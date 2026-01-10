@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Details - Job Tracker</title>
+  <link rel="stylesheet" href="job-detail.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <button class="back-btn" id="back-btn">← Back to Dashboard</button>
+      <div class="header-actions">
+        <button class="btn-secondary" id="delete-btn">Delete</button>
+        <button class="btn-primary" id="save-btn">Save Changes</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Job Header -->
+      <div class="job-header">
+        <input type="text" class="job-title" id="job-title" placeholder="Job Title">
+        <input type="text" class="job-company" id="job-company" placeholder="Company Name">
+      </div>
+
+      <!-- Job Meta -->
+      <div class="job-meta">
+        <div class="meta-item">
+          <label>Location</label>
+          <input type="text" id="location" placeholder="e.g., San Francisco, CA">
+        </div>
+        <div class="meta-item">
+          <label>Salary</label>
+          <input type="text" id="salary" placeholder="e.g., $120k - $150k">
+        </div>
+        <div class="meta-item">
+          <label>Work Type</label>
+          <select id="work-type">
+            <option value="Remote">Remote</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Onsite">Onsite</option>
+            <option value="Not specified">Not specified</option>
+          </select>
+        </div>
+        <div class="meta-item">
+          <label>Status</label>
+          <select id="status">
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Job Description -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Full Job Description</h3>
+          <div class="description-toggle">
+            <button class="toggle-btn active" id="view-formatted">Formatted</button>
+            <button class="toggle-btn" id="view-plain">Plain Text</button>
+          </div>
+        </div>
+        <div id="description-formatted" class="description-content formatted"></div>
+        <textarea id="description" class="description-content plain" style="display: none;" placeholder="Job description..."></textarea>
+      </div>
+
+      <!-- Resume Upload -->
+      <div class="section">
+        <h3>Resume</h3>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="resume-upload" accept=".pdf,.doc,.docx" hidden>
+          <button class="upload-btn" id="upload-btn">Choose File</button>
+          <span class="file-name" id="file-name">No file selected</span>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="section">
+        <h3>Notes</h3>
+        <textarea id="notes" placeholder="Add your notes here..."></textarea>
+      </div>
+
+      <!-- Timeline -->
+      <div class="section">
+        <h3>Timeline</h3>
+        <div class="timeline" id="timeline"></div>
+      </div>
+
+      <!-- LinkedIn Link -->
+      <div class="section">
+        <h3>LinkedIn URL</h3>
+        <a href="#" id="linkedin-url" target="_blank" class="link">View on LinkedIn</a>
+      </div>
+    </main>
+  </div>
+
+  <script src="job-tracker.js"></script>
+  <script src="job-detail.js"></script>
+</body>
+</html>
+

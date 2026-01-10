@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autofill Profile Setup</title>
+  <link rel="stylesheet" href="profile-setup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">📝</div>
+      <h1>Autofill Profile Setup</h1>
+      <p class="subtitle">Fill this once, autofill everywhere</p>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-step active" data-step="1">
+        <div class="step-number">1</div>
+        <div class="step-label">Personal</div>
+      </div>
+      <div class="progress-step" data-step="2">
+        <div class="step-number">2</div>
+        <div class="step-label">Contact</div>
+      </div>
+      <div class="progress-step" data-step="3">
+        <div class="step-number">3</div>
+        <div class="step-label">Work</div>
+      </div>
+      <div class="progress-step" data-step="4">
+        <div class="step-number">4</div>
+        <div class="step-label">Education</div>
+      </div>
+      <div class="progress-step" data-step="5">
+        <div class="step-number">5</div>
+        <div class="step-label">Legal</div>
+      </div>
+    </div>
+
+    <form id="profile-form">
+      <!-- Step 1: Personal Information -->
+      <div class="form-step active" data-step="1">
+        <h2>👤 Personal Information</h2>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name *</label>
+            <input type="text" id="firstName" name="firstName" required placeholder="John">
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name *</label>
+            <input type="text" id="lastName" name="lastName" required placeholder="Doe">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="preferredName">Preferred Name (Optional)</label>
+          <input type="text" id="preferredName" name="preferredName" placeholder="Johnny">
+          <small>If different from first name</small>
+        </div>
+      </div>
+
+      <!-- Step 2: Contact Information -->
+      <div class="form-step" data-step="2">
+        <h2>📞 Contact Information</h2>
+        
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input type="email" id="email" name="email" required placeholder="john.doe@example.com">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number *</label>
+          <input type="tel" id="phone" name="phone" required placeholder="(555) 123-4567">
+        </div>
+
+        <div class="form-group">
+          <label for="address">Street Address</label>
+          <input type="text" id="address" name="address" placeholder="123 Main Street, Apt 4B">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input type="text" id="city" name="city" required placeholder="San Francisco">
+          </div>
+          <div class="form-group">
+            <label for="state">State *</label>
+            <input type="text" id="state" name="state" required placeholder="CA">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="zipCode">ZIP Code</label>
+            <input type="text" id="zipCode" name="zipCode" placeholder="94102">
+          </div>
+          <div class="form-group">
+            <label for="country">Country</label>
+            <input type="text" id="country" name="country" value="United States" placeholder="United States">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="linkedin">LinkedIn Profile</label>
+          <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/johndoe">
+        </div>
+
+        <div class="form-group">
+          <label for="github">GitHub Profile (Optional)</label>
+          <input type="url" id="github" name="github" placeholder="https://github.com/johndoe">
+        </div>
+
+        <div class="form-group">
+          <label for="website">Personal Website/Portfolio (Optional)</label>
+          <input type="url" id="website" name="website" placeholder="https://johndoe.com">
+        </div>
+      </div>
+
+      <!-- Step 3: Work Experience -->
+      <div class="form-step" data-step="3">
+        <h2>💼 Work Experience</h2>
+        
+        <div class="form-group">
+          <label for="currentCompany">Current/Most Recent Company</label>
+          <input type="text" id="currentCompany" name="currentCompany" placeholder="Google">
+        </div>
+
+        <div class="form-group">
+          <label for="currentTitle">Current/Most Recent Job Title</label>
+          <input type="text" id="currentTitle" name="currentTitle" placeholder="Senior Software Engineer">
+        </div>
+
+        <div class="form-group">
+          <label for="yearsExperience">Years of Experience</label>
+          <select id="yearsExperience" name="yearsExperience">
+            <option value="">Select...</option>
+            <option value="0-1">Less than 1 year</option>
+            <option value="1-2">1-2 years</option>
+            <option value="2-5">2-5 years</option>
+            <option value="5-10">5-10 years</option>
+            <option value="10+">10+ years</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="skills">Skills (comma-separated)</label>
+          <textarea id="skills" name="skills" rows="3" placeholder="JavaScript, Python, React, Node.js, AWS, Docker"></textarea>
+          <small>Separate skills with commas</small>
+        </div>
+      </div>
+
+      <!-- Step 4: Education -->
+      <div class="form-step" data-step="4">
+        <h2>🎓 Education</h2>
+        
+        <div class="form-group">
+          <label for="university">University/College</label>
+          <input type="text" id="university" name="university" placeholder="Stanford University">
+        </div>
+
+        <div class="form-group">
+          <label for="degree">Degree</label>
+          <select id="degree" name="degree">
+            <option value="">Select...</option>
+            <option value="High School">High School Diploma</option>
+            <option value="Associate">Associate's Degree</option>
+            <option value="Bachelor">Bachelor's Degree</option>
+            <option value="Master">Master's Degree</option>
+            <option value="PhD">PhD</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="major">Major/Field of Study</label>
+          <input type="text" id="major" name="major" placeholder="Computer Science">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="graduationYear">Graduation Year</label>
+            <input type="number" id="graduationYear" name="graduationYear" placeholder="2020" min="1950" max="2030">
+          </div>
+          <div class="form-group">
+            <label for="gpa">GPA (Optional)</label>
+            <input type="text" id="gpa" name="gpa" placeholder="3.8">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Legal & Other -->
+      <div class="form-step" data-step="5">
+        <h2>📋 Legal & Additional Information</h2>
+
+        <div class="form-group">
+          <label for="workAuthorization">Work Authorization Status *</label>
+          <select id="workAuthorization" name="workAuthorization" required>
+            <option value="">Select...</option>
+            <option value="US Citizen">U.S. Citizen</option>
+            <option value="Green Card">Green Card Holder</option>
+            <option value="H1B">H-1B Visa</option>
+            <option value="F1 OPT">F-1 OPT</option>
+            <option value="F1 CPT">F-1 CPT</option>
+            <option value="Other">Other Work Authorization</option>
+            <option value="Need Sponsorship">Need Sponsorship</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="requireSponsorship">Do you require visa sponsorship? *</label>
+          <select id="requireSponsorship" name="requireSponsorship" required>
+            <option value="">Select...</option>
+            <option value="No">No</option>
+            <option value="Now">Yes, now</option>
+            <option value="Future">Yes, in the future</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="veteranStatus">Veteran Status (Optional)</label>
+          <select id="veteranStatus" name="veteranStatus">
+            <option value="">Prefer not to answer</option>
+            <option value="Not a Veteran">Not a Veteran</option>
+            <option value="Veteran">Veteran</option>
+            <option value="Disabled Veteran">Disabled Veteran</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="disability">Disability Status (Optional)</label>
+          <select id="disability" name="disability">
+            <option value="">Prefer not to answer</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="gender">Gender (Optional)</label>
+          <select id="gender" name="gender">
+            <option value="">Prefer not to answer</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ethnicity">Ethnicity (Optional)</label>
+          <select id="ethnicity" name="ethnicity">
+            <option value="">Prefer not to answer</option>
+            <option value="Asian">Asian</option>
+            <option value="Black or African American">Black or African American</option>
+            <option value="Hispanic or Latino">Hispanic or Latino</option>
+            <option value="White">White</option>
+            <option value="Native American">Native American or Alaska Native</option>
+            <option value="Pacific Islander">Native Hawaiian or Pacific Islander</option>
+            <option value="Two or More">Two or More Races</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="desiredSalary">Desired Salary (Optional)</label>
+          <input type="text" id="desiredSalary" name="desiredSalary" placeholder="$120,000">
+          <small>Leave blank if you prefer not to specify</small>
+        </div>
+
+        <div class="form-group">
+          <label for="availableStartDate">Available Start Date</label>
+          <input type="date" id="availableStartDate" name="availableStartDate">
+        </div>
+
+        <div class="form-group">
+          <label for="coverLetter">Cover Letter Template (Optional)</label>
+          <textarea id="coverLetter" name="coverLetter" rows="5" placeholder="Dear Hiring Manager,
+
+I am excited to apply for this position..."></textarea>
+          <small>This will be used as a default cover letter</small>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="form-navigation">
+        <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+          ← Previous
+        </button>
+        <button type="button" class="btn btn-primary" id="nextBtn">
+          Next →
+        </button>
+        <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+          💾 Save Profile
+        </button>
+      </div>
+    </form>
+
+    <div class="success-message" id="successMessage" style="display: none;">
+      <div class="success-icon">✅</div>
+      <h2>Profile Saved Successfully!</h2>
+      <p>Your information is ready to autofill job applications.</p>
+      <button class="btn btn-primary" id="closeBtn">Close</button>
+    </div>
+  </div>
+
+  <script src="profile-setup.js"></script>
+</body>
+</html>
+
