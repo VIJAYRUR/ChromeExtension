@@ -9,8 +9,14 @@
 # Text files
 *.txt
 
-# Specific HTML file
+# Specific HTML files
 notion.html
+notions.mhtml
+
+# Test files
+job-detail-standalone.html
+test-editable-pills.html
+test-pills.html
 
 # ========================================
 # STANDARD EXCLUSIONS
