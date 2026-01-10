@@ -96,21 +96,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'openJobDetail') {
     // Open job detail page
     chrome.tabs.create({
-      url: chrome.runtime.getURL(`job-detail.html?id=${message.jobId}`)
+      url: chrome.runtime.getURL(`tracking-dashboard/job-detail.html?id=${message.jobId}`)
     });
   }
 
   if (message.action === 'openDashboard') {
     // Open dashboard
     chrome.tabs.create({
-      url: chrome.runtime.getURL('dashboard.html')
+      url: chrome.runtime.getURL('tracking-dashboard/dashboard.html')
     });
   }
 
   if (message.action === 'openProfileSetup') {
     // Open profile setup page
     chrome.tabs.create({
-      url: chrome.runtime.getURL('profile-setup.html')
+      url: chrome.runtime.getURL('autofill/profile-setup.html')
     });
   }
 });

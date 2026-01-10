@@ -10,6 +10,7 @@ A comprehensive Chrome extension that revolutionizes your job search by filterin
 
 ## 📖 Table of Contents
 
+- [Project Structure](#-project-structure)
 - [Features Overview](#-features-overview)
 - [LinkedIn Jobs Filter](#-linkedin-jobs-filter)
 - [Job Application Tracker](#-job-application-tracker)
@@ -20,6 +21,55 @@ A comprehensive Chrome extension that revolutionizes your job search by filterin
 - [Documentation](#-documentation)
 - [For Developers](#-for-developers)
 - [Troubleshooting](#-troubleshooting)
+
+---
+
+## 📁 Project Structure
+
+This extension is organized into **3 independent modules** for better maintainability and separation of concerns:
+
+```
+ChromeExtension/
+├── job-filter/              # LinkedIn job filtering feature
+│   ├── content.js          # Main content script for LinkedIn
+│   ├── floating-panel.css  # Filter panel styling
+│   └── README.md           # Module documentation
+│
+├── tracking-dashboard/      # Job application tracking
+│   ├── dashboard.html      # Main dashboard page
+│   ├── dashboard.css       # Dashboard styling
+│   ├── dashboard.js        # Dashboard logic
+│   ├── job-detail.html     # Job detail page
+│   ├── job-detail.css      # Job detail styling
+│   ├── job-detail.js       # Job detail logic
+│   ├── job-tracker.js      # Core tracking functionality
+│   └── README.md           # Module documentation
+│
+├── autofill/               # Job application autofill
+│   ├── autofill-content.js # Autofill UI controller
+│   ├── autofill-engine.js  # Core autofill logic
+│   ├── profile-setup.html  # Profile setup wizard
+│   ├── profile-setup.css   # Profile setup styling
+│   ├── profile-setup.js    # Profile setup logic
+│   ├── resume-manager.js   # Resume parsing
+│   └── README.md           # Module documentation
+│
+├── shared/                 # Shared components
+│   ├── popup.html         # Extension popup
+│   ├── popup.js           # Popup logic
+│   ├── background.js      # Background service worker
+│   └── README.md          # Module documentation
+│
+├── icons/                 # Extension icons
+├── manifest.json          # Extension manifest
+└── README.md             # This file
+```
+
+### Module Benefits
+- ✅ **Separation of Concerns** - Each feature is independent
+- ✅ **Easy Maintenance** - Changes to one module don't affect others
+- ✅ **Better Organization** - Clear structure for developers
+- ✅ **Scalability** - Easy to add new features or modules
 
 ---
 

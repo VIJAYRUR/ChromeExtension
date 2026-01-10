@@ -12,8 +12,8 @@
   "content_scripts": [
     {
       "matches": ["https://www.linkedin.com/jobs/*"],
-      "js": ["content.js"],
-      "css": ["floating-panel.css"],
+      "js": ["job-filter/content.js"],
+      "css": ["job-filter/floating-panel.css"],
       "run_at": "document_idle"
     },
     {
@@ -35,7 +35,7 @@
         "https://*/*careers*",
         "https://*/*jobs/*"
       ],
-      "js": ["resume-manager.js", "autofill-engine.js", "autofill-content.js"],
+      "js": ["autofill/resume-manager.js", "autofill/autofill-engine.js", "autofill/autofill-content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -46,10 +46,10 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_popup": "popup.html"
+    "default_popup": "shared/popup.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "shared/background.js"
   },
   "icons": {
     "16": "icons/icon16.png",
@@ -59,17 +59,19 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "dashboard.html",
-        "job-detail.html",
-        "dashboard.css",
-        "dashboard.js",
-        "job-tracker.js",
-        "resume-manager.js",
-        "autofill-engine.js",
-        "autofill-content.js",
-        "profile-setup.html",
-        "profile-setup.css",
-        "profile-setup.js"
+        "tracking-dashboard/dashboard.html",
+        "tracking-dashboard/job-detail.html",
+        "tracking-dashboard/dashboard.css",
+        "tracking-dashboard/dashboard.js",
+        "tracking-dashboard/job-detail.css",
+        "tracking-dashboard/job-detail.js",
+        "tracking-dashboard/job-tracker.js",
+        "autofill/resume-manager.js",
+        "autofill/autofill-engine.js",
+        "autofill/autofill-content.js",
+        "autofill/profile-setup.html",
+        "autofill/profile-setup.css",
+        "autofill/profile-setup.js"
       ],
       "matches": ["<all_urls>"]
     }
