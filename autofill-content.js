@@ -8,7 +8,7 @@ class AutofillUI {
   }
 
   async init() {
-    console.log('[Autofill UI] 🚀 Initializing on', window.location.hostname);
+  
     
     // Wait for page to load
     if (document.readyState === 'loading') {
@@ -21,7 +21,7 @@ class AutofillUI {
   async setup() {
     // Check if we're on a job application page
     if (!this.isJobApplicationPage()) {
-      console.log('[Autofill UI] ℹ️ Not a job application page, skipping...');
+     
       return;
     }
 

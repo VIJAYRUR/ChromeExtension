@@ -14,6 +14,7 @@ class LinkedInJobsFilter {
     this.detailPanelObserver = null;  // NEW: Observer for job detail panel
     this.panel = null;
     this.stats = { total: 0, visible: 0, hidden: 0 };
+    this.hasScannedJobs = false;  // Track if we've scanned jobs for reposted status
     this.init();
   }
 
@@ -37,6 +38,12 @@ class LinkedInJobsFilter {
       if (changes.settings) {
         console.log('[LinkedIn Jobs Filter] ⚡ Settings changed:', changes.settings.newValue);
         this.settings = changes.settings.newValue;
+
+        // Reset scan flag if hideReposted setting changed
+        if (changes.settings.oldValue?.hideReposted !== changes.settings.newValue?.hideReposted) {
+          this.hasScannedJobs = false;
+        }
+
         this.updatePanelUI();
         this.filterAllJobs();
       }
@@ -329,6 +336,8 @@ class LinkedInJobsFilter {
     });
   }
 
+
+
   startObserver() {
     // Debounce to avoid too many filter calls
     let filterTimeout;
@@ -361,7 +370,6 @@ class LinkedInJobsFilter {
       });
 
       if (hasJobChanges) {
-        console.log('[LinkedIn Jobs Filter] 🔄 Job list changed, re-filtering...');
         debouncedFilter();
         // Re-add click listeners to new job cards
         setTimeout(() => this.addJobCardClickListeners(), 500);
@@ -394,8 +402,6 @@ class LinkedInJobsFilter {
       childList: true,
       subtree: true
     });
-
-    console.log('[LinkedIn Jobs Filter] Observer started on:', container.className || 'body');
 
     // Start observing the job detail panel for changes
     this.startDetailPanelObserver();
@@ -456,15 +462,101 @@ class LinkedInJobsFilter {
       if (card.dataset.trackListenerAdded) return;
 
       card.addEventListener('click', () => {
-        console.log('[Job Tracker] 🖱️ Job card clicked, adding Track button...');
+        console.log('[Job Tracker] 🖱️ Job card clicked, checking detail panel...');
+
         // Wait for LinkedIn to update the detail panel
-        setTimeout(() => this.addTrackButtonToDetailPanel(), 300);
+        setTimeout(() => {
+          // Add Track button
+          this.addTrackButtonToDetailPanel();
+
+          // CRITICAL: Check if the job is reposted in the detail panel
+          this.checkDetailPanelAndMarkJob(card);
+        }, 500);
       });
 
       card.dataset.trackListenerAdded = 'true';
     });
 
     console.log(`[Job Tracker] ✅ Added click listeners to ${jobCards.length} job cards`);
+  }
+
+  checkDetailPanelAndMarkJob(card) {
+    const detailPanel = document.querySelector('.jobs-details, .jobs-search__job-details, .jobs-details__main-content');
+
+    if (!detailPanel) {
+      console.log('[LinkedIn Jobs Filter] ⚠️ Detail panel not found');
+      return;
+    }
+
+    const detailText = (detailPanel.textContent || '').toLowerCase();
+
+    // Check for "Reposted" text
+    if (detailText.includes('reposted')) {
+      console.log('[LinkedIn Jobs Filter] 🔁 FOUND REPOSTED in detail panel - marking card');
+
+      // Mark this card as reposted
+      card.setAttribute('data-is-reposted', 'true');
+
+      // If hideReposted is enabled, hide this job immediately
+      if (this.settings.hideReposted) {
+        console.log('[LinkedIn Jobs Filter] 🔁 HIDING REPOSTED job NOW');
+
+        card.style.setProperty('display', 'none', 'important');
+        card.style.setProperty('visibility', 'hidden', 'important');
+        card.style.setProperty('height', '0', 'important');
+        card.style.setProperty('overflow', 'hidden', 'important');
+        card.style.setProperty('opacity', '0', 'important');
+        card.style.setProperty('max-height', '0', 'important');
+        card.setAttribute('data-filtered-out', 'true');
+        card.setAttribute('aria-hidden', 'true');
+
+        // Update stats
+        this.stats.hidden++;
+        this.stats.visible--;
+        this.updateStats();
+
+        // Close the detail panel and move to next job
+        const nextCard = card.nextElementSibling;
+        if (nextCard && nextCard.matches('li.jobs-search-results__list-item')) {
+          console.log('[LinkedIn Jobs Filter] ⏭️ Moving to next job...');
+          nextCard.click();
+        }
+      }
+    }
+
+    // Check for "Promoted" text
+    if (detailText.includes('promoted')) {
+      console.log('[LinkedIn Jobs Filter] 📢 FOUND PROMOTED in detail panel - marking card');
+
+      // Mark this card as promoted
+      card.setAttribute('data-is-promoted', 'true');
+
+      // If hidePromoted is enabled, hide this job immediately
+      if (this.settings.hidePromoted) {
+        console.log('[LinkedIn Jobs Filter] 📢 HIDING PROMOTED job NOW');
+
+        card.style.setProperty('display', 'none', 'important');
+        card.style.setProperty('visibility', 'hidden', 'important');
+        card.style.setProperty('height', '0', 'important');
+        card.style.setProperty('overflow', 'hidden', 'important');
+        card.style.setProperty('opacity', '0', 'important');
+        card.style.setProperty('max-height', '0', 'important');
+        card.setAttribute('data-filtered-out', 'true');
+        card.setAttribute('aria-hidden', 'true');
+
+        // Update stats
+        this.stats.hidden++;
+        this.stats.visible--;
+        this.updateStats();
+
+        // Move to next job
+        const nextCard = card.nextElementSibling;
+        if (nextCard && nextCard.matches('li.jobs-search-results__list-item')) {
+          console.log('[LinkedIn Jobs Filter] ⏭️ Moving to next job...');
+          nextCard.click();
+        }
+      }
+    }
   }
 
   addTrackButtonToDetailPanel() {
@@ -809,36 +901,46 @@ class LinkedInJobsFilter {
       jobCards = document.querySelectorAll('.job-card-container');
     }
 
+
+
     let visibleCount = 0;
     let hiddenCount = 0;
 
-    console.log('[LinkedIn Jobs Filter] 🔍 Filtering', jobCards.length, 'jobs');
-    console.log('  Settings:', this.settings);
-
-    if (this.settings.blacklistedCompanies.length > 0) {
-      console.log('  Blacklisted companies:', this.settings.blacklistedCompanies);
-    }
-
-    jobCards.forEach(card => {
+    jobCards.forEach((card, index) => {
       const shouldHide = this.shouldHideJob(card);
 
       if (shouldHide) {
-        // Hide the job completely
-        card.style.display = 'none';
-        card.style.visibility = 'hidden';
-        card.style.height = '0';
-        card.style.overflow = 'hidden';
+        // AGGRESSIVELY hide the job - use multiple methods
+        card.style.setProperty('display', 'none', 'important');
+        card.style.setProperty('visibility', 'hidden', 'important');
+        card.style.setProperty('height', '0', 'important');
+        card.style.setProperty('overflow', 'hidden', 'important');
+        card.style.setProperty('opacity', '0', 'important');
+        card.style.setProperty('max-height', '0', 'important');
+        card.style.setProperty('margin', '0', 'important');
+        card.style.setProperty('padding', '0', 'important');
+
+        // Also add a data attribute to mark as hidden
+        card.setAttribute('data-filtered-out', 'true');
+        card.setAttribute('aria-hidden', 'true');
+
         hiddenCount++;
       } else {
-        // Show the job
-        card.style.display = '';
-        card.style.visibility = '';
-        card.style.height = '';
-        card.style.overflow = '';
-        visibleCount++;
+        // Show the job - remove all hiding styles
+        card.style.removeProperty('display');
+        card.style.removeProperty('visibility');
+        card.style.removeProperty('height');
+        card.style.removeProperty('overflow');
+        card.style.removeProperty('opacity');
+        card.style.removeProperty('max-height');
+        card.style.removeProperty('margin');
+        card.style.removeProperty('padding');
 
-        // Don't add track button to left side cards anymore - only on right detail panel
-        // this.addTrackButton(card);
+        // Remove hidden markers
+        card.removeAttribute('data-filtered-out');
+        card.removeAttribute('aria-hidden');
+
+        visibleCount++;
       }
     });
 
@@ -850,89 +952,316 @@ class LinkedInJobsFilter {
     };
     this.updateStats();
 
-    console.log(`[LinkedIn Jobs Filter] ✅ Visible: ${visibleCount}, ❌ Hidden: ${hiddenCount}`);
+    // Force a second pass after a short delay to catch any that slipped through
+    setTimeout(() => {
+      this.forceRecheck();
+    }, 500);
+  }
+
+  async backgroundScanForReposted() {
+    // Get all visible job cards (not already filtered out)
+    const allCards = Array.from(document.querySelectorAll('li.jobs-search-results__list-item, li[data-occludable-job-id]'));
+    const visibleCards = allCards.filter(card => !card.getAttribute('data-filtered-out'));
+
+    console.log(`[LinkedIn Jobs Filter] 🤖 Scanning ${visibleCards.length} jobs for reposted...`);
+
+    if (visibleCards.length === 0) {
+      return;
+    }
+
+    // Store the currently selected job to restore later
+    const currentlySelected = document.querySelector('li.jobs-search-results__list-item--active, li[aria-current="true"]');
+    const currentJobId = currentlySelected?.getAttribute('data-occludable-job-id');
+
+    let scannedCount = 0;
+    let repostedCount = 0;
+
+    for (let i = 0; i < visibleCards.length; i++) {
+      const card = visibleCards[i];
+
+      // Skip if already checked
+      if (card.getAttribute('data-detail-checked') === 'true') {
+        continue;
+      }
+
+      // Click the job to load detail panel
+      card.click();
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Wait for detail panel to load
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Check detail panel for reposted
+      const detailPanel = document.querySelector('.jobs-search__job-details--container') ||
+                         document.querySelector('.job-details-jobs-unified-top-card') ||
+                         document.querySelector('[class*="job-details"]');
+
+      if (detailPanel) {
+        const detailText = detailPanel.textContent || '';
+
+        // PRECISE REPOSTED DETECTION
+        const repostedPatterns = [
+          /Reposted\s+\d+\s+(day|hour|week|month)s?\s+ago/i,
+          /Reposted\s+[a-z]+\s+(day|hour|week|month)s?\s+ago/i,
+        ];
+
+        let isReposted = false;
+
+        // Check patterns
+        for (const pattern of repostedPatterns) {
+          if (pattern.test(detailText)) {
+            isReposted = true;
+            break;
+          }
+        }
+
+        // Also check for standalone "Reposted" in elements
+        if (!isReposted) {
+          const elements = detailPanel.querySelectorAll('span, div, li, p');
+          for (const el of elements) {
+            const text = (el.textContent || '').trim();
+            if (text.match(/^Reposted/i) && text.length < 100) {
+              isReposted = true;
+              break;
+            }
+          }
+        }
+
+        if (isReposted) {
+          card.setAttribute('data-is-reposted', 'true');
+          repostedCount++;
+        }
+      }
+
+      card.setAttribute('data-detail-checked', 'true');
+      scannedCount++;
+    }
+
+    console.log(`[LinkedIn Jobs Filter] ✅ Scan complete! Found ${repostedCount} reposted jobs out of ${scannedCount} scanned`);
+
+    // Re-filter to hide newly detected reposted jobs
+    this.filterAllJobs();
+
+    // Restore the originally selected job
+    if (currentJobId) {
+      const originalCard = document.querySelector(`li[data-occludable-job-id="${currentJobId}"]`);
+      if (originalCard && !originalCard.getAttribute('data-filtered-out')) {
+        setTimeout(() => {
+          originalCard.click();
+          originalCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    }
+  }
+
+  forceRecheck() {
+    // Second pass to catch any jobs that might have slipped through
+    const allCards = document.querySelectorAll('li.jobs-search-results__list-item, li[data-occludable-job-id]');
+    let recheckHidden = 0;
+
+    allCards.forEach(card => {
+      // Skip if already marked as filtered
+      if (card.getAttribute('data-filtered-out') === 'true') {
+        return;
+      }
+
+      // Re-check if this should be hidden
+      const shouldHide = this.shouldHideJob(card);
+
+      if (shouldHide) {
+        console.log('[LinkedIn Jobs Filter] 🔄 RECHECK: Hiding job that slipped through');
+
+        // Aggressively hide
+        card.style.setProperty('display', 'none', 'important');
+        card.style.setProperty('visibility', 'hidden', 'important');
+        card.style.setProperty('height', '0', 'important');
+        card.style.setProperty('overflow', 'hidden', 'important');
+        card.style.setProperty('opacity', '0', 'important');
+        card.setAttribute('data-filtered-out', 'true');
+        card.setAttribute('aria-hidden', 'true');
+
+        recheckHidden++;
+      }
+    });
+
+    if (recheckHidden > 0) {
+      console.log(`[LinkedIn Jobs Filter] 🔄 RECHECK: Hid ${recheckHidden} additional jobs`);
+      // Update stats
+      this.stats.hidden += recheckHidden;
+      this.stats.visible -= recheckHidden;
+      this.updateStats();
+    }
   }
 
   shouldHideJob(card) {
     // Extract job data
     const jobData = this.extractJobData(card);
 
-    // Filter 1: Blacklisted companies (check first for better performance)
+    // Filter 1: Hide reposted jobs (CHECK FIRST - most important)
+    if (this.settings.hideReposted && jobData.isReposted) {
+      console.log(`[LinkedIn Jobs Filter] 🔁 HIDING REPOSTED: "${jobData.company || 'Unknown'}"`);
+      return true; // Hide - reposted
+    }
+
+    // Filter 2: Hide promoted jobs
+    if (this.settings.hidePromoted && jobData.isPromoted) {
+      console.log(`[LinkedIn Jobs Filter] 📢 HIDING PROMOTED: "${jobData.company || 'Unknown'}"`);
+      return true; // Hide - promoted
+    }
+
+    // Filter 3: Blacklisted companies - ULTRA ROBUST MATCHING
     if (this.settings.blacklistedCompanies.length > 0 && jobData.company) {
-      const companyLower = jobData.company.toLowerCase();
-
-      // Check if company matches any blacklisted company
-      const isBlacklisted = this.settings.blacklistedCompanies.some(blocked => {
-        const blockedLower = blocked.toLowerCase().trim();
-
-        // Exact match or contains match
-        return companyLower === blockedLower ||
-               companyLower.includes(blockedLower) ||
-               blockedLower.includes(companyLower);
-      });
+      const isBlacklisted = this.isCompanyBlacklisted(jobData.company);
 
       if (isBlacklisted) {
-        console.log(`[LinkedIn Jobs Filter] 🚫 Hiding: "${jobData.company}" (blacklisted)`);
+        console.log(`[LinkedIn Jobs Filter] 🚫 HIDING BLACKLISTED: "${jobData.company}"`);
         return true; // Hide - blacklisted company
       }
     }
 
-    // Filter 2: Time range (hours) - only if URL filtering is not used
+    // Filter 4: Time range (hours)
     if (this.settings.hoursRange > 0) {
       const hoursAgo = this.getJobAgeInHours(jobData.timeText);
       if (hoursAgo > this.settings.hoursRange) {
+        console.log(`[LinkedIn Jobs Filter] ⏰ HIDING OLD: "${jobData.company || 'Unknown'}" (${hoursAgo}h old)`);
         return true; // Hide - too old
       }
-    }
-
-    // Filter 3: Hide reposted jobs
-    if (this.settings.hideReposted && jobData.isReposted) {
-      console.log(`[LinkedIn Jobs Filter] 🔁 Hiding: "${jobData.company}" (reposted)`);
-      return true; // Hide - reposted
-    }
-
-    // Filter 4: Hide promoted jobs
-    if (this.settings.hidePromoted && jobData.isPromoted) {
-      console.log(`[LinkedIn Jobs Filter] 📢 Hiding: "${jobData.company}" (promoted)`);
-      return true; // Hide - promoted
     }
 
     return false; // Show job
   }
 
+  isCompanyBlacklisted(company) {
+    if (!company) return false;
+
+    // Normalize the company name for comparison
+    const normalizeCompany = (name) => {
+      return name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ')           // Normalize spaces
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')  // Remove punctuation
+        .replace(/\binc\b|\bllc\b|\bltd\b|\bcorp\b|\bco\b/gi, '');  // Remove company suffixes
+    };
+
+    const normalizedCompany = normalizeCompany(company);
+
+    // Check against each blacklisted company
+    for (const blocked of this.settings.blacklistedCompanies) {
+      const normalizedBlocked = normalizeCompany(blocked);
+
+      // Method 1: Exact match (after normalization)
+      if (normalizedCompany === normalizedBlocked) {
+        console.log(`[LinkedIn Jobs Filter] ✓ Exact match: "${company}" === "${blocked}"`);
+        return true;
+      }
+
+      // Method 2: Contains match (bidirectional)
+      if (normalizedCompany.includes(normalizedBlocked)) {
+        console.log(`[LinkedIn Jobs Filter] ✓ Contains match: "${company}" contains "${blocked}"`);
+        return true;
+      }
+
+      if (normalizedBlocked.includes(normalizedCompany)) {
+        console.log(`[LinkedIn Jobs Filter] ✓ Reverse contains: "${blocked}" contains "${company}"`);
+        return true;
+      }
+
+      // Method 3: Word-by-word matching (for "Jobs via X" cases)
+      const companyWords = normalizedCompany.split(' ').filter(w => w.length > 2);
+      const blockedWords = normalizedBlocked.split(' ').filter(w => w.length > 2);
+
+      // Check if all significant words from blocked company appear in company name
+      if (blockedWords.length > 0) {
+        const allWordsMatch = blockedWords.every(word =>
+          companyWords.some(cw => cw.includes(word) || word.includes(cw))
+        );
+
+        if (allWordsMatch) {
+          console.log(`[LinkedIn Jobs Filter] ✓ Word match: "${company}" matches "${blocked}"`);
+          return true;
+        }
+      }
+
+      // Method 4: Fuzzy matching for common variations
+      // Handle "Jobs via X" vs "X" matching
+      if (normalizedCompany.includes('jobs via')) {
+        const afterVia = normalizedCompany.split('jobs via')[1]?.trim();
+        if (afterVia && (
+            afterVia === normalizedBlocked ||
+            afterVia.includes(normalizedBlocked) ||
+            normalizedBlocked.includes(afterVia)
+        )) {
+          console.log(`[LinkedIn Jobs Filter] ✓ "Jobs via" match: "${company}" matches "${blocked}"`);
+          return true;
+        }
+      }
+
+      // Reverse: if blocked is "Jobs via X" and company is "X"
+      if (normalizedBlocked.includes('jobs via')) {
+        const afterVia = normalizedBlocked.split('jobs via')[1]?.trim();
+        if (afterVia && (
+            normalizedCompany === afterVia ||
+            normalizedCompany.includes(afterVia) ||
+            afterVia.includes(normalizedCompany)
+        )) {
+          console.log(`[LinkedIn Jobs Filter] ✓ Reverse "Jobs via" match: "${company}" matches "${blocked}"`);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   extractJobData(card) {
-    // Extract company name - try multiple selectors and methods
+    // Extract company name - ULTRA ROBUST with multiple fallbacks
     let company = '';
 
-    // Method 1: Try common selectors
+    // Method 1: Try ALL possible selectors
     const companySelectors = [
       '.job-card-container__primary-description',
       '.artdeco-entity-lockup__subtitle',
       '.job-card-container__company-name',
       '[data-anonymize="company-name"]',
       '.base-search-card__subtitle',
-      '.job-card-container__metadata-item'
+      '.job-card-container__metadata-item',
+      '.job-card-list__company-name',
+      '.job-card-container__company',
+      '.artdeco-entity-lockup__subtitle span',
+      '.job-card-container__metadata-wrapper span',
+      'span[class*="company"]',
+      'div[class*="company"]'
     ];
 
     for (const selector of companySelectors) {
       const el = card.querySelector(selector);
       if (el && el.textContent.trim()) {
-        company = el.textContent.trim();
-        break;
+        const text = el.textContent.trim();
+        // Skip if it's just a number or time text
+        if (text && !text.match(/^\d+$/) && !text.includes('ago')) {
+          company = text;
+          break;
+        }
       }
     }
 
-    // Method 2: If still not found, look for any element with company-related text
+    // Method 2: Look for "Jobs via X" pattern in ALL text content
     if (!company) {
       const allText = card.textContent || '';
-      // Look for "Jobs via X" pattern - more comprehensive
-      const viaMatch = allText.match(/Jobs via ([^\n]+)/i);
-      if (viaMatch) {
-        company = 'Jobs via ' + viaMatch[1].trim();
+      const lines = allText.split('\n').map(l => l.trim()).filter(l => l);
+
+      // Try to find "Jobs via X" pattern
+      for (const line of lines) {
+        const viaMatch = line.match(/Jobs via (.+)/i);
+        if (viaMatch) {
+          company = 'Jobs via ' + viaMatch[1].trim();
+          break;
+        }
       }
     }
 
-    // Method 3: Try to find company in the card's aria-label or data attributes
+    // Method 3: Try aria-label
     if (!company) {
       const ariaLabel = card.getAttribute('aria-label') || '';
       const companyMatch = ariaLabel.match(/at ([^,\n]+)/i);
@@ -941,30 +1270,78 @@ class LinkedInJobsFilter {
       }
     }
 
-    // Clean up company name (remove extra whitespace, newlines)
-    company = company.replace(/\s+/g, ' ').trim();
-
-    // Debug: Log the extracted company name
-    if (company) {
-      console.log('[LinkedIn Jobs Filter] 📋 Extracted company:', company);
+    // Method 4: Look for company in structured data
+    if (!company) {
+      const allElements = card.querySelectorAll('span, div, a');
+      for (const el of allElements) {
+        const text = el.textContent?.trim() || '';
+        // Look for company-like text (not too short, not a number, not time)
+        if (text.length > 2 &&
+            text.length < 100 &&
+            !text.match(/^\d+$/) &&
+            !text.includes('ago') &&
+            !text.includes('applicant') &&
+            !text.includes('Easy Apply') &&
+            !text.includes('Save')) {
+          // Check if this might be a company name
+          const parent = el.parentElement;
+          if (parent && (
+              parent.className.includes('company') ||
+              parent.className.includes('subtitle') ||
+              parent.className.includes('metadata')
+          )) {
+            company = text;
+            break;
+          }
+        }
+      }
     }
 
-    // Extract time posted - try multiple methods
+    // Clean up company name aggressively
+    if (company) {
+      company = company
+        .replace(/\s+/g, ' ')  // Normalize whitespace
+        .replace(/\n/g, ' ')   // Remove newlines
+        .trim();
+
+      // Remove common suffixes that might be appended
+      company = company.split('·')[0].trim();  // Remove anything after ·
+      company = company.split('•')[0].trim();  // Remove anything after •
+      company = company.split('|')[0].trim();  // Remove anything after |
+    }
+
+    // Extract time posted - COMPREHENSIVE
     let timeText = '';
 
-    // Method 1: Look for <time> element
+    // Method 1: <time> element
     const timeEl = card.querySelector('time');
     if (timeEl) {
       timeText = timeEl.getAttribute('datetime') || timeEl.textContent?.trim() || '';
     }
 
-    // Method 2: Look for specific class
+    // Method 2: Specific time classes
     if (!timeText) {
-      const timeEl2 = card.querySelector('.job-card-container__listed-time');
-      timeText = timeEl2?.textContent?.trim() || '';
+      const timeSelectors = [
+        '.job-card-container__listed-time',
+        '.job-card-list__date',
+        'time',
+        '[class*="time"]',
+        '[class*="date"]'
+      ];
+
+      for (const selector of timeSelectors) {
+        const el = card.querySelector(selector);
+        if (el) {
+          const text = el.textContent?.trim() || '';
+          if (text.includes('ago') || text.match(/\d+\s+(minute|hour|day|week|month)/i)) {
+            timeText = text;
+            break;
+          }
+        }
+      }
     }
 
-    // Method 3: Look for text patterns (e.g., "8 hours ago", "2 days ago")
+    // Method 3: Pattern matching in all text
     if (!timeText) {
       const cardText = card.textContent || '';
       const timeMatch = cardText.match(/(\d+\s+(minute|hour|day|week|month)s?\s+ago)/i);
@@ -973,21 +1350,130 @@ class LinkedInJobsFilter {
       }
     }
 
-    // Check if reposted or promoted - COMPREHENSIVE detection
-    const bodyText = card.textContent || '';
-    const bodyTextLower = bodyText.toLowerCase();
+    // ULTRA ROBUST REPOSTED DETECTION
+    const isReposted = this.detectReposted(card);
 
-    // Reposted detection
-    const hasRepostedText = bodyTextLower.includes('reposted');
-    const hasRepostClass = card.querySelector('[class*="repost"]') !== null;
-    const isReposted = hasRepostedText || hasRepostClass;
-
-    // Promoted detection (separate from reposted)
-    const hasPromotedText = bodyTextLower.includes('promoted');
-    const hasPromotedClass = card.querySelector('[class*="promoted"]') !== null;
-    const isPromoted = hasPromotedText || hasPromotedClass;
+    // ULTRA ROBUST PROMOTED DETECTION
+    const isPromoted = this.detectPromoted(card);
 
     return { company, timeText, isReposted, isPromoted };
+  }
+
+  detectReposted(card) {
+    // PRIORITY: Check if we previously marked this as reposted (from detail panel)
+    if (card.getAttribute('data-is-reposted') === 'true') {
+      console.log('[LinkedIn Jobs Filter] 🔁 REPOSTED detected via previous marking');
+      return true;
+    }
+
+    // Method 1: Check all text content (case-insensitive)
+    const allText = (card.textContent || '').toLowerCase();
+    if (allText.includes('reposted')) {
+      console.log('[LinkedIn Jobs Filter] 🔁 REPOSTED detected via text in card');
+      return true;
+    }
+
+    // Method 2: Check for repost-related classes
+    const repostClasses = [
+      '[class*="repost"]',
+      '[class*="re-post"]',
+      '[class*="reposted"]',
+      '[data-reposted]',
+      '[aria-label*="repost" i]'
+    ];
+
+    for (const selector of repostClasses) {
+      if (card.querySelector(selector)) {
+        console.log('[LinkedIn Jobs Filter] 🔁 REPOSTED detected via class:', selector);
+        return true;
+      }
+    }
+
+    // Method 3: Check all child elements for repost text
+    const allElements = card.querySelectorAll('*');
+    for (const el of allElements) {
+      const text = (el.textContent || '').toLowerCase();
+      const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
+      const title = (el.getAttribute('title') || '').toLowerCase();
+
+      if (text.includes('reposted') || ariaLabel.includes('repost') || title.includes('repost')) {
+        console.log('[LinkedIn Jobs Filter] 🔁 REPOSTED detected in element');
+        return true;
+      }
+    }
+
+    // Method 4: Check for visual indicators (badges, icons)
+    const badges = card.querySelectorAll('span, div, li');
+    for (const badge of badges) {
+      const badgeText = (badge.textContent || '').trim().toLowerCase();
+      if (badgeText === 'reposted' || badgeText === 'repost') {
+        console.log('[LinkedIn Jobs Filter] 🔁 REPOSTED detected via badge');
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  detectPromoted(card) {
+    // PRIORITY: Check if we previously marked this as promoted (from detail panel)
+    if (card.getAttribute('data-is-promoted') === 'true') {
+      console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected via previous marking');
+      return true;
+    }
+
+    // Method 1: Check all text content (case-insensitive)
+    const allText = (card.textContent || '').toLowerCase();
+    if (allText.includes('promoted')) {
+      console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected via text');
+      return true;
+    }
+
+    // Method 2: Check for promoted-related classes
+    const promotedClasses = [
+      '[class*="promoted"]',
+      '[class*="sponsor"]',
+      '[data-promoted]',
+      '[aria-label*="promoted" i]',
+      '[aria-label*="sponsor" i]'
+    ];
+
+    for (const selector of promotedClasses) {
+      if (card.querySelector(selector)) {
+        console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected via class:', selector);
+        return true;
+      }
+    }
+
+    // Method 3: Check all child elements
+    const allElements = card.querySelectorAll('*');
+    for (const el of allElements) {
+      const text = (el.textContent || '').toLowerCase();
+      const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
+      const title = (el.getAttribute('title') || '').toLowerCase();
+
+      if (text.includes('promoted') ||
+          text.includes('sponsored') ||
+          ariaLabel.includes('promoted') ||
+          ariaLabel.includes('sponsor') ||
+          title.includes('promoted') ||
+          title.includes('sponsor')) {
+        console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected in element');
+        return true;
+      }
+    }
+
+    // Method 4: Check for visual indicators
+    const badges = card.querySelectorAll('span, div, li');
+    for (const badge of badges) {
+      const badgeText = (badge.textContent || '').trim().toLowerCase();
+      if (badgeText === 'promoted' || badgeText === 'sponsored') {
+        console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected via badge');
+        return true;
+      }
+    }
+
+    return false;
   }
 
   extractFullJobData(card) {
@@ -1335,8 +1821,14 @@ class LinkedInJobsFilter {
     // Apply client-side filters immediately (for blacklist and reposted)
     // Wait a bit for LinkedIn to reload, then apply client-side filters
     setTimeout(() => {
-      console.log('[LinkedIn Jobs Filter] 🔍 Applying client-side filters...');
       this.filterAllJobs();
+
+      // CRITICAL: If hideReposted is enabled, start background scan
+      if (this.settings.hideReposted) {
+        setTimeout(() => {
+          this.backgroundScanForReposted();
+        }, 500);
+      }
     }, 1000);
 
     // Clear pending settings
