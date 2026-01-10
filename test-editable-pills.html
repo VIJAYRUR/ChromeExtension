@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editable Pills Test</title>
+  <link rel="stylesheet" href="job-detail.css">
+</head>
+<body>
+  <div class="container">
+    <main class="content">
+      <h1 style="font-size: 24px; margin-bottom: 32px;">🎨 Editable Property Pills Test</h1>
+      
+      <p style="margin-bottom: 24px; color: #787774;">
+        These inputs LOOK like pills but are fully editable! Click and type to edit them.
+      </p>
+
+      <!-- Job Meta - Notion Properties Style -->
+      <div class="job-meta">
+        <div class="meta-item">
+          <label>📍 Location</label>
+          <input type="text" id="location" value="San Francisco, CA" placeholder="Add location">
+        </div>
+        <div class="meta-item">
+          <label>💰 Salary</label>
+          <input type="text" id="salary" value="$120k - $150k" placeholder="Add salary range">
+        </div>
+        <div class="meta-item">
+          <label>💼 Work Type</label>
+          <select id="work-type">
+            <option value="Remote" selected>Remote</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Onsite">Onsite</option>
+            <option value="Not specified">Not specified</option>
+          </select>
+        </div>
+        <div class="meta-item">
+          <label>📊 Status</label>
+          <select id="status">
+            <option value="applied" selected>Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px; padding: 16px; background: rgba(35, 131, 226, 0.1); border-radius: 6px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">✨ Try It Out!</h3>
+        <ul style="font-size: 14px; color: #787774; line-height: 1.8;">
+          <li>Click on the <strong style="color: rgb(35, 131, 226);">blue Location pill</strong> and type a new location</li>
+          <li>Click on the <strong style="color: rgb(144, 101, 176);">purple Salary pill</strong> and type a new salary</li>
+          <li>Click on the <strong style="color: rgb(0, 135, 107);">green Work Type dropdown</strong> and select "Hybrid" - watch it turn orange!</li>
+          <li>Select "Onsite" - watch it turn gray!</li>
+        </ul>
+      </div>
+
+      <div style="margin-top: 24px; padding: 16px; background: rgba(0, 135, 107, 0.1); border-radius: 6px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: rgb(0, 135, 107);">✅ What Makes This Special</h3>
+        <ul style="font-size: 14px; color: #787774; line-height: 1.8;">
+          <li><strong>Editable Pills</strong> - They look like pills but you can edit them directly</li>
+          <li><strong>Dynamic Colors</strong> - Work Type changes color based on selection</li>
+          <li><strong>Notion-Style</strong> - Exact same colors and styling as Notion</li>
+          <li><strong>Hover Effects</strong> - Hover over any pill to see the subtle background change</li>
+        </ul>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+

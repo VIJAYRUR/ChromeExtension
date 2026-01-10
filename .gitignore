@@ -1,0 +1,46 @@
+# ========================================
+# FILES TO EXCLUDE FROM GIT
+# ========================================
+
+# Markdown files (EXCEPT README.md)
+*.md
+!README.md
+
+# Text files
+*.txt
+
+# Specific HTML file
+notion.html
+
+# ========================================
+# STANDARD EXCLUSIONS
+# ========================================
+
+# Node modules (if you add build tools)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+._*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+*.log
+
+# Extension packaging
+*.zip
+*.crx
+*.pem
+

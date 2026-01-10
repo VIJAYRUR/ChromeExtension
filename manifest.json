@@ -1,0 +1,77 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Jobs Filter & Tracker",
+  "version": "2.0.0",
+  "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/jobs/*"],
+      "js": ["content.js"],
+      "css": ["floating-panel.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.myworkdayjobs.com/*",
+        "https://*.greenhouse.io/*",
+        "https://boards.greenhouse.io/*",
+        "https://job-boards.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://jobs.lever.co/*",
+        "https://*.taleo.net/*",
+        "https://*.icims.com/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.jobvite.com/*",
+        "https://*.breezy.hr/*",
+        "https://*.workable.com/*",
+        "https://*/*apply*",
+        "https://*/*application*",
+        "https://*/*careers*",
+        "https://*/*jobs/*"
+      ],
+      "js": ["resume-manager.js", "autofill-engine.js", "autofill-content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dashboard.html",
+        "job-detail.html",
+        "dashboard.css",
+        "dashboard.js",
+        "job-tracker.js",
+        "resume-manager.js",
+        "autofill-engine.js",
+        "autofill-content.js",
+        "profile-setup.html",
+        "profile-setup.css",
+        "profile-setup.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Extension Icons</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .icon-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .icon-wrapper {
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 8px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #0a66c2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #004182;
+    }
+    h1 {
+      color: #333;
+    }
+    p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>LinkedIn Jobs Pro Filter - Icon Generator</h1>
+  <p>Click the buttons below to download the extension icons</p>
+  
+  <div class="icon-container">
+    <div class="icon-wrapper">
+      <canvas id="icon16" width="16" height="16"></canvas>
+      <br>
+      <button onclick="downloadIcon('icon16', 16)">Download 16x16</button>
+    </div>
+    <div class="icon-wrapper">
+      <canvas id="icon48" width="48" height="48"></canvas>
+      <br>
+      <button onclick="downloadIcon('icon48', 48)">Download 48x48</button>
+    </div>
+    <div class="icon-wrapper">
+      <canvas id="icon128" width="128" height="128"></canvas>
+      <br>
+      <button onclick="downloadIcon('icon128', 128)">Download 128x128</button>
+    </div>
+  </div>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      const scale = size / 128;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#0a66c2');
+      gradient.addColorStop(1, '#004182');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+      
+      // Draw filter/funnel icon
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3 * scale;
+      
+      // Funnel shape
+      const padding = 20 * scale;
+      const topWidth = size - (padding * 2);
+      const bottomWidth = 30 * scale;
+      const height = size - (padding * 2);
+      
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(size - padding, padding);
+      ctx.lineTo(size / 2 + bottomWidth / 2, size / 2);
+      ctx.lineTo(size / 2 + bottomWidth / 2, size - padding);
+      ctx.lineTo(size / 2 - bottomWidth / 2, size - padding);
+      ctx.lineTo(size / 2 - bottomWidth / 2, size / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Add checkmark overlay
+      ctx.strokeStyle = '#057642';
+      ctx.lineWidth = 4 * scale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      const checkSize = 25 * scale;
+      const checkX = size - padding - checkSize;
+      const checkY = padding;
+      
+      ctx.beginPath();
+      ctx.moveTo(checkX, checkY + checkSize / 2);
+      ctx.lineTo(checkX + checkSize / 3, checkY + checkSize);
+      ctx.lineTo(checkX + checkSize, checkY);
+      ctx.stroke();
+    }
+    
+    function downloadIcon(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    // Draw all icons on load
+    window.onload = function() {
+      drawIcon(document.getElementById('icon16'), 16);
+      drawIcon(document.getElementById('icon48'), 48);
+      drawIcon(document.getElementById('icon128'), 128);
+    };
+  </script>
+</body>
+</html>
+
