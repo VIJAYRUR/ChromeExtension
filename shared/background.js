@@ -56,6 +56,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         company: message.jobData.company || 'Unknown Company',
         title: message.jobData.title || 'Unknown Position',
         description: message.jobData.description || '',
+        descriptionHtml: message.jobData.descriptionHtml || '',
         location: message.jobData.location || '',
         salary: message.jobData.salary || '',
         workType: message.jobData.workType || 'Not specified',

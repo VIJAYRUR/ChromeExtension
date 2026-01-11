@@ -176,15 +176,22 @@ class JobDetailPage {
     // Render formatted description
     const formattedDiv = document.getElementById('description-formatted');
     if (formattedDiv) {
-      if (this.job.descriptionHtml) {
+      console.log('[Job Detail] Has descriptionHtml:', !!this.job.descriptionHtml);
+      console.log('[Job Detail] descriptionHtml length:', this.job.descriptionHtml?.length || 0);
+      console.log('[Job Detail] linkedInCleaner available:', !!window.linkedInCleaner);
+
+      if (this.job.descriptionHtml && window.linkedInCleaner) {
         // LinkedIn provides HTML - clean it up and display
-        formattedDiv.innerHTML = window.linkedInCleaner.format(this.job.descriptionHtml);
+        const formatted = window.linkedInCleaner.format(this.job.descriptionHtml);
+        console.log('[Job Detail] Formatted HTML length:', formatted?.length || 0);
+        formattedDiv.innerHTML = formatted;
 
         // Extract skills for future colored pills
         this.extractedSkills = window.linkedInCleaner.extractSkills(this.job.descriptionHtml);
         console.log('[Job Detail] Extracted skills:', this.extractedSkills);
       } else if (this.job.description) {
         // Fallback: plain text description
+        console.log('[Job Detail] Using plain text fallback');
         formattedDiv.innerHTML = `<p>${this.job.description.replace(/\n/g, '<br>')}</p>`;
       } else {
         formattedDiv.innerHTML = this.renderEmptyState('📄', 'No description', 'Job description will appear here');

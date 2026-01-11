@@ -67,6 +67,7 @@ class JobTracker {
       company: jobData.company || 'Unknown Company',
       title: jobData.title || 'Unknown Position',
       description: jobData.description || '',
+      descriptionHtml: jobData.descriptionHtml || '',
       location: jobData.location || '',
       salary: jobData.salary || '',
       workType: jobData.workType || 'Not specified', // onsite, remote, hybrid

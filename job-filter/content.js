@@ -768,27 +768,64 @@ class LinkedInJobsFilter {
       const companyElement = detailPanel.querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name, .jobs-unified-top-card__subtitle-primary-grouping a');
       const company = companyElement?.textContent?.trim() || 'Unknown Company';
 
-      // Extract location - improved selectors
+      // Extract location - using tvm__text--low-emphasis in tertiary description
       let location = '';
-      const locationElement = detailPanel.querySelector('.jobs-unified-top-card__bullet, .job-details-jobs-unified-top-card__bullet');
-      if (locationElement) {
-        location = locationElement.textContent?.trim() || '';
+
+      // Primary: Check tertiary description container for location
+      const tertiaryDesc = detailPanel.querySelector('.job-details-jobs-unified-top-card__tertiary-description-container');
+      if (tertiaryDesc) {
+        const tvmTexts = tertiaryDesc.querySelectorAll('.tvm__text--low-emphasis');
+        if (tvmTexts.length > 0) {
+          // First tvm text is usually the location
+          location = tvmTexts[0].textContent?.trim() || '';
+        }
       }
-      // Fallback: try to find location in the primary grouping
+
+      // Fallback: Old selectors
       if (!location) {
-        const primaryGrouping = detailPanel.querySelector('.jobs-unified-top-card__subtitle-primary-grouping');
-        if (primaryGrouping) {
-          const bullets = primaryGrouping.querySelectorAll('.jobs-unified-top-card__bullet');
-          if (bullets.length > 0) {
-            location = bullets[0].textContent?.trim() || '';
+        const locationElement = detailPanel.querySelector('.jobs-unified-top-card__bullet, .job-details-jobs-unified-top-card__bullet');
+        if (locationElement) {
+          location = locationElement.textContent?.trim() || '';
+        }
+      }
+
+      console.log('[Job Tracker] 📍 Location extracted:', location);
+
+      // Extract work type and salary from job-details-fit-level-preferences buttons
+      let workType = 'Not specified';
+      let salary = '';
+
+      // Check fit level preferences buttons for both work type and salary
+      const fitButtons = detailPanel.querySelectorAll('.job-details-fit-level-preferences button');
+      for (const button of fitButtons) {
+        const text = button.textContent?.trim() || '';
+        const textLower = text.toLowerCase();
+
+        // Extract work type
+        if (textLower.includes('on-site') || textLower.includes('onsite')) {
+          workType = 'On-site';
+        } else if (textLower.includes('remote')) {
+          workType = 'Remote';
+        } else if (textLower.includes('hybrid')) {
+          workType = 'Hybrid';
+        }
+
+        // Extract salary
+        if (text.match(/\$|\/yr|\/year|salary|compensation/i)) {
+          const match = text.match(/\$[\d,]+(?:K)?(?:\/yr)?(?:\s*-\s*\$[\d,]+(?:K)?(?:\/yr)?)?/i);
+          if (match) {
+            salary = match[0];
           }
         }
       }
-      console.log('[Job Tracker] 📍 Location extracted:', location);
 
-      // Extract work type (Remote/Hybrid/Onsite)
-      const workTypeElement = detailPanel.querySelector('.jobs-unified-top-card__workplace-type');
-      const workType = workTypeElement?.textContent?.trim() || 'Not specified';
+      // Fallback: Old selector for work type
+      if (workType === 'Not specified') {
+        const workTypeElement = detailPanel.querySelector('.jobs-unified-top-card__workplace-type');
+        workType = workTypeElement?.textContent?.trim() || 'Not specified';
+      }
+
+      console.log('[Job Tracker] 💼 Work Type extracted:', workType);
 
       // Extract LinkedIn URL
       const linkedinUrl = window.location.href;
@@ -812,25 +849,23 @@ class LinkedInJobsFilter {
       // Extract additional details
       const jobInsights = this.extractJobInsights(detailPanel);
 
-      // Extract salary - improved extraction
-      let salary = '';
+      // Fallback: Old selectors for salary
+      if (!salary) {
+        const salarySelectors = [
+          '.jobs-unified-top-card__job-insight--highlight',
+          '.job-details-jobs-unified-top-card__job-insight--highlight',
+          '.jobs-unified-top-card__job-insight',
+          '.salary-main-rail__salary-info'
+        ];
 
-      // Try multiple selectors for salary
-      const salarySelectors = [
-        '.jobs-unified-top-card__job-insight--highlight',
-        '.job-details-jobs-unified-top-card__job-insight--highlight',
-        '.jobs-unified-top-card__job-insight',
-        '.salary-main-rail__salary-info'
-      ];
-
-      for (const selector of salarySelectors) {
-        const salaryElement = detailPanel.querySelector(selector);
-        if (salaryElement) {
-          const text = salaryElement.textContent?.trim() || '';
-          // Check if it contains salary indicators
-          if (text.match(/\$|USD|EUR|salary|compensation/i)) {
-            salary = text;
-            break;
+        for (const selector of salarySelectors) {
+          const salaryElement = detailPanel.querySelector(selector);
+          if (salaryElement) {
+            const text = salaryElement.textContent?.trim() || '';
+            if (text.match(/\$|USD|EUR|salary|compensation/i)) {
+              salary = text;
+              break;
+            }
           }
         }
       }
