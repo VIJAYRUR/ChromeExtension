@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Description Formatting Test</title>
+  <link rel="stylesheet" href="tracking-dashboard/job-detail.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <button class="back-btn">← Back</button>
+      <div class="header-actions">
+        <button class="btn-secondary">Delete</button>
+        <button class="btn-primary">Save</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Job Header -->
+      <div class="job-header">
+        <input type="text" class="job-title" value="Solutions Engineer, Snap Ads, Level 4" placeholder="Untitled">
+        <input type="text" class="job-company" value="Snap Inc." placeholder="Add company name">
+      </div>
+
+      <!-- Job Meta -->
+      <div class="job-meta">
+        <div class="meta-item">
+          <label>📍 Location</label>
+          <input type="text" value="Add location" placeholder="Add location">
+        </div>
+        <div class="meta-item">
+          <label>💰 Salary</label>
+          <input type="text" value="Add salary range" placeholder="Add salary range">
+        </div>
+        <div class="meta-item">
+          <label>💼 Work Type</label>
+          <select>
+            <option>Not specified</option>
+            <option>Remote</option>
+            <option>Hybrid</option>
+            <option>Onsite</option>
+          </select>
+        </div>
+        <div class="meta-item">
+          <label>📊 Status</label>
+          <select class="status-applied">
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="meta-item">
+          <label>📅 Date Applied</label>
+          <input type="text" value="Jan 10, 2026" readonly>
+        </div>
+        <div class="meta-item">
+          <label>🔗 LinkedIn URL</label>
+          <a href="#" id="linkedin-url" style="display: inline-flex;">View on LinkedIn</a>
+        </div>
+      </div>
+
+      <!-- Job Description -->
+      <div class="section">
+        <div class="section-header">
+          <h3>📄 Job Description</h3>
+          <div class="description-toggle">
+            <button class="toggle-btn active" id="view-formatted">Formatted</button>
+            <button class="toggle-btn" id="view-plain">Plain</button>
+          </div>
+        </div>
+        <div id="description-formatted" class="description-content formatted">
+          <!-- This will be populated by JavaScript -->
+        </div>
+        <textarea id="description" class="description-content plain" style="display: none;">About the job
+
+Snap Inc is a technology company. We believe the camera presents the greatest opportunity to improve the way people live and communicate. Snap contributes to human progress by empowering people to express themselves, live in the moment, learn about the world, and have fun together. The Company's three core products are Snapchat, a visual messaging app that enhances your relationships with friends, family, and the world; Lens Studio, an augmented reality platform that powers AR across Snapchat and other services; and its AR glasses, Spectacles.Snap Engineering teams build fun and technically sophisticated products that reach hundreds of millions of Snapchatters around the world, every day. We're deeply committed to the well-being of everyone in our global community, which is why our values are at the root of everything we do. We move fast, with precision, and always execute with privacy at the forefront.We're looking for a Solutions Engineer to join Snap!What you'll do: Develop, scale, and optimize Snap's tools and solutions to solve more complex partner needs, ensuring alignment with business goals. Collaborate with internal teams (e.g., Product, Engineering, and Sales) to design and deliver technical solutions that drive partner success. Build and improve end-to-end systems and launch-plan strategies, ensuring technical and business requirements are met. Troubleshoot and resolve technical challenges during partner integrations, working independently to solve issues at scale. Write clean, high-quality code for APIs, SDKs, and partner-facing tools, enhancing reliability and scalability. Identify and surface actionable insights from metrics on product usage to improve adoption and deliver new solutions for partner needs.
+
+Knowledge, Skills & Abilities: Proficiency in one or more programming languages such as JavaScript, Python, or Java. Understanding of RESTful APIs, SDKs, and third-party integrations. Familiarity with basic debugging, troubleshooting, and performance optimization techniques. Experience in debugging and troubleshooting more complex systems, providing reliable solutions to technical issues. Ability to work effectively with cross-functional teams to deliver scoped technical solutions. Strong analytical thinking with the ability to break down technical challenges into actionable steps. Strong written and verbal communication skills to explain technical concepts to both technical and non-technical audiences.</textarea>
+      </div>
+
+      <!-- Notes -->
+      <div class="section">
+        <h3>📝 Notes</h3>
+        <textarea placeholder="Add a note..."></textarea>
+      </div>
+    </main>
+  </div>
+
+  <script src="tracking-dashboard/job-detail.js"></script>
+  <script>
+    // Test the formatting function
+    const plainText = document.getElementById('description').value;
+    const formattedDiv = document.getElementById('description-formatted');
+    
+    // Create a temporary instance to access the formatting method
+    const tempJobDetail = {
+      formatPlainTextDescription: function(text) {
+        if (!text) return '';
+        
+        const headingPatterns = [
+          /^(About the [Jj]ob|About the [Rr]ole|About the [Pp]osition|About [Uu]s|About the [Cc]ompany|About this [Jj]ob)$/i,
+          /^(What [Yy]ou'?ll [Dd]o|Your [Rr]esponsibilities|Responsibilities|Key [Rr]esponsibilities|Job [Rr]esponsibilities)$/i,
+          /^(Knowledge,? Skills,? (&|and) Abilities|Requirements|Qualifications|What [Ww]e'?re [Ll]ooking [Ff]or|What [Yy]ou [Bb]ring|Your [Qq]ualifications)$/i,
+          /^(Nice to [Hh]ave|Bonus [Pp]oints|Preferred [Qq]ualifications|Plus if [Yy]ou [Hh]ave)$/i,
+          /^(Benefits|What [Ww]e [Oo]ffer|Perks|Compensation|Why [Jj]oin [Uu]s)$/i,
+          /^(How to [Aa]pply|Application [Pp]rocess|Next [Ss]teps)$/i,
+          /^(Our [Tt]ech [Ss]tack|Technology|Tools [Ww]e [Uu]se)$/i,
+          /^(The [Tt]eam|Your [Tt]eam|Who [Yy]ou'?ll [Ww]ork [Ww]ith)$/i,
+          /^(Equal [Oo]pportunity|Diversity|Inclusion)$/i
+        ];
+        
+        const paragraphs = text.split(/\n\n+/);
+        
+        return paragraphs.map(para => {
+          para = para.trim();
+          if (!para) return '';
+          
+          const lines = para.split('\n');
+          const firstLine = lines[0].trim();
+          
+          const isHeading = headingPatterns.some(pattern => pattern.test(firstLine));
+          const isShortHeading = firstLine.length < 60 && firstLine.endsWith(':');
+          
+          if (isHeading || isShortHeading) {
+            const headingText = firstLine.replace(/:$/, '');
+            return `<p><strong>${headingText}</strong></p>`;
+          }
+          
+          return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+        }).filter(p => p).join('');
+      }
+    };
+    
+    formattedDiv.innerHTML = tempJobDetail.formatPlainTextDescription(plainText);
+    
+    // Toggle functionality
+    document.getElementById('view-formatted').addEventListener('click', function() {
+      document.getElementById('description-formatted').style.display = 'block';
+      document.getElementById('description').style.display = 'none';
+      this.classList.add('active');
+      document.getElementById('view-plain').classList.remove('active');
+    });
+    
+    document.getElementById('view-plain').addEventListener('click', function() {
+      document.getElementById('description-formatted').style.display = 'none';
+      document.getElementById('description').style.display = 'block';
+      this.classList.add('active');
+      document.getElementById('view-formatted').classList.remove('active');
+    });
+  </script>
+</body>
+</html>
+

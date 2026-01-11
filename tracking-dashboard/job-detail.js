@@ -177,11 +177,15 @@ class JobDetailPage {
     const formattedDiv = document.getElementById('description-formatted');
     if (formattedDiv) {
       if (this.job.descriptionHtml) {
-        // Use HTML version if available
-        formattedDiv.innerHTML = this.job.descriptionHtml;
+        // LinkedIn provides HTML - clean it up and display
+        formattedDiv.innerHTML = window.linkedInCleaner.format(this.job.descriptionHtml);
+
+        // Extract skills for future colored pills
+        this.extractedSkills = window.linkedInCleaner.extractSkills(this.job.descriptionHtml);
+        console.log('[Job Detail] Extracted skills:', this.extractedSkills);
       } else if (this.job.description) {
-        // Fallback to plain text with basic formatting
-        formattedDiv.innerHTML = this.formatPlainTextDescription(this.job.description);
+        // Fallback: plain text description
+        formattedDiv.innerHTML = `<p>${this.job.description.replace(/\n/g, '<br>')}</p>`;
       } else {
         formattedDiv.innerHTML = this.renderEmptyState('📄', 'No description', 'Job description will appear here');
       }
@@ -259,13 +263,6 @@ class JobDetailPage {
     `;
   }
 
-  formatPlainTextDescription(text) {
-    // Convert plain text to basic HTML formatting
-    return text
-      .split('\n\n')
-      .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
-      .join('');
-  }
 
   renderTimeline() {
     const timeline = document.getElementById('timeline');

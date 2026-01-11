@@ -608,9 +608,9 @@ body {
 .description-content.formatted h1,
 .description-content.formatted h2,
 .description-content.formatted h3 {
-  margin-top: 16px;
-  margin-bottom: 8px;
-  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -629,25 +629,68 @@ body {
   line-height: 1.3;
 }
 
+/* Paragraphs with proper spacing */
 .description-content.formatted p {
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 16px;
+  line-height: 1.65;
+  color: var(--text-primary);
 }
 
+/* Remove margin from last paragraph */
+.description-content.formatted p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists with better spacing */
 .description-content.formatted ul,
 .description-content.formatted ol {
-  margin-left: 24px;
-  margin-bottom: 8px;
+  margin-left: 28px;
+  margin-bottom: 16px;
+  padding-left: 0;
 }
 
 .description-content.formatted li {
-  margin-bottom: 4px;
-  line-height: 1.5;
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--text-primary);
 }
 
+/* Last list item shouldn't have bottom margin */
+.description-content.formatted li:last-child {
+  margin-bottom: 0;
+}
+
+/* Bold text (general) */
 .description-content.formatted strong {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
+}
+
+/* Headings in paragraphs (bold text as headings) - must come after general strong rule */
+.description-content.formatted p strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 24px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* First heading shouldn't have top margin */
+.description-content.formatted > p:first-child strong:first-child {
+  margin-top: 0;
+}
+
+/* Ensure proper spacing after headings */
+.description-content.formatted p:has(strong) + p {
+  margin-top: 0;
+}
+
+/* Ensure proper spacing after headings in paragraphs */
+.description-content.formatted p:has(strong) {
+  margin-bottom: 4px;
 }
 
 .description-content.formatted a {
