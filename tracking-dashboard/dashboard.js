@@ -11,6 +11,14 @@ class DashboardUI {
     };
     this.isUpdating = false;
     this.compactMode = false;
+
+    // Job-related icons in Notion style (all same gray color like Notion)
+    this.jobIcons = [
+      '💼', '🎯', '🚀', '💻', '🔧', '⚡',
+      '🎨', '📊', '🔍', '⚙️', '🌟', '📱',
+      '🏢', '👨‍💻', '🎓', '🔬', '📈', '🛠️'
+    ];
+
     this.init();
   }
 
@@ -541,22 +549,16 @@ class DashboardUI {
       // Status text with proper capitalization
       const statusText = job.status.charAt(0).toUpperCase() + job.status.slice(1);
 
-      // Status badge colors matching Notion
-      const statusColors = {
-        'applied': { bg: 'rgba(206, 205, 202, 0.5)', color: 'rgba(55, 53, 47, 0.85)' },
-        'interview': { bg: 'rgba(219, 237, 255, 0.9)', color: 'rgb(11, 110, 153)' },
-        'offer': { bg: 'rgba(219, 237, 219, 0.9)', color: 'rgb(0, 135, 107)' },
-        'rejected': { bg: 'rgba(255, 226, 221, 0.9)', color: 'rgb(180, 35, 24)' }
-      };
+      // Get status style
+      const statusStyle = this.getStatusStyle(job.status);
 
-      const statusStyle = statusColors[job.status] || statusColors['applied'];
+      // Get job icon
+      const jobIcon = this.getJobIcon(job.id);
 
       row.innerHTML = `
         <td class="td-icon">
-          <div style="width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
-              <path d="M2 3.65a.65.65 0 0 1 .65-.65h10.7a.65.65 0 0 1 .65.65v8.7a.65.65 0 0 1-.65.65H2.65a.65.65 0 0 1-.65-.65zm1.3.65v7.4h9.4V4.3z"></path>
-            </svg>
+          <div style="width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
+            ${jobIcon}
           </div>
         </td>
         <td class="td-title">
@@ -827,8 +829,8 @@ class DashboardUI {
       const eventsContainer = document.createElement('div');
       eventsContainer.className = 'calendar-events';
 
-      // Show first 3 jobs
-      const maxVisible = 3;
+      // Show first 2 jobs only
+      const maxVisible = 2;
       const visibleJobs = jobs.slice(0, maxVisible);
 
       visibleJobs.forEach(job => {
@@ -845,7 +847,8 @@ class DashboardUI {
         companyElement.textContent = job.company;
         eventCard.appendChild(companyElement);
 
-        eventCard.addEventListener('click', () => {
+        eventCard.addEventListener('click', (e) => {
+          e.stopPropagation();
           this.showJobDetail(job);
         });
 
@@ -857,10 +860,22 @@ class DashboardUI {
         const moreElement = document.createElement('div');
         moreElement.className = 'calendar-more-events';
         moreElement.textContent = `+${jobs.length - maxVisible} more`;
+        moreElement.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear());
+        });
         eventsContainer.appendChild(moreElement);
       }
 
       dayElement.appendChild(eventsContainer);
+    }
+
+    // Add click handler to day element to show all jobs for that day
+    if (jobs && jobs.length > 0 && !isOtherMonth) {
+      dayElement.style.cursor = 'pointer';
+      dayElement.addEventListener('click', () => {
+        this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear());
+      });
     }
 
     return dayElement;
@@ -887,6 +902,243 @@ class DashboardUI {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  getStatusStyle(status) {
+    const statusColors = {
+      'applied': { bg: 'rgba(206, 205, 202, 0.5)', color: 'rgba(55, 53, 47, 0.85)' },
+      'interview': { bg: 'rgba(219, 237, 255, 0.9)', color: 'rgb(11, 110, 153)' },
+      'offer': { bg: 'rgba(219, 237, 219, 0.9)', color: 'rgb(0, 135, 107)' },
+      'rejected': { bg: 'rgba(255, 226, 221, 0.9)', color: 'rgb(180, 35, 24)' },
+      'withdrawn': { bg: 'rgba(206, 205, 202, 0.5)', color: 'rgba(55, 53, 47, 0.85)' }
+    };
+    return statusColors[status] || statusColors['applied'];
+  }
+
+  getJobIcon(jobId) {
+    // Use job ID to consistently assign the same icon to the same job
+    const hash = jobId.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    const index = Math.abs(hash) % this.jobIcons.length;
+    return this.jobIcons[index];
+  }
+
+  showDayJobsList(jobs, day, month, year) {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const dateTitle = `${monthNames[month]} ${day}, ${year}`;
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(2px);
+    `;
+
+    // Create modal container - smaller, more compact
+    const modal = document.createElement('div');
+    modal.className = 'day-jobs-modal';
+    modal.style.cssText = `
+      background: white;
+      border-radius: 6px;
+      width: 420px;
+      max-width: 90vw;
+      max-height: 480px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    `;
+
+    // Modal header - more compact
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    `;
+
+    const headerTitle = document.createElement('div');
+    headerTitle.style.cssText = `
+      font-size: 14px;
+      font-weight: 600;
+      color: rgb(55, 53, 47);
+    `;
+    headerTitle.textContent = `${dateTitle}`;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: rgba(55, 53, 47, 0.5);
+      cursor: pointer;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 20ms ease-in;
+    `;
+    closeBtn.addEventListener('mouseover', () => {
+      closeBtn.style.background = 'rgba(55, 53, 47, 0.08)';
+    });
+    closeBtn.addEventListener('mouseout', () => {
+      closeBtn.style.background = 'none';
+    });
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+
+    header.appendChild(headerTitle);
+    header.appendChild(closeBtn);
+
+    // Modal body with Notion-style list - compact and scrollable
+    const body = document.createElement('div');
+    body.style.cssText = `
+      padding: 4px 0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    `;
+
+    // Create Notion-style list items - more compact
+    jobs.forEach((job, index) => {
+      const listItem = document.createElement('div');
+      listItem.style.cssText = `
+        display: flex;
+        align-items: center;
+        padding: 4px 16px;
+        cursor: pointer;
+        transition: background 20ms ease-in;
+        min-height: 32px;
+      `;
+
+      listItem.addEventListener('mouseover', () => {
+        listItem.style.background = 'rgba(55, 53, 47, 0.08)';
+      });
+      listItem.addEventListener('mouseout', () => {
+        listItem.style.background = 'transparent';
+      });
+      listItem.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+        this.showJobDetail(job);
+      });
+
+      // Bullet point - smaller
+      const bullet = document.createElement('div');
+      bullet.style.cssText = `
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(55, 53, 47, 0.4);
+        margin-right: 10px;
+        flex-shrink: 0;
+      `;
+
+      // Job content
+      const content = document.createElement('div');
+      content.style.cssText = `
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      `;
+
+      // Job title and company
+      const textContainer = document.createElement('div');
+      textContainer.style.cssText = `
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      `;
+
+      const titleText = document.createElement('span');
+      titleText.style.cssText = `
+        color: rgb(55, 53, 47);
+        font-size: 13px;
+        font-weight: 500;
+      `;
+      titleText.textContent = job.title;
+
+      const companyText = document.createElement('span');
+      companyText.style.cssText = `
+        color: rgba(55, 53, 47, 0.65);
+        font-size: 13px;
+        margin-left: 4px;
+      `;
+      companyText.textContent = `at ${job.company}`;
+
+      textContainer.appendChild(titleText);
+      textContainer.appendChild(companyText);
+
+      // Status badge - smaller
+      const statusStyle = this.getStatusStyle(job.status);
+      const statusBadge = document.createElement('span');
+      statusBadge.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        background: ${statusStyle.bg};
+        color: ${statusStyle.color};
+        white-space: nowrap;
+        flex-shrink: 0;
+      `;
+      const statusLabels = {
+        'applied': 'Applied',
+        'interview': 'Interview',
+        'offer': 'Offer',
+        'rejected': 'Rejected',
+        'withdrawn': 'Withdrawn'
+      };
+      statusBadge.textContent = statusLabels[job.status] || job.status;
+
+      content.appendChild(textContainer);
+      content.appendChild(statusBadge);
+
+      listItem.appendChild(bullet);
+      listItem.appendChild(content);
+
+      body.appendChild(listItem);
+    });
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    overlay.appendChild(modal);
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
+
+    document.body.appendChild(overlay);
   }
 }
 
