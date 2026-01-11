@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Job Application Tracker</title>
   <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="stats.css">
 </head>
 <body>
   <!-- Header -->
@@ -73,6 +74,11 @@
         <button class="view-tab" data-view="calendar">
           <div class="view-tab-icon" style="mask: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><path d=%22M2.65 2A.65.65 0 0 0 2 2.65v10.7c0 .36.29.65.65.65h10.7a.65.65 0 0 0 .65-.65V2.65a.65.65 0 0 0-.65-.65zM3.3 3.3h9.4v2.05H3.3zm0 3.35h9.4v6H3.3z%22/></svg>') center center / contain no-repeat;"></div>
           <span>Calendar</span>
+        </button>
+
+        <button class="view-tab" data-view="stats">
+          <div class="view-tab-icon" style="mask: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><path d=%22M2 12.35v1.3c0 .36.29.65.65.65h1.3a.65.65 0 0 0 .65-.65v-1.3a.65.65 0 0 0-.65-.65h-1.3a.65.65 0 0 0-.65.65m4-3v4.3c0 .36.29.65.65.65h1.3a.65.65 0 0 0 .65-.65v-4.3a.65.65 0 0 0-.65-.65h-1.3a.65.65 0 0 0-.65.65m4-4v8.3c0 .36.29.65.65.65h1.3a.65.65 0 0 0 .65-.65v-8.3a.65.65 0 0 0-.65-.65h-1.3a.65.65 0 0 0-.65.65%22/></svg>') center center / contain no-repeat;"></div>
+          <span>Stats overview</span>
         </button>
       </div>
 
@@ -238,9 +244,134 @@
         </div>
       </div>
     </div>
+
+    <!-- Stats Overview -->
+    <div id="stats-view" class="view-container">
+      <div class="stats-wrapper">
+        <!-- Header with date range selector -->
+        <div class="stats-header">
+          <h2 class="stats-title">Stats overview</h2>
+          <div class="date-range-selector">
+            <button class="date-range-btn active" data-range="7">Last 7 days</button>
+            <button class="date-range-btn" data-range="30">Last 30 days</button>
+            <button class="date-range-btn" data-range="90">Last 3 months</button>
+            <button class="date-range-btn" data-range="all">All time</button>
+          </div>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(46, 170, 220, 0.1);">
+              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(46, 170, 220);">
+                <path d="M4.35 2.65a.65.65 0 0 0-.65.65v9.4c0 .36.29.65.65.65h7.3a.65.65 0 0 0 .65-.65V3.3a.65.65 0 0 0-.65-.65z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total applications</div>
+              <div class="stat-value" id="stat-total">0</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(0, 135, 107, 0.1);">
+              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(0, 135, 107);">
+                <path d="M12.57 2H15L6 15l-5-5 1.41-1.41 3.31 3.3z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Success rate</div>
+              <div class="stat-value" id="stat-success">0%</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(219, 148, 0, 0.1);">
+              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(219, 148, 0);">
+                <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zm.65 3.35a.65.65 0 1 1-1.3 0 .65.65 0 0 1 1.3 0zM8 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12zm-.65-3.35V7.3a.65.65 0 1 1 1.3 0v3.35a.65.65 0 1 1-1.3 0z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Avg. response time</div>
+              <div class="stat-value" id="stat-response">-</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(176, 54, 235, 0.1);">
+              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(176, 54, 235);">
+                <path d="M2 5.35v5.3c0 .36.29.65.65.65h10.7a.65.65 0 0 0 .65-.65v-5.3a.65.65 0 0 0-.65-.65H2.65a.65.65 0 0 0-.65.65z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Interview rate</div>
+              <div class="stat-value" id="stat-interview">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Response Time Buckets -->
+        <div class="chart-container chart-full">
+          <div class="chart-header">
+            <h3 class="chart-title">⏱️ Response Time by Days</h3>
+          </div>
+          <div class="response-buckets-grid" id="response-buckets"></div>
+        </div>
+
+        <!-- Charts Row 1: Timeline + Status -->
+        <div class="stats-charts-row">
+          <div class="chart-container chart-large">
+            <div class="chart-header">
+              <h3 class="chart-title">Applications timeline</h3>
+              <div class="chart-legend" id="timeline-legend"></div>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="timeline-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-container chart-small">
+            <div class="chart-header">
+              <h3 class="chart-title">Status distribution</h3>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="status-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+
+
+
+
+        <!-- Simple Insights Table -->
+        <div class="chart-container chart-full simple-insights">
+          <div class="chart-header">
+            <h3 class="chart-title">📊 Status Breakdown</h3>
+            <div class="insight-selector">
+              <select id="insight-type-selector" class="notion-select">
+                <option value="" selected disabled>Select a view...</option>
+                <option value="by-hours">By Application Speed (Hours)</option>
+                <option value="by-applicants">By Competition (Applicants)</option>
+              </select>
+            </div>
+          </div>
+          <div class="simple-insights-table" id="simple-insights-table">
+            <div class="insights-empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+              </svg>
+              <p>Select a view to see insights</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
+  <script src="chart.min.js"></script>
   <script src="job-tracker.js"></script>
+  <script src="stats.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>

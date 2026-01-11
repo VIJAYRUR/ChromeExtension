@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Timing & Competition Badges</title>
+  <link rel="stylesheet" href="tracking-dashboard/job-detail.css">
+  <style>
+    body {
+      padding: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .test-section {
+      margin-bottom: 40px;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>⏱️ Timing & Competition Badges Test</h1>
+
+  <div class="test-section">
+    <h2>Test 1: Applied 3 hours after posting, 23 applicants</h2>
+    <div class="job-meta">
+      <div class="meta-item">
+        <label>⏱️ Applied After</label>
+        <div class="timing-badge">3 hours</div>
+      </div>
+      <div class="meta-item">
+        <label>👥 Applicants</label>
+        <div class="competition-badge">23</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Applied 2 days after posting, Over 100 applicants</h2>
+    <div class="job-meta">
+      <div class="meta-item">
+        <label>⏱️ Applied After</label>
+        <div class="timing-badge">2 days</div>
+      </div>
+      <div class="meta-item">
+        <label>👥 Applicants</label>
+        <div class="competition-badge">Over 100</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: Applied 1 week after posting, 5 applicants</h2>
+    <div class="job-meta">
+      <div class="meta-item">
+        <label>⏱️ Applied After</label>
+        <div class="timing-badge">1 week</div>
+      </div>
+      <div class="meta-item">
+        <label>👥 Applicants</label>
+        <div class="competition-badge">5</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 4: Full Job Meta (with all fields)</h2>
+    <div class="job-meta">
+      <div class="meta-item">
+        <label>📍 Location</label>
+        <input type="text" value="San Francisco, CA" placeholder="Add location">
+      </div>
+      <div class="meta-item">
+        <label>💰 Salary</label>
+        <input type="text" value="$120k - $150k" placeholder="Add salary range">
+      </div>
+      <div class="meta-item">
+        <label>💼 Work Type</label>
+        <select class="work-type-remote">
+          <option value="Remote">Remote</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="Onsite">Onsite</option>
+        </select>
+      </div>
+      <div class="meta-item">
+        <label>📊 Status</label>
+        <select class="status-applied">
+          <option value="applied">Applied</option>
+          <option value="interview">Interview</option>
+          <option value="offer">Offer</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="meta-item">
+        <label>⏱️ Applied After</label>
+        <div class="timing-badge">12 hours</div>
+      </div>
+      <div class="meta-item">
+        <label>👥 Applicants</label>
+        <div class="competition-badge">47</div>
+      </div>
+      <div class="meta-item">
+        <label>📅 Date Applied</label>
+        <input type="text" value="Jan 11, 2026" readonly>
+      </div>
+    </div>
+  </div>
+
+  <h2>✅ What to Check:</h2>
+  <ul>
+    <li>⏱️ <strong>Timing badge</strong> should have <span style="background: rgba(253, 230, 138, 0.5); color: rgb(180, 83, 9); padding: 2px 8px; border-radius: 3px;">yellow/orange background</span></li>
+    <li>👥 <strong>Competition badge</strong> should have <span style="background: rgba(219, 234, 254, 0.5); color: rgb(29, 78, 216); padding: 2px 8px; border-radius: 3px;">blue background</span></li>
+    <li>Both badges should be inline, not editable</li>
+    <li>Should fit nicely with other meta items</li>
+  </ul>
+</body>
+</html>
+

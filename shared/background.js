@@ -63,6 +63,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         linkedinUrl: message.jobData.linkedinUrl || '',
         dateApplied: new Date().toISOString(),
         status: 'applied',
+        // Timing and competition data
+        jobPostedHoursAgo: message.jobData.jobPostedHoursAgo || null,
+        applicantsAtApplyTime: message.jobData.applicantsAtApplyTime || null,
+        applicantsText: message.jobData.applicantsText || null,
+        timeToApplyBucket: message.jobData.timeToApplyBucket || null,
+        competitionBucket: message.jobData.competitionBucket || null,
         resumeFile: null,
         coverLetter: '',
         notes: '',

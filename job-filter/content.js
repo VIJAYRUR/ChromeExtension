@@ -881,6 +881,16 @@ class LinkedInJobsFilter {
       const seniorityElement = detailPanel.querySelector('.jobs-unified-top-card__job-insight-view-model-secondary');
       const seniority = seniorityElement?.textContent?.trim() || '';
 
+      // NEW: Calculate time-to-apply and competition buckets
+      const timingData = this.calculateTimingBuckets(jobInsights);
+
+      console.log('[Job Tracker] ⏱️ Timing data:', {
+        postedHoursAgo: jobInsights.postedHoursAgo,
+        applicantsCount: jobInsights.applicantsCount,
+        timeToApplyBucket: timingData.timeToApplyBucket,
+        competitionBucket: timingData.competitionBucket
+      });
+
       return {
         title,
         company,
@@ -894,7 +904,13 @@ class LinkedInJobsFilter {
         jobInsights,
         dateApplied: new Date().toISOString(),
         dateTracked: new Date().toISOString(),
-        status: 'applied'  // Default status when tracking
+        status: 'applied',  // Default status when tracking
+        // NEW: Timing and competition data
+        jobPostedHoursAgo: jobInsights.postedHoursAgo || null,
+        applicantsAtApplyTime: jobInsights.applicantsCount || null,
+        applicantsText: jobInsights.applicants || null,
+        timeToApplyBucket: timingData.timeToApplyBucket,
+        competitionBucket: timingData.competitionBucket
       };
     } catch (error) {
       console.error('[Job Tracker] Error extracting job data from detail panel:', error);
@@ -907,21 +923,104 @@ class LinkedInJobsFilter {
     const insights = {};
 
     try {
-      // Number of applicants and posted time
-      const applicantsElement = detailPanel.querySelector('.jobs-unified-top-card__subtitle-secondary-grouping');
-      if (applicantsElement) {
-        const text = applicantsElement.textContent?.trim() || '';
+      // NEW: Extract from tertiary description container (more accurate)
+      const tertiaryContainer = detailPanel.querySelector('.job-details-jobs-unified-top-card__tertiary-description-container');
+      console.log('[Job Tracker] 🔍 Tertiary container found:', !!tertiaryContainer);
 
-        // Extract "X applicants"
-        const applicantsMatch = text.match(/(\d+)\s+applicants?/i);
-        if (applicantsMatch) {
-          insights.applicants = applicantsMatch[1];
+      if (tertiaryContainer) {
+        const fullText = tertiaryContainer.textContent || '';
+        console.log('[Job Tracker] 🔍 Tertiary container text:', fullText);
+
+        // Extract posted time - multiple patterns
+        // "3 minutes ago", "9 hours ago", "2 days ago", "Reposted 3 hours ago"
+        let postedMatch = fullText.match(/(\d+)\s+(minute|hour|day|week|month)s?\s+ago/i);
+        if (postedMatch) {
+          const number = parseInt(postedMatch[1]);
+          const unit = postedMatch[2].toLowerCase();
+
+          // Convert to hours for bucketing
+          let hoursAgo = 0;
+          if (unit.includes('minute')) {
+            hoursAgo = number / 60; // Convert minutes to hours
+          } else if (unit.includes('hour')) {
+            hoursAgo = number;
+          } else if (unit.includes('day')) {
+            hoursAgo = number * 24;
+          } else if (unit.includes('week')) {
+            hoursAgo = number * 24 * 7;
+          } else if (unit.includes('month')) {
+            hoursAgo = number * 24 * 30;
+          }
+
+          insights.postedTime = `${number} ${unit}${number > 1 ? 's' : ''} ago`;
+          insights.postedHoursAgo = hoursAgo;
+          console.log('[Job Tracker] ✅ Posted time found:', insights.postedTime, `(${hoursAgo} hours)`);
         }
 
-        // Extract posted time
-        const postedMatch = text.match(/(\d+)\s+(hour|day|week|month)s?\s+ago/i);
-        if (postedMatch) {
-          insights.postedTime = `${postedMatch[1]} ${postedMatch[2]}s ago`;
+        // Extract number of applicants
+        // NEW patterns: "0 people clicked apply", "23 people clicked apply"
+        // OLD patterns: "23 applicants", "Over 100 applicants", "100+ applicants"
+        let applicantsMatch = fullText.match(/(\d+)\s+people\s+clicked\s+apply/i);
+        if (applicantsMatch) {
+          const count = parseInt(applicantsMatch[1]);
+          insights.applicants = count === 0 ? 'Be first to apply' : `${count}`;
+          insights.applicantsCount = count;
+          console.log('[Job Tracker] ✅ Applicants found (clicked apply):', insights.applicants);
+        } else {
+          // Try old patterns
+          applicantsMatch = fullText.match(/Over\s+(\d+)\s+applicants?/i);
+          if (applicantsMatch) {
+            insights.applicants = `Over ${applicantsMatch[1]}`;
+            insights.applicantsCount = parseInt(applicantsMatch[1]) + 50; // Approximate for "Over X"
+            console.log('[Job Tracker] ✅ Applicants found (over):', insights.applicants);
+          } else {
+            applicantsMatch = fullText.match(/(\d+)\+?\s+applicants?/i);
+            if (applicantsMatch) {
+              insights.applicants = applicantsMatch[1];
+              insights.applicantsCount = parseInt(applicantsMatch[1]);
+              console.log('[Job Tracker] ✅ Applicants found:', insights.applicants);
+            }
+          }
+        }
+      }
+
+      // FALLBACK: Old selectors
+      if (!insights.postedTime || !insights.applicants) {
+        const applicantsElement = detailPanel.querySelector('.jobs-unified-top-card__subtitle-secondary-grouping');
+        if (applicantsElement) {
+          const text = applicantsElement.textContent?.trim() || '';
+
+          // Extract "X applicants"
+          if (!insights.applicants) {
+            const applicantsMatch = text.match(/(\d+)\s+applicants?/i);
+            if (applicantsMatch) {
+              insights.applicants = applicantsMatch[1];
+              insights.applicantsCount = parseInt(applicantsMatch[1]);
+            }
+          }
+
+          // Extract posted time
+          if (!insights.postedTime) {
+            const postedMatch = text.match(/(\d+)\s+(hour|day|week|month)s?\s+ago/i);
+            if (postedMatch) {
+              const number = parseInt(postedMatch[1]);
+              const unit = postedMatch[2].toLowerCase();
+
+              let hoursAgo = 0;
+              if (unit.includes('hour')) {
+                hoursAgo = number;
+              } else if (unit.includes('day')) {
+                hoursAgo = number * 24;
+              } else if (unit.includes('week')) {
+                hoursAgo = number * 24 * 7;
+              } else if (unit.includes('month')) {
+                hoursAgo = number * 24 * 30;
+              }
+
+              insights.postedTime = `${number} ${unit}s ago`;
+              insights.postedHoursAgo = hoursAgo;
+            }
+          }
         }
       }
 
@@ -945,6 +1044,51 @@ class LinkedInJobsFilter {
     }
 
     return insights;
+  }
+
+  calculateTimingBuckets(jobInsights) {
+    const result = {
+      timeToApplyBucket: null,
+      competitionBucket: null
+    };
+
+    // Time-to-Apply Buckets
+    if (jobInsights.postedHoursAgo !== undefined && jobInsights.postedHoursAgo !== null) {
+      const hours = jobInsights.postedHoursAgo;
+
+      if (hours <= 3) {
+        result.timeToApplyBucket = '0-3h';
+      } else if (hours <= 12) {
+        result.timeToApplyBucket = '4-12h';
+      } else if (hours <= 24) {
+        result.timeToApplyBucket = '13-24h';
+      } else if (hours <= 72) {
+        result.timeToApplyBucket = '1-3d';
+      } else if (hours <= 168) {
+        result.timeToApplyBucket = '3-7d';
+      } else {
+        result.timeToApplyBucket = '7d+';
+      }
+    }
+
+    // Competition Buckets
+    if (jobInsights.applicantsCount !== undefined && jobInsights.applicantsCount !== null) {
+      const count = jobInsights.applicantsCount;
+
+      if (count <= 10) {
+        result.competitionBucket = '0-10';
+      } else if (count <= 25) {
+        result.competitionBucket = '11-25';
+      } else if (count <= 50) {
+        result.competitionBucket = '26-50';
+      } else if (count <= 100) {
+        result.competitionBucket = '51-100';
+      } else {
+        result.competitionBucket = '100+';
+      }
+    }
+
+    return result;
   }
 
   async checkIfJobTracked(detailPanel, trackBtn) {

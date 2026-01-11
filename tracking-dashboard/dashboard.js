@@ -217,6 +217,13 @@ class DashboardUI {
       this.calendarInitialized = true;
     }
 
+    // Initialize stats if switching to stats view
+    if (view === 'stats' && window.statsManager && window.jobTracker) {
+      console.log('[Dashboard] Switching to stats view, passing', window.jobTracker.jobs.length, 'jobs');
+      window.statsManager.jobs = window.jobTracker.jobs;
+      window.statsManager.render();
+    }
+
     this.render();
   }
 

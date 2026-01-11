@@ -85,7 +85,9 @@ class LinkedInHTMLCleaner {
     const lowerText = text.toLowerCase();
 
     for (const skill of this.skillKeywords) {
-      const regex = new RegExp(`\\b${skill.toLowerCase()}\\b`, 'i');
+      // Escape special regex characters (like + in C++)
+      const escapedSkill = skill.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedSkill}\\b`, 'i');
       if (regex.test(lowerText)) {
         found.push(skill);
       }

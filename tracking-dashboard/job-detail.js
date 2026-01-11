@@ -207,6 +207,10 @@ class JobDetailPage {
       linkedinLink.style.display = 'none';
     }
 
+    // Timing and Competition Badges
+    this.renderTimingBadge();
+    this.renderCompetitionBadge();
+
     // Update resume state
     this.updateResumeState();
 
@@ -363,6 +367,77 @@ class JobDetailPage {
     await window.jobTracker.deleteJob(this.jobId);
     alert('Job deleted successfully!');
     window.close();
+  }
+
+  renderTimingBadge() {
+    const timingMeta = document.getElementById('timing-meta');
+    const timingBadge = document.getElementById('timing-badge');
+
+    console.log('[Job Detail] 🕐 Timing data:', {
+      jobPostedHoursAgo: this.job.jobPostedHoursAgo,
+      hasValue: this.job.jobPostedHoursAgo !== undefined && this.job.jobPostedHoursAgo !== null
+    });
+
+    if (this.job.jobPostedHoursAgo !== undefined && this.job.jobPostedHoursAgo !== null) {
+      // Show the meta item
+      timingMeta.style.display = 'flex';
+
+      // Format the timing text
+      const hours = this.job.jobPostedHoursAgo;
+      let displayText;
+
+      if (hours < 1) {
+        displayText = 'Less than 1 hour';
+      } else if (hours === 1) {
+        displayText = '1 hour';
+      } else if (hours < 24) {
+        displayText = `${Math.round(hours)} hours`;
+      } else if (hours < 48) {
+        displayText = '1 day';
+      } else if (hours < 168) {
+        const days = Math.round(hours / 24);
+        displayText = `${days} days`;
+      } else if (hours < 336) {
+        displayText = '1 week';
+      } else if (hours < 730) {
+        const weeks = Math.round(hours / 168);
+        displayText = `${weeks} weeks`;
+      } else {
+        const months = Math.round(hours / 730);
+        displayText = `${months} month${months > 1 ? 's' : ''}`;
+      }
+
+      timingBadge.textContent = displayText;
+    } else {
+      // Hide if no data
+      timingMeta.style.display = 'none';
+    }
+  }
+
+  renderCompetitionBadge() {
+    const competitionMeta = document.getElementById('competition-meta');
+    const competitionBadge = document.getElementById('competition-badge');
+
+    console.log('[Job Detail] 👥 Competition data:', {
+      applicantsText: this.job.applicantsText,
+      applicantsAtApplyTime: this.job.applicantsAtApplyTime,
+      hasValue: !!(this.job.applicantsText || this.job.applicantsAtApplyTime)
+    });
+
+    if (this.job.applicantsText) {
+      // Show the meta item
+      competitionMeta.style.display = 'flex';
+
+      // Use the stored applicants text (e.g., "23", "Over 100")
+      competitionBadge.textContent = this.job.applicantsText;
+    } else if (this.job.applicantsAtApplyTime !== undefined && this.job.applicantsAtApplyTime !== null) {
+      // Fallback to count if text not available
+      competitionMeta.style.display = 'flex';
+      competitionBadge.textContent = this.job.applicantsAtApplyTime.toString();
+    } else {
+      // Hide if no data
+      competitionMeta.style.display = 'none';
+    }
   }
 }
 
