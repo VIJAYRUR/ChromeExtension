@@ -3,6 +3,7 @@
 **Supercharge your job search with smart filtering, application tracking, analytics, and one-click autofill.**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://www.google.com/chrome/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/VIJAYRUR/ChromeExtension)
 
 ---
 
@@ -13,18 +14,31 @@ This Chrome extension is an all-in-one job search companion that solves major pa
 1. **🔍 Filter LinkedIn Jobs** - Hide reposted jobs, filter by time, blacklist companies
 2. **📊 Track Applications** - Beautiful Notion-style dashboard with kanban, table, calendar, and stats views
 3. **📈 Analytics & Insights** - Visualize your job search progress with charts and metrics
-4. **⚡ Autofill Forms** - One-click autofill for job applications across 10+ platforms
+4. **⚡ Autofill Forms** - One-click autofill for job applications across 10+ platforms with intelligent field detection
 
 ---
 
 ## Quick Start
 
 ### Installation
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" (top right)
-4. Click "Load unpacked" and select the extension folder
-5. Pin the extension to your toolbar
+
+**Option 1: Clone from GitHub (Recommended)**
+```bash
+git clone https://github.com/VIJAYRUR/ChromeExtension.git
+cd ChromeExtension
+```
+
+**Option 2: Download ZIP**
+1. Visit [GitHub Repository](https://github.com/VIJAYRUR/ChromeExtension)
+2. Click "Code" → "Download ZIP"
+3. Extract the ZIP file
+
+**Load in Chrome:**
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable "Developer mode" (top right toggle)
+3. Click "Load unpacked"
+4. Select the extension folder (ChromeExtension)
+5. Pin the extension to your toolbar for easy access
 
 ### Usage
 
@@ -47,9 +61,17 @@ This Chrome extension is an all-in-one job search companion that solves major pa
 
 **Autofill Applications:**
 - Click extension icon → "Setup Profile" (one-time setup)
+- Complete 7-step profile wizard:
+  1. Upload resume (PDF/DOC/DOCX) - auto-extracts data
+  2. Personal information (name, email, phone)
+  3. Address details
+  4. Professional links (LinkedIn, GitHub, portfolio)
+  5. Work experience
+  6. Education history
+  7. Skills and summary
 - Visit any job application page (Workday, Greenhouse, Lever, etc.)
 - Click the floating "Autofill" button
-- Review and submit
+- Review auto-filled fields and submit
 
 ---
 
@@ -153,13 +175,37 @@ This Chrome extension is an all-in-one job search companion that solves major pa
 - Last 3 months
 - All time
 
-### ⚡ Autofill System
-- One-time profile setup
-- Supports 10+ ATS platforms
-- Intelligent field detection and mapping
-- Multi-page form support
+### ⚡ Autofill System (Enhanced!)
+
+**Profile Setup:**
+- One-time comprehensive profile setup with 7-step wizard
+- Resume upload (PDF, DOC, DOCX) with automatic parsing
+- Cover letter upload and management
+- Extract information from resume: name, email, phone, LinkedIn, GitHub, website
+- Work experience and education history
+- Skills and professional summary
+- Address and contact information
+
+**Smart Autofill Features:**
+- Supports 10+ ATS platforms (Workday, Greenhouse, Lever, Taleo, iCIMS, SmartRecruiters, Jobvite, Breezy HR, Workable, and more)
+- Intelligent field detection and mapping (90+ field types recognized)
+- Platform-specific autofill logic for optimal accuracy
+- Multi-page form support with automatic page monitoring
+- Auto-detect form types and adapt filling strategy
+- Fills personal info, contact details, work experience, education, skills
+- Handles complex fields: work authorization, EEO questions, legal questions
+- Professional links: LinkedIn, GitHub, portfolio/website
+- Visual feedback with field highlighting
 - Review before submit
-- Auto-detect form types
+
+**Supported Field Types:**
+- Personal: First/Last/Full Name, Email, Phone, Address, City, State, ZIP, Country
+- Professional: LinkedIn, GitHub, Portfolio, Website, Current Company, Job Title
+- Education: University, Degree, Major, GPA, Graduation Year
+- Work: Years of Experience, Responsibilities, Start/End Dates
+- Legal: Work Authorization, Sponsorship Requirements, Security Clearance
+- EEO: Gender, Race, Veteran Status, Disability Status (optional)
+- Additional: Preferred Location, Start Date, Relocation, Salary Expectations
 
 ### 🎨 Design Philosophy
 - **Notion-inspired UI**: Clean, modern, professional
@@ -214,6 +260,20 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
 ---
 
 ## Technical Details
+
+### GitHub Integration
+
+**Current Features:**
+- Extract GitHub profile URL from resume during profile setup
+- Autofill GitHub profile in job application forms
+- Recognize GitHub field variations: "github", "github-url", "github-profile", "githuburl"
+
+**Planned Features (Roadmap):**
+- Pull repository statistics from GitHub API
+- Display contribution graph and activity
+- Show top languages and popular repositories
+- Include GitHub stats in application tracking
+- Auto-populate GitHub achievements in applications
 
 ### Auto-Extraction from LinkedIn
 
@@ -301,8 +361,20 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 
 ## Recent Updates
 
-### v2.0 - Stats Overview & Auto-Extraction
-- ✅ Added Stats Overview page with 3 charts
+### v2.1 - Enhanced Autofill System (Latest - 2026-01-14)
+- ✅ **Major Autofill Overhaul**: Completely redesigned autofill engine with 90+ field types
+- ✅ **7-Step Profile Setup**: Comprehensive wizard for profile creation
+- ✅ **Resume Parsing**: Automatic extraction of data from uploaded resumes
+- ✅ **Platform-Specific Logic**: Optimized autofill for Workday, Greenhouse, Lever, and more
+- ✅ **GitHub Profile Support**: Extract and autofill GitHub profile URLs
+- ✅ **Multi-Page Forms**: Automatic detection and filling across multiple form pages
+- ✅ **Legal & EEO Fields**: Smart handling of work authorization and compliance questions
+- ✅ **Enhanced Field Mapping**: Improved accuracy with better field detection algorithms
+- ✅ **Visual Feedback**: Real-time highlighting of filled fields
+- ✅ **Cover Letter Management**: Upload and manage cover letters
+
+### v2.0 - Stats Overview & Auto-Extraction (2026-01-10)
+- ✅ Added Stats Overview page with 5 charts
 - ✅ Auto-extract location from LinkedIn
 - ✅ Auto-extract salary from LinkedIn
 - ✅ Auto-extract work type (On-site/Remote/Hybrid)
@@ -310,14 +382,21 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 - ✅ Bold headings in job descriptions
 - ✅ Skill extraction (40+ keywords)
 - ✅ Response time tracking
+- ✅ Application timing insights (how fast you applied)
+- ✅ Competition level tracking (number of applicants)
 - ✅ Date range filters
 - ✅ Notion-style design polish
 
 ### Implementation Files (Recent)
-- `tracking-dashboard/stats.js` - Stats manager class
+- `autofill/autofill-engine.js` - Enhanced autofill engine (950 lines)
+- `autofill/profile-setup.js` - 7-step profile wizard (501 lines)
+- `autofill/profile-setup.html` - Profile setup UI
+- `autofill/profile-setup.css` - Profile setup styles
+- `autofill/resume-manager.js` - Resume parsing and management
+- `tracking-dashboard/stats.js` - Stats manager class (382 lines)
 - `tracking-dashboard/stats.css` - Stats view styles
 - `tracking-dashboard/chart.min.js` - Chart.js library
-- `shared/linkedin-html-cleaner.js` - HTML cleaner
+- `shared/linkedin-html-cleaner.js` - HTML cleaner (126 lines)
 
 ---
 
@@ -344,7 +423,9 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 - `job-filter/content.js` - LinkedIn filtering & data extraction (875 lines)
 - `tracking-dashboard/dashboard.js` - Dashboard UI & view switching (654 lines)
 - `tracking-dashboard/stats.js` - Analytics & charts (382 lines)
-- `autofill/autofill-engine.js` - Form autofill logic
+- `autofill/autofill-engine.js` - Enhanced form autofill logic (950 lines)
+- `autofill/profile-setup.js` - Profile setup wizard (501 lines)
+- `autofill/resume-manager.js` - Resume parsing and data extraction
 - `shared/background.js` - Background service worker
 - `shared/linkedin-html-cleaner.js` - HTML cleaner (126 lines)
 
@@ -423,35 +504,78 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly (reload extension, test all views)
-5. Commit with descriptive message
-6. Push to branch
-7. Open a Pull Request
+We welcome contributions! Here's how to get started:
 
-**Coding Standards:**
-- Use ES6+ features
+### Getting Started
+1. **Fork the repository** on GitHub
+2. **Clone your fork**:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/ChromeExtension.git
+   cd ChromeExtension
+   ```
+3. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+4. **Make your changes**
+5. **Test thoroughly**:
+   - Reload extension in Chrome
+   - Test all views (Kanban, Table, Calendar, Stats)
+   - Test autofill on different platforms
+   - Check console for errors
+6. **Commit with descriptive message**:
+   ```bash
+   git add .
+   git commit -m "Add amazing feature: description"
+   ```
+7. **Push to your fork**:
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+8. **Open a Pull Request** on GitHub
+
+### Coding Standards
+- Use ES6+ features (arrow functions, async/await, destructuring)
 - Add comments for complex logic
-- Follow existing code style
+- Follow existing code style and naming conventions
 - Test on multiple screen sizes
-- Console log important operations
+- Console log important operations with prefixes (e.g., `[Autofill]`, `[Dashboard]`)
+- Keep functions focused and modular
+- Update documentation for new features
+
+### Pull Request Guidelines
+- Describe what your PR does and why
+- Include screenshots for UI changes
+- Reference any related issues
+- Ensure all tests pass
+- Keep PRs focused on a single feature/fix
 
 ---
 
 ## Roadmap
 
+**Completed Features:**
+- [x] Enhanced autofill system with 90+ field types
+- [x] Resume parsing and automatic data extraction
+- [x] GitHub profile extraction and autofill
+- [x] Multi-page form support
+- [x] Platform-specific autofill logic
+- [x] Stats overview with 5 charts
+- [x] Application timing and competition tracking
+
 **Planned Features:**
+- [ ] GitHub API integration to pull repository stats and contributions
 - [ ] Colored skill pills in job descriptions
 - [ ] Export to PDF/CSV
 - [ ] Email reminders for follow-ups
-- [ ] Company research integration
+- [ ] Company research integration (Glassdoor, Blind)
 - [ ] Salary comparison with market data
-- [ ] Interview preparation notes
+- [ ] Interview preparation notes and resources
 - [ ] Job search goals and tracking
 - [ ] Browser notifications for deadlines
 - [ ] Dark mode
+- [ ] AI-powered cover letter generation
+- [ ] Resume tailoring suggestions based on job description
 
 ---
 
@@ -463,29 +587,64 @@ MIT License - feel free to use, modify, and distribute
 
 ## Changelog
 
+### v2.1.0 (2026-01-14)
+- **Major Autofill Overhaul**: Complete redesign of autofill engine
+- Enhanced profile setup with 7-step wizard
+- Resume parsing with automatic data extraction
+- GitHub profile URL extraction and autofill
+- 90+ field types now supported (up from 30+)
+- Platform-specific autofill logic for Workday, Greenhouse, Lever
+- Multi-page form detection and automatic filling
+- Legal and EEO field handling
+- Cover letter upload and management
+- Visual feedback with field highlighting
+- Improved field detection algorithms
+
 ### v2.0.0 (2026-01-10)
-- Added Stats Overview with 3 charts
+- Added Stats Overview with 5 charts
 - Auto-extract location, salary, work type from LinkedIn
 - Job description HTML formatting with bold headings
 - Skill extraction (40+ keywords)
 - Response time tracking
-- Date range filters
+- Application timing insights (how fast you applied)
+- Competition level tracking (number of applicants)
+- Date range filters (7d, 30d, 3m, all time)
 - Notion-style design improvements
+- LinkedIn HTML cleaner for job descriptions
 
-### v1.0.0
-- Initial release
-- LinkedIn job filtering
-- Job application tracking
-- Autofill system
+### v1.0.0 (Initial Release)
+- LinkedIn job filtering (time, reposts, blacklist)
+- Job application tracking dashboard
+- Kanban, Table, Calendar views
+- Basic autofill system
+- Chrome storage integration
 
 ---
 
 ## Support
 
-Found a bug? Have a feature request?
-- Open an issue on GitHub
-- Include browser version, error messages, screenshots
-- Describe steps to reproduce
+Found a bug? Have a feature request? We'd love to hear from you!
+
+### Reporting Issues
+1. **Check existing issues** on [GitHub Issues](https://github.com/VIJAYRUR/ChromeExtension/issues)
+2. **Create a new issue** with:
+   - Clear, descriptive title
+   - Browser version (Chrome/Edge/Brave)
+   - Extension version (check `chrome://extensions/`)
+   - Error messages from console (F12 → Console tab)
+   - Screenshots or screen recordings
+   - Steps to reproduce the issue
+   - Expected vs. actual behavior
+
+### Feature Requests
+- Open a [GitHub Issue](https://github.com/VIJAYRUR/ChromeExtension/issues) with the "enhancement" label
+- Describe the feature and why it would be useful
+- Include mockups or examples if applicable
+
+### Getting Help
+- Check the [Troubleshooting](#troubleshooting) section below
+- Review [ARCHITECTURE.md](ARCHITECTURE.md) for technical details
+- Search [closed issues](https://github.com/VIJAYRUR/ChromeExtension/issues?q=is%3Aissue+is%3Aclosed) for similar problems
 
 ---
 
@@ -502,6 +661,33 @@ Found a bug? Have a feature request?
 
 ---
 
+## Repository
+
+**GitHub**: [https://github.com/VIJAYRUR/ChromeExtension](https://github.com/VIJAYRUR/ChromeExtension)
+
+### Staying Updated
+
+**Pull Latest Changes:**
+```bash
+cd ChromeExtension
+git pull origin main
+```
+
+**Check for Updates:**
+- Watch the repository on GitHub for notifications
+- Check the [Changelog](#changelog) for new features
+- Review [Recent Updates](#recent-updates) section
+
+**Version History:**
+- Current: v2.1.0 (Enhanced Autofill)
+- Previous: v2.0.0 (Stats & Analytics)
+- Initial: v1.0.0 (Core Features)
+
+---
+
 **Made with ❤️ to make job searching less painful**
 
-Star ⭐ this repo if it helped you land a job!
+⭐ **Star this repo** if it helped you land a job!
+🐛 **Report bugs** to help us improve
+🚀 **Contribute** to make it even better
+📢 **Share** with friends who are job hunting

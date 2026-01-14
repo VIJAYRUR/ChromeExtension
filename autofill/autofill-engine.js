@@ -179,17 +179,27 @@ class AutofillEngine {
 
   isFieldVisible(element) {
     if (!element) return false;
-    
+
     const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+
+    // Check display and visibility
+    if (style.display === 'none' || style.visibility === 'hidden') {
       return false;
     }
-    
-    const rect = element.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
+
+    // Don't check opacity - some forms use opacity for animations
+    // Don't check bounding rect - some fields are off-screen but still fillable
+
+    // Check if element or parent has aria-hidden
+    if (element.getAttribute('aria-hidden') === 'true') {
       return false;
     }
-    
+
+    // Check if disabled
+    if (element.disabled) {
+      return false;
+    }
+
     return true;
   }
 
@@ -366,6 +376,14 @@ class AutofillEngine {
       field.dataTestId
     ].join(' ').toLowerCase();
 
+    // Special case: File inputs for resume/CV - MUST CHECK FIRST
+    if (field.inputType === 'file') {
+      if (searchText.includes('resume') || searchText.includes('cv')) {
+        console.log(`[Autofill] 🎯 Identified field type: FILE (resume) for field: ${field.label || field.name || field.id}`);
+        return null; // Don't try to fill file inputs with text
+      }
+    }
+
     // Special case: Exclude LinkedIn fields from professional summary matching
     if (searchText.includes('linkedin')) {
       // Only match linkedin field type
@@ -377,8 +395,35 @@ class AutofillEngine {
       return null; // Don't match other field types for LinkedIn fields
     }
 
-    // Check each field mapping
+    // Check each field mapping with priority order
+    // Check more specific fields first to avoid false matches
+    const priorityOrder = [
+      'firstName', 'lastName', 'middleName', 'fullName',
+      'email', 'phone', 'mobileNumber',
+      'linkedin', 'github', 'portfolio', 'website',
+      'address', 'address2', 'city', 'state', 'zipCode', 'country',
+      'currentCompany', 'jobTitle',
+      'university', 'degree', 'major', 'gpa', 'graduationYear',
+      'workAuthorization', 'requireSponsorship'
+    ];
+
+    // First check priority fields
+    for (const fieldType of priorityOrder) {
+      const keywords = this.fieldMappings[fieldType];
+      if (keywords) {
+        for (const keyword of keywords) {
+          if (searchText.includes(keyword)) {
+            console.log(`[Autofill] 🎯 Identified field type: ${fieldType} for field: ${field.label || field.name || field.id}`);
+            return fieldType;
+          }
+        }
+      }
+    }
+
+    // Then check remaining fields
     for (const [fieldType, keywords] of Object.entries(this.fieldMappings)) {
+      if (priorityOrder.includes(fieldType)) continue; // Skip already checked
+
       for (const keyword of keywords) {
         if (searchText.includes(keyword)) {
           console.log(`[Autofill] 🎯 Identified field type: ${fieldType} for field: ${field.label || field.name || field.id}`);
@@ -920,6 +965,21 @@ class PlatformDetector {
       return 'jobvite';
     }
 
+    // NEW: Ashby ATS
+    if (hostname.includes('ashbyhq.com') || url.includes('ashby')) {
+      return 'ashby';
+    }
+
+    // NEW: Breezy HR
+    if (hostname.includes('breezy.hr')) {
+      return 'breezy';
+    }
+
+    // NEW: Workable
+    if (hostname.includes('workable.com')) {
+      return 'workable';
+    }
+
     return 'generic';
   }
 
@@ -933,6 +993,9 @@ class PlatformDetector {
       icims: 'iCIMS',
       smartrecruiters: 'SmartRecruiters',
       jobvite: 'Jobvite',
+      ashby: 'Ashby',
+      breezy: 'Breezy HR',
+      workable: 'Workable',
       generic: 'Unknown Platform'
     };
 

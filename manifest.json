@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Jobs Filter & Tracker",
-  "version": "2.0.0",
-  "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard",
+  "version": "2.1.0",
+  "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard and smart autofill",
   "permissions": [
     "storage"
   ],
@@ -71,7 +71,8 @@
         "autofill/autofill-content.js",
         "autofill/profile-setup.html",
         "autofill/profile-setup.css",
-        "autofill/profile-setup.js"
+        "autofill/profile-setup.js",
+        "shared/backup-manager.js"
       ],
       "matches": ["<all_urls>"]
     }
