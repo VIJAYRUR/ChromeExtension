@@ -543,7 +543,7 @@ class DashboardUI {
       return;
     }
 
-    jobs.forEach(job => {
+    jobs.forEach((job, index) => {
       const row = document.createElement('tr');
       row.dataset.jobId = job.id;
 
@@ -559,13 +559,13 @@ class DashboardUI {
       // Get status style
       const statusStyle = this.getStatusStyle(job.status);
 
-      // Get job icon
-      const jobIcon = this.getJobIcon(job.id);
+      // Serial number (1-based)
+      const serialNumber = index + 1;
 
       row.innerHTML = `
         <td class="td-icon">
-          <div style="width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';">
-            ${jobIcon}
+          <div style="width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: rgba(55, 53, 47, 0.4);">
+            ${serialNumber}
           </div>
         </td>
         <td class="td-title">
