@@ -381,29 +381,6 @@ class AutofillEngine {
   isFieldVisible(element) {
     if (!element) return false;
 
-<<<<<<< HEAD
-    const style = window.getComputedStyle(element);
-
-    // Check display and visibility
-    if (style.display === 'none' || style.visibility === 'hidden') {
-      return false;
-    }
-
-    // Don't check opacity - some forms use opacity for animations
-    // Don't check bounding rect - some fields are off-screen but still fillable
-
-    // Check if element or parent has aria-hidden
-    if (element.getAttribute('aria-hidden') === 'true') {
-      return false;
-    }
-
-    // Check if disabled
-    if (element.disabled) {
-      return false;
-    }
-
-    return true;
-=======
     try {
       // Check if element is connected to DOM
       if (!element.isConnected) return false;
@@ -425,6 +402,12 @@ class AutofillEngine {
       // Check if element or parent has hidden attribute
       if (element.hasAttribute('hidden')) return false;
 
+      // Check if disabled
+      if (element.disabled) return false;
+
+      // Check if element or parent has aria-hidden
+      if (element.getAttribute('aria-hidden') === 'true') return false;
+
       // Check if any parent is hidden (walk up the tree, max 10 levels)
       let parent = element.parentElement;
       let depth = 0;
@@ -445,7 +428,6 @@ class AutofillEngine {
       console.warn('[Autofill] ⚠️ Error checking field visibility:', error);
       return true;
     }
->>>>>>> 612726c (modified the profile page, also included profile button in application tracking dashboad)
   }
 
   getFieldLabel(field) {
