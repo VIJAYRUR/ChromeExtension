@@ -594,9 +594,9 @@ body {
   padding: 0;
   margin-bottom: 16px;
   box-sizing: border-box;
-  min-height: 400px;
   display: flex;
   flex-direction: column;
+  height: fit-content;
 }
 
 .column-content {
@@ -604,9 +604,11 @@ body {
   flex-direction: column;
   gap: 6px;
   min-height: 200px;
+  max-height: calc(100vh - 280px);
   padding: 12px;
   border-radius: 8px;
-  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Light colored backgrounds for column content like Notion */
@@ -629,6 +631,24 @@ body {
 .column-content.drag-over {
   background: rgba(55, 53, 47, 0.08);
   border-radius: 10px;
+}
+
+/* Custom scrollbar for column content */
+.column-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.column-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.column-content::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.2);
+  border-radius: 3px;
+}
+
+.column-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 53, 47, 0.35);
 }
 
 /* All job cards have white background like Notion */
