@@ -14,15 +14,6 @@
       <div class="logo">
         <h1>Job Tracker</h1>
       </div>
-      <div class="header-actions">
-        <button class="btn-profile" id="openProfileBtn" title="Open Profile">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span>Profile</span>
-        </button>
-      </div>
     </div>
   </header>
 
@@ -200,27 +191,10 @@
     <!-- Table View -->
     <div id="table-view" class="view-container">
       <div class="table-container">
-        <!-- Table Actions Bar (Top) -->
-        <div class="table-actions table-actions-top" id="table-actions" style="display: none;">
-          <button class="btn-table-action btn-delete" id="delete-selected-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            Delete <span id="selected-count">0</span> selected
-          </button>
-        </div>
-
         <table class="jobs-table">
           <thead>
             <tr>
-<<<<<<< HEAD
               <th class="col-icon">#</th>
-=======
-              <th class="col-checkbox">
-                <input type="checkbox" id="select-all-checkbox" class="table-checkbox" title="Select all">
-              </th>
->>>>>>> 612726c (modified the profile page, also included profile button in application tracking dashboad)
               <th class="col-title">Title</th>
               <th class="col-company">Company</th>
               <th class="col-location">Location</th>
@@ -231,34 +205,24 @@
           </thead>
           <tbody id="table-body"></tbody>
         </table>
+      </div>
 
-        <!-- Pagination -->
-        <div class="table-pagination" id="table-pagination">
-          <div class="pagination-info">
-            <span id="pagination-info-text">Showing 1-25 of 100</span>
-          </div>
-          <div class="pagination-controls">
-            <button class="pagination-btn" id="prev-page-btn" title="Previous page">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <div class="pagination-pages" id="pagination-pages">
-              <!-- Page numbers will be inserted here -->
-            </div>
-            <button class="pagination-btn" id="next-page-btn" title="Next page">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
-          <div class="pagination-size">
-            <select id="page-size-select" class="page-size-select">
-              <option value="25">25 per page</option>
-              <option value="50">50 per page</option>
-              <option value="100">100 per page</option>
-            </select>
-          </div>
+      <!-- Notion-style Pagination -->
+      <div class="table-pagination" id="table-pagination">
+        <div class="pagination-info">
+          <span id="pagination-info-text">1-10 of 50</span>
+        </div>
+        <div class="pagination-controls">
+          <button class="pagination-btn" id="prev-page-btn" aria-label="Previous page" disabled>
+            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
+              <path d="M10.03 3.47a.75.75 0 0 1 0 1.06L6.56 8l3.47 3.47a.75.75 0 1 1-1.06 1.06l-4-4a.75.75 0 0 1 0-1.06l4-4a.75.75 0 0 1 1.06 0"></path>
+            </svg>
+          </button>
+          <button class="pagination-btn" id="next-page-btn" aria-label="Next page">
+            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
+              <path d="M5.97 3.47a.75.75 0 0 0 0 1.06L9.44 8l-3.47 3.47a.75.75 0 1 0 1.06 1.06l4-4a.75.75 0 0 0 0-1.06l-4-4a.75.75 0 0 0-1.06 0"></path>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

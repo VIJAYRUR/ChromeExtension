@@ -35,15 +35,7 @@
         "https://*/*careers*",
         "https://*/*jobs/*"
       ],
-      "js": [
-        "autofill/autofill-utils.js",
-        "autofill/semantic-matcher.js",
-        "autofill/intelligent-value-mapper.js",
-        "autofill/ats-platform-intelligence.js",
-        "autofill/resume-manager.js",
-        "autofill/autofill-engine.js",
-        "autofill/autofill-content.js"
-      ],
+      "js": ["autofill/resume-manager.js", "autofill/autofill-engine.js", "autofill/autofill-content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -74,21 +66,9 @@
         "tracking-dashboard/job-detail.css",
         "tracking-dashboard/job-detail.js",
         "tracking-dashboard/job-tracker.js",
-        "autofill/semantic-matcher.js",
-        "autofill/intelligent-value-mapper.js",
-        "autofill/ats-platform-intelligence.js",
         "autofill/resume-manager.js",
-        "autofill/resume-parser.js",
-        "autofill/pdf.min.js",
-        "autofill/pdf.worker.min.js",
         "autofill/autofill-engine.js",
         "autofill/autofill-content.js",
-        "autofill/profile.html",
-        "autofill/profile.css",
-        "autofill/profile.js",
-        "autofill/profile-edit-inline.html",
-        "autofill/profile-edit-inline.css",
-        "autofill/profile-edit-inline.js",
         "autofill/profile-setup.html",
         "autofill/profile-setup.css",
         "autofill/profile-setup.js",

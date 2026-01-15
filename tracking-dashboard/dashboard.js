@@ -12,6 +12,10 @@ class DashboardUI {
     this.isUpdating = false;
     this.compactMode = false;
 
+    // Pagination
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+
     // Job-related icons in Notion style (all same gray color like Notion)
     this.jobIcons = [
       '💼', '🎯', '🚀', '💻', '🔧', '⚡',
@@ -125,6 +129,7 @@ class DashboardUI {
     // Inline search input
     inlineSearchInput.addEventListener('input', (e) => {
       this.currentFilters.query = e.target.value;
+      this.currentPage = 1; // Reset to first page
       this.render();
     });
 
@@ -142,16 +147,19 @@ class DashboardUI {
     // Filters
     document.getElementById('filter-status').addEventListener('change', (e) => {
       this.currentFilters.status = e.target.value;
+      this.currentPage = 1; // Reset to first page
       this.render();
     });
 
     document.getElementById('filter-worktype').addEventListener('change', (e) => {
       this.currentFilters.workType = e.target.value;
+      this.currentPage = 1; // Reset to first page
       this.render();
     });
 
     document.getElementById('filter-sort').addEventListener('change', (e) => {
       this.currentFilters.sort = e.target.value;
+      this.currentPage = 1; // Reset to first page
       this.render();
     });
 
@@ -189,6 +197,29 @@ class DashboardUI {
         this.toggleCompactMode();
       }
     });
+
+    // Pagination controls
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener('click', () => {
+        if (this.currentPage > 1) {
+          this.currentPage--;
+          this.renderTable(this.currentJobs);
+        }
+      });
+    }
+
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(this.currentJobs.length / this.itemsPerPage);
+        if (this.currentPage < totalPages) {
+          this.currentPage++;
+          this.renderTable(this.currentJobs);
+        }
+      });
+    }
   }
 
   async toggleCompactMode() {
@@ -540,10 +571,19 @@ class DashboardUI {
 
     if (jobs.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No jobs found</p></td></tr>';
+      this.updatePagination(0, 0, 0);
       return;
     }
 
-    jobs.forEach((job, index) => {
+    // Calculate pagination
+    const totalItems = jobs.length;
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = Math.min(startIndex + this.itemsPerPage, totalItems);
+    const paginatedJobs = jobs.slice(startIndex, endIndex);
+
+    // Render paginated jobs
+    paginatedJobs.forEach((job, index) => {
       const row = document.createElement('tr');
       row.dataset.jobId = job.id;
 
@@ -559,8 +599,8 @@ class DashboardUI {
       // Get status style
       const statusStyle = this.getStatusStyle(job.status);
 
-      // Serial number (1-based)
-      const serialNumber = index + 1;
+      // Serial number (global index, not page index)
+      const serialNumber = startIndex + index + 1;
 
       row.innerHTML = `
         <td class="td-icon">
@@ -596,6 +636,41 @@ class DashboardUI {
 
       tbody.appendChild(row);
     });
+
+    // Update pagination controls
+    this.updatePagination(startIndex + 1, endIndex, totalItems);
+  }
+
+  updatePagination(start, end, total) {
+    const paginationContainer = document.getElementById('table-pagination');
+    const paginationInfo = document.getElementById('pagination-info-text');
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+
+    if (!paginationContainer) return;
+
+    // Show/hide pagination based on total items
+    if (total <= this.itemsPerPage) {
+      paginationContainer.style.display = 'none';
+      return;
+    } else {
+      paginationContainer.style.display = 'flex';
+    }
+
+    // Update info text
+    if (paginationInfo) {
+      paginationInfo.textContent = `${start}-${end} of ${total}`;
+    }
+
+    // Update button states
+    if (prevBtn) {
+      prevBtn.disabled = this.currentPage === 1;
+    }
+
+    if (nextBtn) {
+      const totalPages = Math.ceil(total / this.itemsPerPage);
+      nextBtn.disabled = this.currentPage >= totalPages;
+    }
   }
 
   showJobDetail(job) {
