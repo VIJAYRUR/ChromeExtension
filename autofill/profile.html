@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile</title>
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+  <div class="container">
+    <!-- View Mode -->
+    <div id="viewMode" class="mode-container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1>Profile</h1>
+            <p class="header-subtitle">Manage your job application information</p>
+          </div>
+          <button class="btn-primary" id="editBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit All
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty State (no profile) -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <h2>No Profile Yet</h2>
+        <p>Create your profile to enable autofill across job applications</p>
+        <button class="btn-primary" id="createProfileBtn">Create Profile</button>
+      </div>
+
+      <!-- Profile Content -->
+      <div id="profileContent" class="profile-content">
+        <!-- Personal Info Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Personal Information</h2>
+            <button class="btn-section-edit" data-step="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Name</span>
+              <span class="info-value" id="view-fullName">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Professional Summary</span>
+              <span class="info-value" id="view-professionalSummary">-</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contact Info Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Contact Information</h2>
+            <button class="btn-section-edit" data-step="3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Email</span>
+              <span class="info-value" id="view-email">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Phone</span>
+              <span class="info-value" id="view-phone">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Location</span>
+              <span class="info-value" id="view-location">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">LinkedIn</span>
+              <a class="info-link" id="view-linkedin" href="#" target="_blank">-</a>
+            </div>
+            <div class="info-item">
+              <span class="info-label">GitHub</span>
+              <a class="info-link" id="view-github" href="#" target="_blank">-</a>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Portfolio</span>
+              <a class="info-link" id="view-portfolio" href="#" target="_blank">-</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Work Experience Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Work Experience</h2>
+            <button class="btn-section-edit" data-step="4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div id="view-experiences" class="timeline-container">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- Education Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Education</h2>
+            <button class="btn-section-edit" data-step="6">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div id="view-education" class="timeline-container">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Skills</h2>
+            <button class="btn-section-edit" data-step="5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div id="view-skills" class="skills-container">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- Work Authorization Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Work Authorization</h2>
+            <button class="btn-section-edit" data-step="7">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">US Work Authorization</span>
+              <span class="info-value" id="view-workAuthorization">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Authorization Type</span>
+              <span class="info-value" id="view-workAuthorizationType">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Sponsorship Required</span>
+              <span class="info-value" id="view-requireSponsorship">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Security Clearance</span>
+              <span class="info-value" id="view-clearanceEligibility">-</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Additional Info Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Additional Information</h2>
+            <button class="btn-section-edit" data-step="7">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Preferred Location</span>
+              <span class="info-value" id="view-preferredLocation">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Salary Expectation</span>
+              <span class="info-value" id="view-salaryExpectation">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Available Start Date</span>
+              <span class="info-value" id="view-availableStartDate">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Notice Period</span>
+              <span class="info-value" id="view-noticePeriod">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Willing to Relocate</span>
+              <span class="info-value" id="view-willingToRelocate">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Remote Preference</span>
+              <span class="info-value" id="view-remotePreference">-</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Files Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2 class="section-title">Documents</h2>
+            <button class="btn-section-edit" data-step="1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </button>
+          </div>
+          <div class="files-container">
+            <div class="file-item" id="view-resumeFile" style="display: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+              <span class="file-name" id="view-resumeFileName">Resume.pdf</span>
+            </div>
+            <div class="file-item" id="view-coverLetterFile" style="display: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+              <span class="file-name" id="view-coverLetterFileName">Cover Letter.pdf</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="profile-section danger-zone">
+          <div class="section-header">
+            <h2 class="section-title">Danger Zone</h2>
+          </div>
+          <div class="danger-zone-content">
+            <div class="danger-zone-info">
+              <h3>Clear Profile</h3>
+              <p>Permanently delete all your profile information and uploaded documents. This action cannot be undone.</p>
+            </div>
+            <button class="btn-danger" id="clearProfileBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+              Clear Profile
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Edit Mode (iframe) -->
+    <div id="editMode" class="mode-container" style="display: none;">
+      <iframe id="editFrame" src="profile-setup.html" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <script src="profile.js"></script>
+</body>
+</html>

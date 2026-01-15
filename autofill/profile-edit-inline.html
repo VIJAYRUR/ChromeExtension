@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile</title>
+  <link rel="stylesheet" href="profile-edit-inline.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <button class="btn-back" id="backBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+          <h1 id="editTitle">Edit Profile</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" id="cancelBtn">Cancel</button>
+          <button class="btn-primary" id="saveBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="edit-content">
+      <form id="editForm">
+        <!-- Documents (Resume Upload) - Moved to top -->
+        <section class="edit-section" id="section-documents" data-section="documents">
+          <h2 class="section-title">Resume</h2>
+          <p class="section-description">Upload your resume and let our intelligent parser auto-fill your profile information.</p>
+
+          <div class="form-group">
+            <div class="file-upload-area" id="resumeUploadArea">
+              <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" hidden>
+              <div class="file-upload-content" id="resumeUploadContent">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <p>Click to upload resume</p>
+                <small>PDF, DOC, or DOCX (max 5MB)</small>
+              </div>
+              <div class="file-upload-success" id="resumeUploadSuccess" style="display: none;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span id="resumeFileName">Resume.pdf</span>
+                <button type="button" class="btn-remove-file" id="removeResumeBtn">Remove</button>
+              </div>
+            </div>
+
+            <!-- Coming Soon Notice -->
+            <div id="parseResumeSection" style="display: none; margin-top: 16px;">
+              <div style="padding: 12px; border-radius: 10px; background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.2);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent);">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <div>
+                    <div style="font-size: 14px; font-weight: 600; color: var(--gray-900); margin-bottom: 2px;">Auto-parse from resume coming soon!</div>
+                    <div style="font-size: 13px; color: var(--gray-600);">For now, please fill in your information manually below. Your resume is saved and will be used for job applications.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Personal Information -->
+        <section class="edit-section" id="section-personal" data-section="personal">
+          <h2 class="section-title">Personal Information</h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name <span class="required">*</span></label>
+              <input type="text" id="firstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+              <label for="middleName">Middle Name</label>
+              <input type="text" id="middleName" name="middleName">
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name <span class="required">*</span></label>
+              <input type="text" id="lastName" name="lastName" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="professionalSummary">Professional Summary</label>
+            <textarea id="professionalSummary" name="professionalSummary" rows="4"></textarea>
+            <small>Brief overview of your professional background and key skills</small>
+          </div>
+        </section>
+
+        <!-- Contact Information -->
+        <section class="edit-section" id="section-contact" data-section="contact">
+          <h2 class="section-title">Contact Information</h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Email <span class="required">*</span></label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone <span class="required">*</span></label>
+              <input type="tel" id="phone" name="phone" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City <span class="required">*</span></label>
+              <input type="text" id="city" name="city" required>
+            </div>
+            <div class="form-group">
+              <label for="state">State</label>
+              <input type="text" id="state" name="state">
+            </div>
+            <div class="form-group">
+              <label for="country">Country <span class="required">*</span></label>
+              <input type="text" id="country" name="country" required>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3 class="subsection-title">Online Profiles</h3>
+
+          <div class="form-group">
+            <label for="linkedin">LinkedIn</label>
+            <input type="url" id="linkedin" name="linkedin">
+          </div>
+
+          <div class="form-group">
+            <label for="github">GitHub</label>
+            <input type="url" id="github" name="github">
+          </div>
+
+          <div class="form-group">
+            <label for="portfolio">Portfolio</label>
+            <input type="url" id="portfolio" name="portfolio">
+          </div>
+        </section>
+
+        <!-- Work Experience -->
+        <section class="edit-section" id="section-experience" data-section="experience">
+          <div class="section-header-with-action">
+            <h2 class="section-title">Work Experience</h2>
+            <button type="button" class="btn-add" id="addExperienceBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Add Experience
+            </button>
+          </div>
+
+          <div id="experienceContainer">
+            <!-- Dynamic experience entries -->
+          </div>
+        </section>
+
+        <!-- Skills -->
+        <section class="edit-section" id="section-skills" data-section="skills">
+          <h2 class="section-title">Skills</h2>
+
+          <div class="form-group">
+            <label for="skills">Skills</label>
+            <textarea id="skills" name="skills" rows="4" placeholder="JavaScript, React, Node.js, Python, SQL, Git"></textarea>
+            <small>Separate skills with commas</small>
+          </div>
+        </section>
+
+        <!-- Education -->
+        <section class="edit-section" id="section-education" data-section="education">
+          <div class="section-header-with-action">
+            <h2 class="section-title">Education</h2>
+            <button type="button" class="btn-add" id="addEducationBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Add Education
+            </button>
+          </div>
+
+          <div id="educationContainer">
+            <!-- Dynamic education entries -->
+          </div>
+        </section>
+
+        <!-- Work Authorization -->
+        <section class="edit-section" id="section-authorization" data-section="authorization">
+          <h2 class="section-title">Work Authorization</h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="workAuthorization">US Work Authorization</label>
+              <select id="workAuthorization" name="workAuthorization">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="workAuthorizationType">Authorization Type</label>
+              <select id="workAuthorizationType" name="workAuthorizationType">
+                <option value="">Select</option>
+                <option value="US Citizen">U.S. Citizen</option>
+                <option value="Green Card">Green Card</option>
+                <option value="H1B">H-1B Visa</option>
+                <option value="F1 OPT">F-1 OPT</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="requireSponsorship">Require Sponsorship?</label>
+            <select id="requireSponsorship" name="requireSponsorship">
+              <option value="">Select</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="Future">Yes, in the future</option>
+            </select>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3 class="subsection-title">Additional Information</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="preferredLocation">Preferred Location</label>
+              <input type="text" id="preferredLocation" name="preferredLocation">
+            </div>
+            <div class="form-group">
+              <label for="remotePreference">Remote Preference</label>
+              <select id="remotePreference" name="remotePreference">
+                <option value="">Select</option>
+                <option value="Remote Only">Remote Only</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="On-site">On-site</option>
+                <option value="Flexible">Flexible</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+      </form>
+    </div>
+  </div>
+
+  <script src="resume-parser.js"></script>
+  <script src="profile-edit-inline.js"></script>
+</body>
+</html>

@@ -1,5 +1,14 @@
 // Autofill Content Script - Runs on job application pages
 
+// Helper to check if extension context is valid
+function isExtensionValid() {
+  try {
+    return !!(chrome && chrome.runtime && chrome.runtime.id);
+  } catch (e) {
+    return false;
+  }
+}
+
 class AutofillUI {
   constructor() {
     this.isVisible = false;
@@ -175,9 +184,6 @@ class AutofillUI {
         <div class="autofill-actions">
           <button class="autofill-btn autofill-btn-primary" id="autofill-btn" disabled>
             ✨ Autofill Form
-          </button>
-          <button class="autofill-btn autofill-btn-outline" id="clear-resume-btn" style="display: none;">
-            🗑️ Clear Resume
           </button>
         </div>
 
@@ -463,11 +469,6 @@ class AutofillUI {
     document.getElementById('autofill-btn').addEventListener('click', () => {
       this.performAutofill();
     });
-
-    // Clear resume button
-    document.getElementById('clear-resume-btn').addEventListener('click', () => {
-      this.clearProfile();
-    });
   }
 
   detectAndDisplayPlatform() {
@@ -478,16 +479,36 @@ class AutofillUI {
   }
 
   async loadResumeData() {
-    const result = await chrome.storage.local.get(['userProfile']);
-    if (result.userProfile) {
-      this.displayProfileInfo(result.userProfile);
-      this.resumeUploaded = true;
+    try {
+      // Check if extension context is valid
+      if (!chrome.runtime?.id) {
+        console.warn('[Autofill UI] ⚠️ Extension context invalidated');
+        return;
+      }
+
+      const result = await chrome.storage.local.get(['userProfile']);
+      if (result.userProfile) {
+        this.displayProfileInfo(result.userProfile);
+        this.resumeUploaded = true;
+      }
+    } catch (error) {
+      console.error('[Autofill UI] ❌ Error loading resume data:', error);
+      // Silently fail - user can still set up profile
     }
   }
 
   openProfileSetup() {
-    // Open profile setup page in new tab
-    chrome.runtime.sendMessage({ action: 'openProfileSetup' });
+    try {
+      if (!isExtensionValid()) {
+        alert('Extension was reloaded. Please refresh this page and try again.');
+        return;
+      }
+      // Open profile page in new tab (opens view mode, can edit from there)
+      chrome.runtime.sendMessage({ action: 'openProfile' });
+    } catch (error) {
+      console.error('[Autofill UI] ❌ Error opening profile:', error);
+      alert('Error opening profile. Please try reloading the extension.');
+    }
   }
 
 
@@ -516,9 +537,6 @@ class AutofillUI {
     // Show edit button instead of setup
     document.getElementById('setup-profile-btn').style.display = 'none';
     document.getElementById('edit-profile-btn').style.display = 'block';
-
-    // Show clear button
-    document.getElementById('clear-resume-btn').style.display = 'block';
   }
 
   async performAutofill() {
@@ -529,37 +547,63 @@ class AutofillUI {
 
     console.log('[Autofill UI] 🚀 Starting autofill...');
 
-    const result = await chrome.storage.local.get(['userProfile']);
+    try {
+      // Check if extension context is still valid
+      if (!chrome.runtime?.id) {
+        console.error('[Autofill UI] ❌ Extension context invalidated. Please reload the page.');
+        this.showNotification('⚠️ Extension reloaded. Please refresh the page.', 'error');
+        return;
+      }
 
-    if (result.userProfile && window.autofillEngine) {
-      await window.autofillEngine.autofillForm(result.userProfile);
+      const result = await chrome.storage.local.get(['userProfile']);
 
-      // Start monitoring for page changes (for multi-page forms)
-      window.autofillEngine.startPageMonitoring();
-    } else {
-      this.showNotification('❌ Profile data not found', 'error');
+      if (result.userProfile && window.autofillEngine) {
+        await window.autofillEngine.autofillForm(result.userProfile);
+
+        // Start monitoring for page changes (for multi-page forms)
+        window.autofillEngine.startPageMonitoring();
+      } else {
+        this.showNotification('❌ Profile data not found', 'error');
+      }
+    } catch (error) {
+      console.error('[Autofill UI] ❌ Error during autofill:', error);
+
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        this.showNotification('⚠️ Extension was reloaded. Please refresh this page.', 'error');
+      } else {
+        this.showNotification('❌ Autofill failed. Check console for details.', 'error');
+      }
     }
   }
 
-  clearProfile() {
+  async clearProfile() {
     if (confirm('Are you sure you want to clear your profile data?')) {
-      chrome.storage.local.remove(['userProfile']);
+      try {
+        if (!isExtensionValid()) {
+          alert('Extension was reloaded. Please refresh this page.');
+          return;
+        }
 
-      const statusDiv = document.getElementById('resume-status');
-      statusDiv.innerHTML = `
-        <div class="resume-placeholder">
-          <span>👤</span>
-          <p>No profile set up</p>
-        </div>
-      `;
+        await chrome.storage.local.remove(['userProfile']);
 
-      document.getElementById('autofill-btn').disabled = true;
-      document.getElementById('clear-resume-btn').style.display = 'none';
-      document.getElementById('setup-profile-btn').style.display = 'block';
-      document.getElementById('edit-profile-btn').style.display = 'none';
-      this.resumeUploaded = false;
+        const statusDiv = document.getElementById('resume-status');
+        statusDiv.innerHTML = `
+          <div class="resume-placeholder">
+            <span>👤</span>
+            <p>No profile set up</p>
+          </div>
+        `;
 
-      this.showNotification('🗑️ Profile cleared', 'info');
+        document.getElementById('autofill-btn').disabled = true;
+        document.getElementById('setup-profile-btn').style.display = 'block';
+        document.getElementById('edit-profile-btn').style.display = 'none';
+        this.resumeUploaded = false;
+
+        this.showNotification('🗑️ Profile cleared', 'info');
+      } catch (error) {
+        console.error('[Autofill UI] ❌ Error clearing profile:', error);
+        this.showNotification('❌ Error clearing profile', 'error');
+      }
     }
   }
 

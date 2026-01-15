@@ -53,11 +53,11 @@ body {
 }
 
 .header-content {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 32px 96px 48px;
+  padding: 24px 48px 32px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -73,6 +73,32 @@ body {
   display: flex;
   align-items: center;
   gap: 0;
+}
+
+.btn-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(55, 53, 47, 0.16);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  font-family: inherit;
+}
+
+.btn-profile:hover {
+  background: var(--bg-hover);
+}
+
+.btn-profile svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
 }
 
 .toolbar-icons {
@@ -171,7 +197,7 @@ body {
 .search-section {
   background: var(--bg-soft);
   border-bottom: none;
-  padding: 0 96px 16px;
+  padding: 0 48px 16px;
   display: none !important;
   animation: slideDown 200ms ease-out;
 }
@@ -188,7 +214,7 @@ body {
 }
 
 .search-container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -281,8 +307,8 @@ body {
 
 .view-toggle {
   min-height: 40px;
-  padding-inline: 96px;
-  margin-top: 32px;
+  padding-inline: 48px;
+  margin-top: 16px;
   position: sticky;
   inset-inline-start: 0;
   flex-shrink: 0;
@@ -298,7 +324,7 @@ body {
   justify-content: space-between;
   height: 40px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
 }
 
 .view-tabs {
@@ -420,7 +446,7 @@ body {
 .main-content {
   width: 100%;
   margin: 0 auto;
-  padding: 16px 96px 48px;
+  padding: 16px 48px 24px;
   background: var(--bg-soft);
   display: flex;
   justify-content: center;
@@ -434,7 +460,7 @@ body {
   display: flex;
   justify-content: center;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -563,8 +589,8 @@ body {
 
 .kanban-column {
   flex: 1;
-  min-width: 240px;
-  max-width: 280px;
+  min-width: 280px;
+  max-width: 340px;
   padding: 0;
   margin-bottom: 16px;
   box-sizing: border-box;
@@ -806,7 +832,7 @@ body {
   border-right: none;
 }
 
-.jobs-table th.col-icon {
+.jobs-table th.col-checkbox {
   width: 50px;
   padding-left: 16px;
 }
@@ -861,9 +887,10 @@ body {
   border-right: none;
 }
 
-.jobs-table td.td-icon {
+.jobs-table td.td-checkbox {
   padding-left: 16px;
   width: 50px;
+  cursor: default;
 }
 
 .jobs-table td.td-title {
@@ -945,7 +972,7 @@ body {
 /* Calendar View Styles */
 .calendar-wrapper {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
   background: var(--bg-soft);
 }
 
@@ -1039,20 +1066,20 @@ body {
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;
-  aspect-ratio: 7 / 6;
+  grid-auto-rows: minmax(70px, 90px);
 }
 
 .calendar-day {
   border-right: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 6px;
+  padding: 4px;
   background: var(--bg-main);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 100px;
+  min-height: 70px;
+  max-height: 90px;
 }
 
 .calendar-day:nth-child(7n) {
@@ -1086,14 +1113,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   position: relative;
   z-index: 1;
   flex-shrink: 0;
 }
 
 .calendar-day-number {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -1179,16 +1206,16 @@ body {
 .calendar-events {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
   overflow: hidden;
 }
 
 .calendar-event-card {
   background: white;
-  border-radius: 3px;
-  padding: 3px 4px;
-  font-size: 11px;
+  border-radius: 2px;
+  padding: 2px 3px;
+  font-size: 10px;
   cursor: pointer;
   transition: background 20ms ease-in;
   box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
@@ -1196,6 +1223,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .calendar-event-card:hover {
@@ -1223,16 +1251,17 @@ body {
   color: rgb(55, 53, 47);
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .calendar-event-company {
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(55, 53, 47, 0.65);
-  margin-top: 1px;
+  margin-top: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
+  display: none;
 }
 
 .calendar-more-events {
@@ -1317,9 +1346,211 @@ body {
   transform: translateY(0);
 }
 
+/* Checkboxes */
+.table-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent, #007aff);
+  border-radius: 3px;
+}
+
+.table-checkbox:hover {
+  opacity: 0.8;
+}
+
+/* Table Actions Bar */
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-main);
+}
+
+.table-actions-top {
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  border-radius: 8px 8px 0 0;
+  margin-bottom: -1px;
+}
+
+.btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 20ms ease-in;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.btn-delete {
+  background: transparent;
+  border-color: rgba(235, 87, 87, 0.3);
+  color: rgb(235, 87, 87);
+}
+
+.btn-delete:hover {
+  background: rgba(235, 87, 87, 0.1);
+  border-color: rgb(235, 87, 87);
+}
+
+.btn-delete svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+#selected-count {
+  font-weight: 600;
+}
+
+/* Pagination */
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-soft);
+  border-top: 1px solid rgba(55, 53, 47, 0.09);
+  margin-top: 8px;
+  border-radius: 8px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 140px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-btn {
+  user-select: none;
+  transition: background 20ms ease-in;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  color: var(--text-secondary);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pagination-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 4px;
+}
+
+.page-number {
+  user-select: none;
+  transition: background 20ms ease-in;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.page-number:hover {
+  background: var(--bg-hover);
+}
+
+.page-number.active {
+  background: rgba(55, 53, 47, 0.08);
+  color: var(--text-primary);
+}
+
+.page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+  user-select: none;
+}
+
+.pagination-size {
+  min-width: 140px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.page-size-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  font-size: 14px;
+  background: var(--bg-main);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  line-height: 1.5;
+}
+
+.page-size-select:hover {
+  background: var(--bg-hover);
+}
+
+.page-size-select:focus {
+  outline: none;
+  background: var(--bg-main);
+}
+
 @media (max-width: 768px) {
   .header-content {
     padding: 16px 24px;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .btn-profile span {
+    display: none;
+  }
+
+  .btn-profile {
+    padding: 8px 12px;
   }
 
   .search-section {

@@ -115,9 +115,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'openProfileSetup') {
-    // Open profile setup page
+    // Open profile setup page (old wizard - kept for backward compatibility)
     chrome.tabs.create({
       url: chrome.runtime.getURL('autofill/profile-setup.html')
+    });
+  }
+
+  if (message.action === 'openProfile') {
+    // Open new profile page (view mode with inline editing)
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('autofill/profile.html')
     });
   }
 });

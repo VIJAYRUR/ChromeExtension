@@ -9,6 +9,16 @@ let uploadedCoverLetter = null;
 document.addEventListener('DOMContentLoaded', () => {
   loadExistingProfile();
   setupEventListeners();
+
+  // Check if a specific step was requested via URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedStep = urlParams.get('step');
+
+  if (requestedStep) {
+    currentStep = parseInt(requestedStep);
+    console.log('[Profile Setup] Navigating to step:', currentStep);
+  }
+
   updateStepDisplay();
 });
 
@@ -18,7 +28,12 @@ function setupEventListeners() {
   document.getElementById('prevBtn').addEventListener('click', prevStep);
   document.getElementById('profile-form').addEventListener('submit', saveProfile);
   document.getElementById('closeBtn')?.addEventListener('click', () => {
-    window.close();
+    // If in iframe, notify parent
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'profileSaved' }, '*');
+    } else {
+      window.close();
+    }
   });
 
   // Resume upload
@@ -262,18 +277,138 @@ window.removeEntry = function(entryId) {
 async function loadExistingProfile() {
   const result = await chrome.storage.local.get(['userProfile']);
   if (result.userProfile) {
-    console.log('[Profile Setup] Loading existing profile...');
-    populateForm(result.userProfile);
+    console.log('[Profile Setup] 📂 Loading existing profile...');
+    const restored = populateForm(result.userProfile);
+
+    // Show a brief notification about what was restored
+    if (restored.hasData) {
+      const message = `Profile loaded: ${restored.summary.join(', ')}`;
+      console.log(`[Profile Setup] ✅ ${message}`);
+
+      // Optional: Show a toast notification
+      showNotification('Profile loaded successfully!', 'success');
+    }
+  } else {
+    console.log('[Profile Setup] 📝 No existing profile found - starting fresh');
   }
 }
 
 function populateForm(profile) {
+  console.log('[Profile Setup] 🔄 Populating form with profile data:', profile);
+
+  const summary = [];
+  let fieldCount = 0;
+
+  // 1. Populate simple text/select fields
   Object.keys(profile).forEach(key => {
     const input = document.getElementById(key);
-    if (input) {
+    if (input && typeof profile[key] === 'string') {
       input.value = profile[key] || '';
+      fieldCount++;
+      console.log(`[Profile Setup] ✓ Populated ${key}:`, profile[key]);
     }
   });
+
+  if (fieldCount > 0) {
+    summary.push(`${fieldCount} fields`);
+  }
+
+  // 2. Restore resume file
+  if (profile.resumeFile) {
+    uploadedResume = {
+      name: profile.resumeFile.name,
+      type: profile.resumeFile.type,
+      size: profile.resumeFile.size,
+      data: profile.resumeFile.data // Keep base64 data
+    };
+
+    // Update UI to show uploaded state
+    const uploadContent = document.querySelector('.upload-content');
+    const uploadSuccess = document.getElementById('uploadSuccess');
+    const uploadFilename = document.getElementById('uploadFilename');
+
+    if (uploadContent && uploadSuccess && uploadFilename) {
+      uploadContent.style.display = 'none';
+      uploadSuccess.style.display = 'flex';
+      uploadFilename.textContent = profile.resumeFile.name;
+    }
+
+    summary.push('resume');
+    console.log('[Profile Setup] ✅ Resume restored:', profile.resumeFile.name);
+  }
+
+  // 3. Restore work experiences
+  if (profile.experiences && Array.isArray(profile.experiences) && profile.experiences.length > 0) {
+    // Clear any existing entries first
+    const experienceContainer = document.getElementById('experienceContainer');
+    if (experienceContainer) {
+      experienceContainer.innerHTML = '';
+      experienceCount = 0; // Reset counter
+    }
+
+    // Add each experience entry
+    profile.experiences.forEach((exp, index) => {
+      addExperienceEntry();
+
+      // Populate each field in the experience
+      const fields = ['company', 'title', 'location', 'startDate', 'endDate', 'responsibilities'];
+      fields.forEach(field => {
+        const input = document.querySelector(`[name="experiences[${experienceCount}][${field}]"]`);
+        if (input && exp[field]) {
+          input.value = exp[field];
+        }
+      });
+    });
+
+    summary.push(`${profile.experiences.length} experience(s)`);
+    console.log(`[Profile Setup] ✅ Restored ${profile.experiences.length} work experience(s)`);
+  }
+
+  // 4. Restore education entries
+  if (profile.education && Array.isArray(profile.education) && profile.education.length > 0) {
+    // Clear any existing entries first
+    const educationContainer = document.getElementById('educationContainer');
+    if (educationContainer) {
+      educationContainer.innerHTML = '';
+      educationCount = 0; // Reset counter
+    }
+
+    // Add each education entry
+    profile.education.forEach((edu, index) => {
+      addEducationEntry();
+
+      // Populate each field in the education
+      const fields = ['degree', 'university', 'major', 'startDate', 'endDate', 'gpa'];
+      fields.forEach(field => {
+        const input = document.querySelector(`[name="education[${educationCount}][${field}]"]`);
+        if (input && edu[field]) {
+          input.value = edu[field];
+        }
+      });
+    });
+
+    summary.push(`${profile.education.length} education(s)`);
+    console.log(`[Profile Setup] ✅ Restored ${profile.education.length} education(s)`);
+  }
+
+  // 5. Restore cover letter file (if you have this feature)
+  if (profile.coverLetterFile) {
+    uploadedCoverLetter = {
+      name: profile.coverLetterFile.name,
+      type: profile.coverLetterFile.type,
+      size: profile.coverLetterFile.size,
+      data: profile.coverLetterFile.data
+    };
+    summary.push('cover letter');
+    console.log('[Profile Setup] ✅ Cover letter restored:', profile.coverLetterFile.name);
+  }
+
+  console.log('[Profile Setup] ✅ Form population complete!');
+
+  return {
+    hasData: summary.length > 0,
+    summary: summary
+  };
 }
 
 function nextStep() {
@@ -446,6 +581,11 @@ async function saveProfile(e) {
     await chrome.storage.local.set({ userProfile: profile });
     console.log('[Profile Setup] ✅ Profile saved successfully!');
 
+    // Notify parent window (if in iframe)
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'profileSaved', profile }, '*');
+    }
+
     // Show success message
     document.getElementById('profile-form').style.display = 'none';
     document.querySelector('.progress-bar').style.display = 'none';
@@ -497,4 +637,63 @@ async function loadDraft() {
 
 // Call loadDraft after DOM is ready
 setTimeout(loadDraft, 100);
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+  console.log(`[Profile Setup] 🔔 ${type.toUpperCase()}: ${message}`);
+
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: ${type === 'success' ? '#34c759' : type === 'error' ? '#ff3b30' : '#007aff'};
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  document.body.appendChild(notification);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// Add CSS animations for notifications
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
 

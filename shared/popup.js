@@ -18,6 +18,13 @@ document.getElementById('open-dashboard').addEventListener('click', () => {
   });
 });
 
+// Open profile
+document.getElementById('open-profile').addEventListener('click', () => {
+  chrome.tabs.create({
+    url: chrome.runtime.getURL('autofill/profile.html')
+  });
+});
+
 // Toggle filter panel (only works on LinkedIn jobs pages)
 document.getElementById('toggle-panel').addEventListener('click', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

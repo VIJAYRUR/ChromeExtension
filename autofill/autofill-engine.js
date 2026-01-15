@@ -2,10 +2,21 @@
 
 class AutofillEngine {
   constructor() {
+    // Initialize intelligent systems
+    this.semanticMatcher = new SemanticFieldMatcher();
+    this.valueMapper = new IntelligentValueMapper();
+    this.platformIntelligence = new ATSPlatformIntelligence();
+
+    // Legacy systems (keep for backward compatibility)
     this.platformDetector = new PlatformDetector();
     this.fieldMappings = this.initializeFieldMappings();
+
+    // State
     this.filledFields = new Set();
     this.isAutofilling = false;
+    this.useIntelligentMatching = true; // Feature flag
+
+    console.log('[Autofill Engine] 🧠 Intelligent autofill system initialized');
   }
 
   initializeFieldMappings() {
@@ -26,12 +37,12 @@ class AutofillEngine {
       mobileNumber: ['mobile', 'mobile-number', 'cell-phone', 'cellphone'],
 
       // Address fields
-      address: ['address', 'street', 'address-line-1', 'address1', 'street-address', 'addressline1'],
+      address: ['address', 'street', 'address-line-1', 'address1', 'street-address', 'addressline1', 'home-address', 'residential-address'],
       address2: ['address-line-2', 'address2', 'apt', 'suite', 'unit', 'addressline2'],
-      city: ['city', 'town', 'locality'],
-      state: ['state', 'province', 'region', 'stateprovince'],
+      city: ['city', 'town', 'locality', 'current-city', 'location-city'],
+      state: ['state', 'province', 'region', 'stateprovince', 'current-state'],
       zipCode: ['zip', 'zipcode', 'zip-code', 'postal', 'postalcode', 'postal-code', 'postcode'],
-      country: ['country', 'nation'],
+      country: ['country', 'nation', 'current-country'],
 
       // Professional fields
       linkedin: ['linkedin', 'linkedin-url', 'linkedin-profile', 'linkedinurl'],
@@ -100,15 +111,24 @@ class AutofillEngine {
     this.isAutofilling = true;
     this.filledFields.clear();
 
-    console.log('[Autofill] 🚀 Starting autofill...');
-    
+    console.log('[Autofill] 🚀 Starting intelligent autofill...');
+
     try {
       const platform = this.platformDetector.detectPlatform();
       console.log('[Autofill] 🎯 Detected platform:', platform);
 
-      // Get all form fields
-      const fields = this.findAllFormFields();
+      // Wait for dynamic content to load
+      await this.waitForFormToLoad();
+
+      // Get all form fields with retry
+      let fields = await this.findFormFieldsWithRetry();
       console.log('[Autofill] 📝 Found', fields.length, 'form fields');
+
+      if (fields.length === 0) {
+        console.warn('[Autofill] ⚠️ No form fields found, setting up dynamic monitoring...');
+        this.setupDynamicFormMonitoring(resumeData);
+        return;
+      }
 
       // Fill fields based on platform-specific logic
       if (platform === 'workday') {
@@ -122,11 +142,14 @@ class AutofillEngine {
         await this.fillGenericForm(fields, resumeData);
       }
 
+      // Set up monitoring for fields that appear later
+      this.setupDynamicFormMonitoring(resumeData);
+
       console.log('[Autofill] ✅ Autofill complete! Filled', this.filledFields.size, 'fields');
-      
+
       // Show success notification
       this.showNotification(`✅ Autofilled ${this.filledFields.size} fields`, 'success');
-      
+
     } catch (error) {
       console.error('[Autofill] ❌ Error during autofill:', error);
       this.showNotification('❌ Autofill failed', 'error');
@@ -135,21 +158,190 @@ class AutofillEngine {
     }
   }
 
+  /**
+   * Wait for form to load (for dynamic forms)
+   */
+  async waitForFormToLoad() {
+    console.log('[Autofill] ⏳ Waiting for form to load...');
+
+    // Wait for common form selectors
+    const selectors = [
+      'form',
+      'input[type="text"]',
+      'input[type="email"]',
+      '[role="form"]',
+      '[class*="form"]',
+      '[id*="form"]'
+    ];
+
+    let attempts = 0;
+    const maxAttempts = 10;
+    const delayMs = 300;
+
+    while (attempts < maxAttempts) {
+      for (const selector of selectors) {
+        if (document.querySelector(selector)) {
+          console.log('[Autofill] ✓ Form detected via selector:', selector);
+          // Wait a bit more for full render
+          await this.delay(500);
+          return;
+        }
+      }
+
+      attempts++;
+      await this.delay(delayMs);
+    }
+
+    console.log('[Autofill] ⚠️ Form detection timeout, proceeding anyway...');
+  }
+
+  /**
+   * Find form fields with retry logic
+   */
+  async findFormFieldsWithRetry(maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`[Autofill] 🔍 Finding form fields (attempt ${attempt}/${maxAttempts})...`);
+
+      const fields = this.findAllFormFields();
+
+      if (fields.length > 0) {
+        return fields;
+      }
+
+      if (attempt < maxAttempts) {
+        console.log('[Autofill] ⏳ No fields found, waiting before retry...');
+        await this.delay(1000);
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * Set up MutationObserver to detect and fill dynamically added fields
+   */
+  setupDynamicFormMonitoring(resumeData) {
+    // Disconnect any existing observer
+    if (this.formObserver) {
+      this.formObserver.disconnect();
+    }
+
+    console.log('[Autofill] 👁️ Setting up dynamic form monitoring...');
+
+    this.formObserver = new MutationObserver(async (mutations) => {
+      // Debounce rapid mutations
+      if (this.observerTimeout) {
+        clearTimeout(this.observerTimeout);
+      }
+
+      this.observerTimeout = setTimeout(async () => {
+        console.log('[Autofill] 🔄 DOM changed, checking for new fields...');
+
+        // Check if new form fields were added
+        const newFields = this.findAllFormFields().filter(
+          field => !this.filledFields.has(field.element)
+        );
+
+        if (newFields.length > 0) {
+          console.log(`[Autofill] 🆕 Found ${newFields.length} new fields, autofilling...`);
+
+          for (const field of newFields) {
+            try {
+              const fieldType = this.identifyFieldType(field);
+              if (fieldType) {
+                const value = this.getValueForField(fieldType, resumeData, field);
+                if (value !== null && value !== undefined && value !== '') {
+                  await this.fillField(field.element, value);
+                  await this.delay(50);
+                }
+              }
+            } catch (error) {
+              console.error('[Autofill] ❌ Error filling new field:', error);
+            }
+          }
+        }
+      }, 500); // Debounce 500ms
+    });
+
+    // Start observing
+    this.formObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: false
+    });
+
+    console.log('[Autofill] ✓ Dynamic monitoring active');
+  }
+
   findAllFormFields() {
     try {
       const fields = [];
+      const processedElements = new Set();
 
-      // Find all input, textarea, and select elements
-      const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"])');
-      const textareas = document.querySelectorAll('textarea');
-      const selects = document.querySelectorAll('select');
+      // Helper to process elements from a root
+      const processRoot = (root) => {
+        // Find all input, textarea, and select elements
+        const inputs = root.querySelectorAll('input:not([type="submit"]):not([type="button"]):not([type="image"]):not([type="reset"])');
+        const textareas = root.querySelectorAll('textarea');
+        const selects = root.querySelectorAll('select');
+        const contentEditables = root.querySelectorAll('[contenteditable="true"]');
 
-      console.log(`[Autofill] 🔍 Found ${inputs.length} inputs, ${textareas.length} textareas, ${selects.length} selects`);
+        return [...inputs, ...textareas, ...selects, ...contentEditables];
+      };
 
-      [...inputs, ...textareas, ...selects].forEach(field => {
+      // 1. Process main document
+      let allElements = processRoot(document);
+
+      // 2. Process iframes (for embedded application forms)
+      try {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+              console.log('[Autofill] 🖼️ Processing iframe:', iframe.src || iframe.id);
+              const iframeElements = processRoot(iframeDoc);
+              allElements = [...allElements, ...iframeElements];
+            }
+          } catch (e) {
+            // Cross-origin iframe, skip silently
+            console.log('[Autofill] ⚠️ Cannot access iframe (cross-origin):', iframe.src);
+          }
+        });
+      } catch (error) {
+        console.warn('[Autofill] ⚠️ Error processing iframes:', error);
+      }
+
+      // 3. Process shadow DOMs (for web components)
+      try {
+        const shadowHosts = document.querySelectorAll('*');
+        shadowHosts.forEach(host => {
+          if (host.shadowRoot) {
+            console.log('[Autofill] 🌑 Processing shadow DOM in:', host.tagName);
+            const shadowElements = processRoot(host.shadowRoot);
+            allElements = [...allElements, ...shadowElements];
+          }
+        });
+      } catch (error) {
+        console.warn('[Autofill] ⚠️ Error processing shadow DOMs:', error);
+      }
+
+      console.log(`[Autofill] 🔍 Found ${allElements.length} total form elements`);
+
+      // Process all elements
+      allElements.forEach(field => {
         try {
-          if (this.isFieldVisible(field) || field.type === 'file') {
-            fields.push({
+          // Skip if already processed
+          if (processedElements.has(field)) return;
+          processedElements.add(field);
+
+          const isVisible = this.isFieldVisible(field);
+          const isFile = field.type === 'file';
+          const isHiddenButRelevant = field.type === 'hidden' && (field.name || field.id);
+
+          // Include visible fields, file inputs, or hidden fields with identifiers
+          if (isVisible || isFile || isHiddenButRelevant) {
+            const fieldData = {
               element: field,
               type: field.tagName.toLowerCase(),
               inputType: field.type || 'text',
@@ -159,16 +351,25 @@ class AutofillEngine {
               label: this.getFieldLabel(field),
               ariaLabel: field.getAttribute('aria-label') || '',
               dataTestId: field.getAttribute('data-testid') || '',
+              dataAutomationId: field.getAttribute('data-automation-id') || '',
+              dataQa: field.getAttribute('data-qa') || '',
+              dataFieldName: field.getAttribute('data-field-name') || '',
               className: field.className || '',
-              accept: field.accept || ''
-            });
+              accept: field.accept || '',
+              value: field.value || '',
+              isVisible: isVisible,
+              role: field.getAttribute('role') || '',
+              autocomplete: field.getAttribute('autocomplete') || ''
+            };
+
+            fields.push(fieldData);
           }
         } catch (error) {
           console.error('[Autofill] ❌ Error processing field:', field, error);
         }
       });
 
-      console.log(`[Autofill] ✓ Processed ${fields.length} visible/file fields`);
+      console.log(`[Autofill] ✓ Processed ${fields.length} fields (${fields.filter(f => f.isVisible).length} visible)`);
       return fields;
 
     } catch (error) {
@@ -180,6 +381,7 @@ class AutofillEngine {
   isFieldVisible(element) {
     if (!element) return false;
 
+<<<<<<< HEAD
     const style = window.getComputedStyle(element);
 
     // Check display and visibility
@@ -201,26 +403,122 @@ class AutofillEngine {
     }
 
     return true;
+=======
+    try {
+      // Check if element is connected to DOM
+      if (!element.isConnected) return false;
+
+      // Get computed style
+      const style = window.getComputedStyle(element);
+
+      // Check display and visibility
+      if (style.display === 'none') return false;
+      if (style.visibility === 'hidden') return false;
+
+      // Allow low opacity (some forms use it for animation)
+      if (parseFloat(style.opacity) === 0) return false;
+
+      // Check dimensions
+      const rect = element.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return false;
+
+      // Check if element or parent has hidden attribute
+      if (element.hasAttribute('hidden')) return false;
+
+      // Check if any parent is hidden (walk up the tree, max 10 levels)
+      let parent = element.parentElement;
+      let depth = 0;
+      const maxDepth = 10;
+
+      while (parent && depth < maxDepth) {
+        const parentStyle = window.getComputedStyle(parent);
+        if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') {
+          return false;
+        }
+        parent = parent.parentElement;
+        depth++;
+      }
+
+      return true;
+    } catch (error) {
+      // If we can't determine visibility, assume it's visible
+      console.warn('[Autofill] ⚠️ Error checking field visibility:', error);
+      return true;
+    }
+>>>>>>> 612726c (modified the profile page, also included profile button in application tracking dashboad)
   }
 
   getFieldLabel(field) {
-    // Try to find associated label
-    if (field.id) {
-      const label = document.querySelector(`label[for="${field.id}"]`);
-      if (label) return label.textContent.trim();
-    }
+    try {
+      // Strategy 1: Label with 'for' attribute
+      if (field.id) {
+        const label = document.querySelector(`label[for="${field.id}"]`);
+        if (label) return this.cleanLabelText(label.textContent);
+      }
 
-    // Check parent label
-    const parentLabel = field.closest('label');
-    if (parentLabel) return parentLabel.textContent.trim();
+      // Strategy 2: Parent label
+      const parentLabel = field.closest('label');
+      if (parentLabel) return this.cleanLabelText(parentLabel.textContent);
 
-    // Check previous sibling
-    let prev = field.previousElementSibling;
-    if (prev && prev.tagName === 'LABEL') {
-      return prev.textContent.trim();
+      // Strategy 3: Previous sibling label
+      let prev = field.previousElementSibling;
+      if (prev && prev.tagName === 'LABEL') {
+        return this.cleanLabelText(prev.textContent);
+      }
+
+      // Strategy 4: Look for nearby text (within parent container)
+      const parent = field.parentElement;
+      if (parent) {
+        // Check for span, div, or p before the input
+        const textElements = parent.querySelectorAll('span, div, p, legend');
+        for (const el of textElements) {
+          const text = this.cleanLabelText(el.textContent);
+          if (text && text.length > 0 && text.length < 200) {
+            return text;
+          }
+        }
+      }
+
+      // Strategy 5: Check aria-label or aria-labelledby
+      if (field.getAttribute('aria-label')) {
+        return this.cleanLabelText(field.getAttribute('aria-label'));
+      }
+
+      if (field.getAttribute('aria-labelledby')) {
+        const labelId = field.getAttribute('aria-labelledby');
+        const labelEl = document.getElementById(labelId);
+        if (labelEl) return this.cleanLabelText(labelEl.textContent);
+      }
+
+      // Strategy 6: Check data attributes
+      const dataLabel = field.getAttribute('data-label') || field.getAttribute('data-field-label');
+      if (dataLabel) return this.cleanLabelText(dataLabel);
+
+      // Strategy 7: Look at parent's parent (for complex nested structures)
+      const grandparent = parent?.parentElement;
+      if (grandparent) {
+        const labels = grandparent.querySelectorAll('label');
+        if (labels.length === 1) {
+          return this.cleanLabelText(labels[0].textContent);
+        }
+      }
+
+    } catch (error) {
+      console.error('[Autofill] Error getting field label:', error);
     }
 
     return '';
+  }
+
+  cleanLabelText(text) {
+    if (!text) return '';
+    return text
+      .trim()
+      .replace(/\s+/g, ' ')  // Normalize whitespace
+      .replace(/\*$/, '')     // Remove asterisks (required field markers)
+      .replace(/\(optional\)/i, '')  // Remove "(optional)"
+      .replace(/\(required\)/i, '')  // Remove "(required)"
+      .trim();
   }
 
   async fillGenericForm(fields, resumeData) {
@@ -236,10 +534,15 @@ class AutofillEngine {
           const fieldType = this.identifyFieldType(field);
 
           if (fieldType) {
-            const value = this.getValueForField(fieldType, resumeData);
-            if (value) {
+            const value = this.getValueForField(fieldType, resumeData, field);
+            if (value !== null && value !== undefined && value !== '') {
+              console.log(`[Autofill] ✍️ Filling ${fieldType} with value: ${value}`);
               await this.fillField(field.element, value);
+            } else {
+              console.log(`[Autofill] ⏭️ Skipping ${fieldType} - no value available`);
             }
+          } else {
+            console.log(`[Autofill] ❓ Could not identify field type for: ${field.label || field.name || field.id}`);
           }
         } catch (error) {
           console.error('[Autofill] ❌ Error filling field:', field, error);
@@ -274,7 +577,7 @@ class AutofillEngine {
           const fieldType = this.identifyFieldType(field);
 
           if (fieldType) {
-            const value = this.getValueForField(fieldType, resumeData);
+            const value = this.getValueForField(fieldType, resumeData, field);
             if (value) {
               console.log(`[Autofill] 🏢 Workday filling ${fieldType}: ${value}`);
               await this.fillField(field.element, value);
@@ -322,7 +625,7 @@ class AutofillEngine {
         const fieldType = this.identifyFieldType(field);
 
         if (fieldType) {
-          const value = this.getValueForField(fieldType, resumeData);
+          const value = this.getValueForField(fieldType, resumeData, field);
           if (value) {
             console.log(`[Autofill] 📝 Attempting to fill ${fieldType}: ${value}`);
             await this.fillField(field.element, value);
@@ -350,7 +653,7 @@ class AutofillEngine {
           const fieldType = this.identifyFieldType(field);
 
           if (fieldType) {
-            const value = this.getValueForField(fieldType, resumeData);
+            const value = this.getValueForField(fieldType, resumeData, field);
             if (value) {
               await this.fillField(field.element, value);
             }
@@ -367,6 +670,51 @@ class AutofillEngine {
   }
 
   identifyFieldType(field) {
+    // Use intelligent semantic matching if enabled
+    if (this.useIntelligentMatching) {
+      return this.identifyFieldTypeIntelligent(field);
+    }
+
+    // Fallback to legacy matching
+    return this.identifyFieldTypeLegacy(field);
+  }
+
+  /**
+   * Intelligent field type identification using semantic matching
+   */
+  identifyFieldTypeIntelligent(field) {
+    // Try legacy matching FIRST (it's more comprehensive)
+    const legacyMatch = this.identifyFieldTypeLegacy(field);
+
+    if (legacyMatch) {
+      console.log(`[Autofill] 🎯 Legacy match: ${legacyMatch} for field: ${field.label || field.name || field.id}`);
+      return legacyMatch;
+    }
+
+    // If legacy fails, try intelligent matching
+    const context = this.semanticMatcher.getSectionContext(field.element);
+    const match = this.semanticMatcher.matchField(field, context);
+
+    // Lower threshold to 30% to be more aggressive
+    if (match.fieldType && match.confidence >= 0.3) {
+      console.log(
+        `[Autofill] 🧠 Intelligent match: ${match.fieldType} ` +
+        `(confidence: ${(match.confidence * 100).toFixed(0)}%) ` +
+        `for field: ${field.label || field.name || field.id}`
+      );
+      console.log(`[Autofill] 💡 Reasoning: ${match.reasoning}`);
+
+      return match.fieldType;
+    }
+
+    console.log(`[Autofill] ❓ No match found for field: ${field.label || field.name || field.id}`);
+    return null;
+  }
+
+  /**
+   * Legacy field type identification (backward compatibility)
+   */
+  identifyFieldTypeLegacy(field) {
     const searchText = [
       field.name,
       field.id,
@@ -426,7 +774,7 @@ class AutofillEngine {
 
       for (const keyword of keywords) {
         if (searchText.includes(keyword)) {
-          console.log(`[Autofill] 🎯 Identified field type: ${fieldType} for field: ${field.label || field.name || field.id}`);
+          console.log(`[Autofill] 🎯 Legacy match: ${fieldType} for field: ${field.label || field.name || field.id}`);
           return fieldType;
         }
       }
@@ -435,7 +783,27 @@ class AutofillEngine {
     return null;
   }
 
-  getValueForField(fieldType, resumeData) {
+  getValueForField(fieldType, resumeData, field = null) {
+    // Always try legacy first (it's more comprehensive)
+    const legacyValue = this.getValueForFieldLegacy(fieldType, resumeData);
+
+    if (legacyValue !== null && legacyValue !== undefined && legacyValue !== '') {
+      return legacyValue;
+    }
+
+    // If legacy fails and intelligent matching is enabled, try intelligent mapper
+    if (this.useIntelligentMatching && field) {
+      const value = this.valueMapper.getValue(fieldType, resumeData, field);
+      if (value !== null && value !== undefined && value !== '') {
+        console.log(`[Autofill] 🧠 Intelligent value mapping: ${fieldType} = ${value}`);
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  getValueForFieldLegacy(fieldType, resumeData) {
     const mapping = {
       // Personal Information
       firstName: () => resumeData.firstName || this.splitName(resumeData.fullName).firstName,
@@ -677,7 +1045,7 @@ class AutofillEngine {
   }
 
   async fillField(element, value) {
-    if (!element || !value || this.filledFields.has(element)) {
+    if (!element || value === null || value === undefined || this.filledFields.has(element)) {
       return;
     }
 
@@ -686,48 +1054,207 @@ class AutofillEngine {
       const fieldId = element.name || element.id || element.placeholder || 'unknown';
       const fieldLabel = this.getFieldLabel(element) || fieldId;
 
-      // Focus the field
+      console.log(`[Autofill] 🖊️ Filling: "${fieldLabel}" with "${value}"`);
+
+      // Focus the field first
       element.focus();
+      await this.delay(50);
 
-      // Clear existing value
-      element.value = '';
-
-      // Set new value
+      // Handle different field types
       if (element.tagName === 'SELECT') {
         const success = this.fillSelectField(element, value);
         if (!success) {
-          console.warn(`[Autofill] ⚠️ Could not find matching option for select field: ${fieldLabel}, value: ${value}`);
-          return; // Don't mark as filled if we couldn't find a match
+          console.warn(`[Autofill] ⚠️ Could not find matching option for select: ${fieldLabel}`);
+          return;
         }
+      } else if (element.type === 'radio') {
+        const success = this.fillRadioField(element, value);
+        if (!success) {
+          console.warn(`[Autofill] ⚠️ Could not select radio button: ${fieldLabel}`);
+          return;
+        }
+      } else if (element.type === 'checkbox') {
+        this.fillCheckboxField(element, value);
+      } else if (element.type === 'date') {
+        this.fillDateField(element, value);
+      } else if (element.type === 'email') {
+        this.fillEmailField(element, value);
+      } else if (element.type === 'tel') {
+        this.fillPhoneField(element, value);
+      } else if (element.getAttribute('contenteditable') === 'true') {
+        this.fillContentEditableField(element, value);
       } else {
-        // Check if this is a skills/autocomplete field
-        const isSkillsField = fieldLabel.toLowerCase().includes('skill') ||
-                             fieldId.toLowerCase().includes('skill') ||
-                             element.getAttribute('role') === 'combobox' ||
-                             element.getAttribute('aria-autocomplete');
+        // Standard text/textarea field
+        // Check if it's a special autocomplete field
+        const isAutocomplete = element.getAttribute('role') === 'combobox' ||
+                              element.getAttribute('aria-autocomplete') ||
+                              fieldLabel.toLowerCase().includes('skill');
 
-        if (isSkillsField && typeof value === 'string' && value.includes(',')) {
-          // For skills fields with comma-separated values, try to trigger autocomplete for each skill
+        if (isAutocomplete && typeof value === 'string' && value.includes(',')) {
           await this.fillSkillsField(element, value);
         } else {
-          element.value = value;
+          // Use native setter to bypass React/Vue
+          this.setValueNatively(element, value);
         }
       }
 
-      // Trigger events to ensure the form recognizes the change
+      // Trigger comprehensive events
       this.triggerChangeEvents(element);
 
       // Mark as filled
       this.filledFields.add(element);
 
-      // Small delay for visual effect
+      // Small delay between fields
       await this.delay(50);
 
-      console.log(`[Autofill] ✓ Filled: "${fieldLabel}" (${fieldId}) = "${value}"`);
+      console.log(`[Autofill] ✓ Successfully filled: "${fieldLabel}"`);
 
     } catch (error) {
       console.error('[Autofill] ❌ Error filling field:', element.name || element.id, error);
     }
+  }
+
+  /**
+   * Set value using native setters (bypasses framework restrictions)
+   */
+  setValueNatively(element, value) {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      element.constructor.prototype,
+      'value'
+    );
+
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(element, value);
+    } else {
+      element.value = value;
+    }
+  }
+
+  /**
+   * Fill radio button field
+   */
+  fillRadioField(element, value) {
+    const name = element.name;
+    if (!name) {
+      element.checked = this.parseBooleanValue(value);
+      return true;
+    }
+
+    // Find all radio buttons with the same name
+    const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
+    const valueStr = String(value).toLowerCase();
+
+    // Try to find matching radio button
+    for (const radio of radios) {
+      const radioValue = (radio.value || '').toLowerCase();
+      const radioLabel = (this.getFieldLabel(radio) || '').toLowerCase();
+
+      if (radioValue === valueStr || radioLabel.includes(valueStr) || valueStr.includes(radioLabel)) {
+        radio.checked = true;
+        this.triggerChangeEvents(radio);
+        console.log(`[Autofill] ✓ Selected radio: ${radio.value}`);
+        return true;
+      }
+    }
+
+    // Fallback: check first radio if value suggests "yes" or positive
+    if (this.parseBooleanValue(value) && radios.length > 0) {
+      radios[0].checked = true;
+      this.triggerChangeEvents(radios[0]);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Fill checkbox field
+   */
+  fillCheckboxField(element, value) {
+    element.checked = this.parseBooleanValue(value);
+    this.triggerChangeEvents(element);
+  }
+
+  /**
+   * Fill date field
+   */
+  fillDateField(element, value) {
+    // Ensure date is in YYYY-MM-DD format
+    let formattedDate = value;
+
+    if (value && typeof value === 'string') {
+      // Parse various date formats
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        formattedDate = `${year}-${month}-${day}`;
+      }
+    }
+
+    this.setValueNatively(element, formattedDate);
+  }
+
+  /**
+   * Fill email field
+   */
+  fillEmailField(element, value) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(value)) {
+      this.setValueNatively(element, value);
+    } else {
+      console.warn(`[Autofill] ⚠️ Invalid email format: ${value}`);
+    }
+  }
+
+  /**
+   * Fill phone field
+   */
+  fillPhoneField(element, value) {
+    // Clean phone number
+    let phone = String(value).replace(/\D/g, '');
+
+    // Format based on length
+    if (phone.length === 10) {
+      // US format: (123) 456-7890
+      phone = `(${phone.slice(0, 3)}) ${phone.slice(3, 6)}-${phone.slice(6)}`;
+    } else if (phone.length === 11 && phone[0] === '1') {
+      // US with country code: +1 (123) 456-7890
+      phone = `+1 (${phone.slice(1, 4)}) ${phone.slice(4, 7)}-${phone.slice(7)}`;
+    }
+
+    this.setValueNatively(element, phone);
+  }
+
+  /**
+   * Fill contenteditable field
+   */
+  fillContentEditableField(element, value) {
+    element.textContent = value;
+    element.innerText = value;
+
+    // Trigger input event for contenteditable
+    const inputEvent = new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: value
+    });
+    element.dispatchEvent(inputEvent);
+  }
+
+  /**
+   * Parse boolean value from various formats
+   */
+  parseBooleanValue(value) {
+    if (typeof value === 'boolean') return value;
+
+    const str = String(value).toLowerCase().trim();
+    const truthyValues = ['yes', 'y', 'true', '1', 'on', 'checked', 'selected'];
+
+    return truthyValues.includes(str);
   }
 
   async fillSkillsField(element, skillsString) {
@@ -842,18 +1369,75 @@ class AutofillEngine {
   }
 
   triggerChangeEvents(element) {
-    // Trigger multiple events to ensure compatibility
-    const events = ['input', 'change', 'blur'];
+    // Comprehensive event triggering for maximum compatibility
 
-    events.forEach(eventType => {
-      const event = new Event(eventType, { bubbles: true, cancelable: true });
+    // 1. Standard DOM events
+    const events = [
+      { type: 'input', bubbles: true, cancelable: true },
+      { type: 'change', bubbles: true, cancelable: true },
+      { type: 'blur', bubbles: true, cancelable: false },
+      { type: 'focusout', bubbles: true, cancelable: false }
+    ];
+
+    events.forEach(({ type, bubbles, cancelable }) => {
+      const event = new Event(type, { bubbles, cancelable });
       element.dispatchEvent(event);
     });
 
-    // Also trigger React events if present
+    // 2. React-specific events
+    // React uses internal event system, need to trigger both native and React events
     if (element._valueTracker) {
       element._valueTracker.setValue('');
     }
+
+    // Trigger React's synthetic events by dispatching native events
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      'value'
+    )?.set;
+
+    const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value'
+    )?.set;
+
+    if (element instanceof HTMLInputElement && nativeInputValueSetter) {
+      nativeInputValueSetter.call(element, element.value);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    } else if (element instanceof HTMLTextAreaElement && nativeTextAreaValueSetter) {
+      nativeTextAreaValueSetter.call(element, element.value);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // 3. Vue-specific events
+    // Vue listens to input events, trigger v-model update
+    const inputEvent = new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      data: element.value
+    });
+    element.dispatchEvent(inputEvent);
+
+    // 4. Angular-specific events
+    // Angular uses zone.js, trigger both input and change
+    const changeEvent = new Event('change', { bubbles: true });
+    element.dispatchEvent(changeEvent);
+
+    // 5. Keyboard events (some forms validate on keyup)
+    const keyboardEvents = ['keydown', 'keypress', 'keyup'];
+    keyboardEvents.forEach(type => {
+      const keyEvent = new KeyboardEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        key: 'Unidentified',
+        code: 'Unidentified'
+      });
+      element.dispatchEvent(keyEvent);
+    });
+
+    // 6. Focus events
+    const focusEvent = new FocusEvent('focus', { bubbles: false });
+    element.dispatchEvent(focusEvent);
   }
 
   triggerWorkdayEvents(element) {
@@ -911,9 +1495,10 @@ class AutofillEngine {
         lastUrl = location.href;
 
         // Wait for page to load
-        setTimeout(() => {
-          if (window.resumeManager && window.resumeManager.hasResumeData()) {
-            this.autofillForm(window.resumeManager.getResumeData());
+        setTimeout(async () => {
+          const result = await chrome.storage.local.get(['userProfile']);
+          if (result.userProfile) {
+            this.autofillForm(result.userProfile);
           }
         }, 1000);
       }
@@ -928,6 +1513,45 @@ class AutofillEngine {
       clearInterval(this.urlObserver);
       this.urlObserver = null;
     }
+
+    if (this.formObserver) {
+      this.formObserver.disconnect();
+      this.formObserver = null;
+    }
+  }
+
+  /**
+   * Get autofill statistics for debugging
+   */
+  getStats() {
+    return {
+      totalFieldsFound: this.findAllFormFields().length,
+      fieldsFilled: this.filledFields.size,
+      isMonitoring: !!this.formObserver,
+      platform: this.platformDetector.getPlatformName(),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Export debug information
+   */
+  exportDebugInfo() {
+    const fields = this.findAllFormFields();
+
+    return {
+      stats: this.getStats(),
+      fields: fields.map(f => ({
+        label: f.label,
+        name: f.name,
+        id: f.id,
+        type: f.inputType,
+        visible: f.isVisible,
+        filled: this.filledFields.has(f.element)
+      })),
+      platform: this.platformDetector.detectPlatform(),
+      url: window.location.href
+    };
   }
 }
 
