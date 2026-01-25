@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Jobs Filter & Tracker",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard and smart autofill",
   "permissions": [
     "storage"
@@ -66,13 +66,27 @@
         "tracking-dashboard/job-detail.css",
         "tracking-dashboard/job-detail.js",
         "tracking-dashboard/job-tracker.js",
+        "tracking-dashboard/auth-guard.js",
+        "autofill/semantic-matcher.js",
+        "autofill/intelligent-value-mapper.js",
+        "autofill/ats-platform-intelligence.js",
         "autofill/resume-manager.js",
         "autofill/autofill-engine.js",
         "autofill/autofill-content.js",
         "autofill/profile-setup.html",
         "autofill/profile-setup.css",
         "autofill/profile-setup.js",
-        "shared/backup-manager.js"
+        "autofill/profile.html",
+        "autofill/profile.css",
+        "autofill/profile.js",
+        "auth/login.html",
+        "auth/register.html",
+        "auth/auth.css",
+        "auth/auth.js",
+        "shared/backup-manager.js",
+        "shared/auth-manager.js",
+        "shared/api-client.js",
+        "shared/sync-manager.js"
       ],
       "matches": ["<all_urls>"]
     }

@@ -23,6 +23,8 @@
       --gray-200: #e5e5e5;
       --gray-100: #f5f5f5;
       --white: #ffffff;
+      --success: #22c55e;
+      --error: #ef4444;
     }
 
     body {
@@ -37,13 +39,95 @@
       padding: 20px;
     }
 
+    /* Loading State */
+    #loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 12px;
+      color: var(--gray-500);
+      font-size: 13px;
+    }
+
+    /* Login Required State */
+    #login-required {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .login-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--gray-100);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .login-icon svg {
+      color: var(--gray-600);
+    }
+
+    .login-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .auth-buttons {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Main Content */
+    #main-content {
+      display: none;
+    }
+
     .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 20px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--gray-200);
     }
 
-    h1 {
+    .header-left h1 {
       font-size: 18px;
       color: var(--black);
       font-weight: 600;
@@ -55,6 +139,77 @@
       font-size: 13px;
       color: var(--gray-500);
       font-weight: 400;
+    }
+
+    /* User Avatar */
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--black);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      min-width: 200px;
+      z-index: 100;
+      display: none;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-info {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--gray-900);
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    .dropdown-item {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--gray-700);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.1s;
+    }
+
+    .dropdown-item:hover {
+      background: var(--gray-100);
+    }
+
+    .dropdown-item.logout {
+      color: var(--error);
+      border-top: 1px solid var(--gray-200);
     }
 
     .buttons {
@@ -75,6 +230,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      background: var(--white);
     }
 
     .btn-primary {
@@ -95,6 +251,11 @@
 
     .btn-secondary:hover {
       background: var(--gray-100);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .stats {
@@ -129,19 +290,7 @@
       color: var(--black);
     }
 
-    .footer {
-      text-align: center;
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--gray-200);
-    }
-
-    .footer-text {
-      font-size: 11px;
-      color: var(--gray-500);
-    }
-
-    .backup-section {
+    .section {
       margin-top: 16px;
       padding-top: 16px;
       border-top: 1px solid var(--gray-200);
@@ -189,95 +338,159 @@
       gap: 8px;
     }
 
-    .btn-backup,
-    .btn-restore {
+    .btn-small {
       padding: 10px 12px;
       font-size: 13px;
     }
 
-    .btn-backup {
-      background: var(--gray-900);
-      color: white;
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--gray-200);
     }
 
-    .btn-backup:hover {
-      background: var(--black);
+    .footer-text {
+      font-size: 11px;
+      color: var(--gray-500);
     }
 
-    .btn-restore {
-      background: var(--gray-200);
-      color: var(--gray-900);
+    /* Offline Warning */
+    .offline-warning {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
     }
 
-    .btn-restore:hover {
-      background: var(--gray-300);
+    /* Spinning animation for sync */
+    .spinning {
+      animation: spin 1s linear infinite;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Job Tracker</h1>
-      <div class="subtitle">Track & manage your applications</div>
+    <!-- Loading State -->
+    <div id="loading-state">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Checking authentication...</div>
     </div>
 
-    <div class="buttons">
-      <button class="btn btn-primary" id="open-dashboard">
-        Open Dashboard
-      </button>
-      <button class="btn btn-secondary" id="toggle-panel">
-        Filter Settings
-      </button>
-    </div>
-
-    <div class="stats">
-      <div class="stat-row">
-        <span class="stat-label">Total Applications</span>
-        <span class="stat-value" id="stat-total">0</span>
+    <!-- Login Required State -->
+    <div id="login-required">
+      <div class="login-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
       </div>
-      <div class="stat-row">
-        <span class="stat-label">Active</span>
-        <span class="stat-value" id="stat-active">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Interviews</span>
-        <span class="stat-value" id="stat-interviews">0</span>
+      <h2 class="login-title">Sign in to Job Tracker</h2>
+      <p class="login-subtitle">Login or create an account to track your job applications and sync across devices.</p>
+      <div class="auth-buttons">
+        <button class="btn btn-primary" id="login-btn">Sign In</button>
+        <button class="btn btn-secondary" id="register-btn">Create Account</button>
       </div>
     </div>
 
-    <!-- Backup Section -->
-    <div class="backup-section">
-      <div class="section-title">Data Backup</div>
-
-      <div class="backup-info" id="backup-info">
-        <div class="info-row">
-          <span>Profile:</span>
-          <span id="profile-status">Loading...</span>
+    <!-- Main Content (shown when authenticated) -->
+    <div id="main-content">
+      <div class="header">
+        <div class="header-left">
+          <h1>Job Tracker</h1>
+          <div class="subtitle">Track & manage your applications</div>
         </div>
-        <div class="info-row">
-          <span>Tracked Jobs:</span>
-          <span id="jobs-count">0</span>
+        <div class="user-avatar" id="user-avatar">
+          <span id="user-initials">U</span>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-name" id="user-name">User</div>
+              <div class="user-email" id="user-email">user@email.com</div>
+            </div>
+            <div class="dropdown-item" id="sync-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                <polyline points="21 3 21 9 15 9"/>
+              </svg>
+              Sync Now
+            </div>
+            <div class="dropdown-item logout" id="logout-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logout
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="backup-buttons">
-        <button class="btn btn-backup" id="export-btn">
-          📥 Export Backup
+      <div class="buttons">
+        <button class="btn btn-primary" id="open-dashboard">
+          Open Dashboard
         </button>
-        <button class="btn btn-restore" id="import-btn">
-          📤 Import Backup
+        <button class="btn btn-secondary" id="open-profile">
+          Profile
+        </button>
+        <button class="btn btn-secondary" id="toggle-panel">
+          Filter Settings
         </button>
       </div>
 
-      <input type="file" id="import-file" accept=".json" style="display: none;">
-    </div>
+      <div class="stats">
+        <div class="stat-row">
+          <span class="stat-label">Total Applications</span>
+          <span class="stat-value" id="stat-total">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Active</span>
+          <span class="stat-value" id="stat-active">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Interviews</span>
+          <span class="stat-value" id="stat-interviews">0</span>
+        </div>
+      </div>
 
-    <div class="footer">
-      <div class="footer-text">v2.1.0</div>
+      <!-- Backup Section -->
+      <div class="section">
+        <div class="section-title">Data Backup</div>
+
+        <div class="backup-info" id="backup-info">
+          <div class="info-row">
+            <span>Profile:</span>
+            <span id="profile-status">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span>Tracked Jobs:</span>
+            <span id="jobs-count">0</span>
+          </div>
+        </div>
+
+        <div class="backup-buttons">
+          <button class="btn btn-primary btn-small" id="export-btn">
+            Export Backup
+          </button>
+          <button class="btn btn-secondary btn-small" id="import-btn">
+            Import Backup
+          </button>
+        </div>
+
+        <input type="file" id="import-file" accept=".json" style="display: none;">
+      </div>
+
+      <div class="footer">
+        <div class="footer-text">v2.2.0</div>
+      </div>
     </div>
   </div>
 
   <script src="popup.js"></script>
 </body>
 </html>
-

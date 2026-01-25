@@ -33,6 +33,7 @@ class DashboardUI {
 
     await this.waitForTracker();
     await this.loadCompactMode();
+    await this.setupUserMenu();
 
     console.log('[Dashboard] ✅ JobTracker loaded with', window.jobTracker.jobs.length, 'jobs');
 
@@ -40,6 +41,95 @@ class DashboardUI {
     this.render();
 
     console.log('[Dashboard] 🎨 Dashboard initialized');
+  }
+
+  async setupUserMenu() {
+    // Wait for auth manager to be ready (with timeout to prevent blocking)
+    if (window.authManager) {
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth timeout')), 3000)
+        );
+        await Promise.race([window.authManager.init(), timeoutPromise]);
+      } catch (error) {
+        console.warn('[Dashboard] Auth init timeout or error:', error.message);
+      }
+
+      const user = window.authManager.getUser();
+      if (user) {
+        const displayName = window.authManager.getUserDisplayName();
+        const initials = window.authManager.getUserInitials();
+
+        const nameEl = document.getElementById('header-user-name');
+        const emailEl = document.getElementById('header-user-email');
+        const initialsEl = document.getElementById('header-user-initials');
+
+        if (nameEl) nameEl.textContent = displayName;
+        if (emailEl) emailEl.textContent = user.email || '';
+        if (initialsEl) initialsEl.textContent = initials;
+      }
+
+      // User avatar dropdown toggle
+      const avatarBtn = document.getElementById('user-avatar-btn');
+      const dropdown = document.getElementById('header-user-dropdown');
+
+      if (avatarBtn && dropdown) {
+        avatarBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', () => {
+          dropdown.classList.remove('show');
+        });
+      }
+
+      // Logout button
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          const confirmed = confirm('Are you sure you want to logout?');
+          if (confirmed) {
+            await window.authManager.logout();
+            window.location.href = '../auth/login.html';
+          }
+        });
+      }
+
+      // Sync button
+      const syncBtn = document.getElementById('sync-data-btn');
+      if (syncBtn) {
+        syncBtn.addEventListener('click', async () => {
+          syncBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinning">
+              <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+            Syncing...
+          `;
+
+          try {
+            const jobs = window.jobTracker.jobs || [];
+            await window.authManager.apiRequest('/jobs/sync', {
+              method: 'POST',
+              body: JSON.stringify({ jobs })
+            });
+
+            alert('Data synced successfully!');
+          } catch (error) {
+            console.error('Sync failed:', error);
+            alert('Sync failed: ' + error.message);
+          } finally {
+            syncBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                <polyline points="21 3 21 9 15 9"/>
+              </svg>
+              Sync Data
+            `;
+          }
+        });
+      }
+    }
   }
 
   async loadCompactMode() {
