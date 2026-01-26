@@ -8,9 +8,9 @@ const CONFIG = {
     ENV: 'development'
   },
   
-  // Production (Railway hosted backend)
+  // Production (Render hosted backend)
   production: {
-    API_URL: 'https://your-app-name.railway.app/api', // UPDATE THIS after Railway deployment
+    API_URL: 'https://job-tracker-api-j7ef.onrender.com/api',
     ENV: 'production'
   }
 };
