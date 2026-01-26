@@ -114,6 +114,18 @@ class JobTracker {
       note: note
     });
 
+    // Update in API if authenticated
+    if (window.apiClient?.isAuthenticated()) {
+      try {
+        const mongoId = job._id || job.id;
+        await window.apiClient.updateJobStatus(mongoId, newStatus, note);
+        console.log('[Job Tracker] 📝 Updated status in MongoDB:', job.company, '-', newStatus);
+      } catch (error) {
+        console.error('[Job Tracker] Failed to update status in MongoDB:', error);
+        // Continue with local update even if API fails
+      }
+    }
+
     await this.saveJobs();
     console.log('[Job Tracker] 📝 Updated status:', job.company, '-', newStatus);
     return true;
@@ -125,12 +137,24 @@ class JobTracker {
     if (!job) return false;
 
     Object.assign(job, updates);
-    
+
     job.timeline.push({
       date: new Date().toISOString(),
       event: 'Job details updated',
       type: 'update'
     });
+
+    // Update in API if authenticated
+    if (window.apiClient?.isAuthenticated()) {
+      try {
+        const mongoId = job._id || job.id;
+        await window.apiClient.updateJob(mongoId, job);
+        console.log('[Job Tracker] 📝 Updated job in MongoDB:', job.company);
+      } catch (error) {
+        console.error('[Job Tracker] Failed to update job in MongoDB:', error);
+        // Continue with local update even if API fails
+      }
+    }
 
     await this.saveJobs();
     return true;
@@ -142,9 +166,24 @@ class JobTracker {
     if (index === -1) return false;
 
     const job = this.jobs[index];
+
+    // Delete from API if authenticated
+    if (window.apiClient?.isAuthenticated()) {
+      try {
+        // Try to find the MongoDB _id from the job
+        const mongoId = job._id || job.id;
+        await window.apiClient.deleteJob(mongoId);
+        console.log('[Job Tracker] 🗑️ Deleted from MongoDB:', job.company, '-', job.title);
+      } catch (error) {
+        console.error('[Job Tracker] Failed to delete from MongoDB:', error);
+        // Continue with local deletion even if API fails
+      }
+    }
+
+    // Delete from local storage
     this.jobs.splice(index, 1);
     await this.saveJobs();
-    
+
     console.log('[Job Tracker] 🗑️ Deleted job:', job.company, '-', job.title);
     return true;
   }
