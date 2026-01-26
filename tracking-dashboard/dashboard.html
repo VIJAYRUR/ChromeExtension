@@ -132,6 +132,12 @@
             </svg>
           </button>
 
+          <button class="toolbar-btn" id="refresh-btn" aria-label="Refresh" title="Refresh">
+            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
+              <path d="M2.5 8a5.5 5.5 0 0 1 9.68-3.578l-.903.89A.5.5 0 0 0 11.63 6.5H14.5a.5.5 0 0 0 .5-.5V3.13a.5.5 0 0 0-.854-.354l-.836.823A6.5 6.5 0 0 0 1.5 8a.5.5 0 0 0 1 0zm11 0a5.5 5.5 0 0 1-9.68 3.578l.903-.89a.5.5 0 0 0-.354-.854H1.5a.5.5 0 0 0-.5.5v2.87a.5.5 0 0 0 .854.354l.836-.823A6.5 6.5 0 0 0 14.5 8a.5.5 0 0 0-1 0z"></path>
+            </svg>
+          </button>
+
           <!-- Inline search input (hidden by default) - appears in place of search button -->
           <div class="inline-search-container" id="inline-search-container" style="display: none;">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="search-icon" style="width: 16px; height: 16px; display: block; fill: var(--text-muted); flex-shrink: 0;">
@@ -303,125 +309,166 @@
     <!-- Stats Overview -->
     <div id="stats-view" class="view-container">
       <div class="stats-wrapper">
-        <!-- Header with date range selector -->
-        <div class="stats-header">
-          <h2 class="stats-title">Stats overview</h2>
-          <div class="date-range-selector">
-            <button class="date-range-btn active" data-range="7">Last 7 days</button>
-            <button class="date-range-btn" data-range="30">Last 30 days</button>
-            <button class="date-range-btn" data-range="90">Last 3 months</button>
-            <button class="date-range-btn" data-range="all">All time</button>
+        <!-- Summary Section -->
+        <div class="stats-summary">
+          <div class="summary-main">
+            <div class="summary-number" id="stat-total">0</div>
+            <div class="summary-label">Total Applications</div>
           </div>
-        </div>
-
-        <!-- Quick Stats Cards -->
-        <div class="stats-cards">
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(46, 170, 220, 0.1);">
-              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(46, 170, 220);">
-                <path d="M4.35 2.65a.65.65 0 0 0-.65.65v9.4c0 .36.29.65.65.65h7.3a.65.65 0 0 0 .65-.65V3.3a.65.65 0 0 0-.65-.65z"/>
-              </svg>
+          <div class="summary-secondary">
+            <div class="summary-stat">
+              <span class="summary-stat-value" id="stat-this-week">0</span>
+              <span class="summary-stat-label">This week</span>
             </div>
-            <div class="stat-content">
-              <div class="stat-label">Total applications</div>
-              <div class="stat-value" id="stat-total">0</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(0, 135, 107, 0.1);">
-              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(0, 135, 107);">
-                <path d="M12.57 2H15L6 15l-5-5 1.41-1.41 3.31 3.3z"/>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Success rate</div>
-              <div class="stat-value" id="stat-success">0%</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(219, 148, 0, 0.1);">
-              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(219, 148, 0);">
-                <path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zm.65 3.35a.65.65 0 1 1-1.3 0 .65.65 0 0 1 1.3 0zM8 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12zm-.65-3.35V7.3a.65.65 0 1 1 1.3 0v3.35a.65.65 0 1 1-1.3 0z"/>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Avg. response time</div>
-              <div class="stat-value" id="stat-response">-</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(176, 54, 235, 0.1);">
-              <svg viewBox="0 0 16 16" style="width: 20px; height: 20px; fill: rgb(176, 54, 235);">
-                <path d="M2 5.35v5.3c0 .36.29.65.65.65h10.7a.65.65 0 0 0 .65-.65v-5.3a.65.65 0 0 0-.65-.65H2.65a.65.65 0 0 0-.65.65z"/>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Interview rate</div>
-              <div class="stat-value" id="stat-interview">0%</div>
+            <div class="summary-stat">
+              <span class="summary-stat-value" id="stat-this-month">0</span>
+              <span class="summary-stat-label">This month</span>
             </div>
           </div>
         </div>
 
-        <!-- Response Time Buckets -->
-        <div class="chart-container chart-full">
-          <div class="chart-header">
-            <h3 class="chart-title">⏱️ Response Time by Days</h3>
+        <!-- Activity Heatmap -->
+        <div class="stats-section">
+          <div class="heatmap-header">
+            <div class="heatmap-title">
+              <h3 class="section-title" style="margin-bottom: 0;">Application Activity</h3>
+              <span class="heatmap-count"><strong id="heatmap-total">0</strong> applications in the last year</span>
+            </div>
+            <div class="heatmap-legend">
+              <span>Less</span>
+              <div class="legend-box level-0"></div>
+              <div class="legend-box level-1"></div>
+              <div class="legend-box level-2"></div>
+              <div class="legend-box level-3"></div>
+              <div class="legend-box level-4"></div>
+              <span>More</span>
+            </div>
           </div>
-          <div class="response-buckets-grid" id="response-buckets"></div>
+          <div class="heatmap-container">
+            <div class="heatmap-months" id="heatmap-months"></div>
+            <div class="heatmap-grid">
+              <div class="heatmap-days">
+                <div class="heatmap-day-label"></div>
+                <div class="heatmap-day-label">Mon</div>
+                <div class="heatmap-day-label"></div>
+                <div class="heatmap-day-label">Wed</div>
+                <div class="heatmap-day-label"></div>
+                <div class="heatmap-day-label">Fri</div>
+                <div class="heatmap-day-label"></div>
+              </div>
+              <div class="heatmap-weeks" id="heatmap-weeks"></div>
+            </div>
+          </div>
         </div>
 
-        <!-- Charts Row 1: Timeline + Status -->
-        <div class="stats-charts-row">
-          <div class="chart-container chart-large">
-            <div class="chart-header">
-              <h3 class="chart-title">Applications timeline</h3>
-              <div class="chart-legend" id="timeline-legend"></div>
+        <!-- Application Funnel -->
+        <div class="stats-section">
+          <h3 class="section-title">Your Application Funnel</h3>
+          <div class="funnel-container">
+            <div class="funnel-stage" data-status="applied">
+              <div class="funnel-bar">
+                <div class="funnel-fill applied" id="funnel-applied"></div>
+              </div>
+              <div class="funnel-info">
+                <span class="funnel-count" id="funnel-count-applied">0</span>
+                <span class="funnel-label">Applied</span>
+              </div>
             </div>
-            <div class="chart-canvas-wrapper">
-              <canvas id="timeline-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="chart-container chart-small">
-            <div class="chart-header">
-              <h3 class="chart-title">Status distribution</h3>
-            </div>
-            <div class="chart-canvas-wrapper">
-              <canvas id="status-chart"></canvas>
-            </div>
-          </div>
-        </div>
-
-
-
-
-
-        <!-- Simple Insights Table -->
-        <div class="chart-container chart-full simple-insights">
-          <div class="chart-header">
-            <h3 class="chart-title">📊 Status Breakdown</h3>
-            <div class="insight-selector">
-              <select id="insight-type-selector" class="notion-select">
-                <option value="" selected disabled>Select a view...</option>
-                <option value="by-hours">By Application Speed (Hours)</option>
-                <option value="by-applicants">By Competition (Applicants)</option>
-              </select>
-            </div>
-          </div>
-          <div class="simple-insights-table" id="simple-insights-table">
-            <div class="insights-empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+            <div class="funnel-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
-              <p>Select a view to see insights</p>
+            </div>
+            <div class="funnel-stage" data-status="interview">
+              <div class="funnel-bar">
+                <div class="funnel-fill interview" id="funnel-interview"></div>
+              </div>
+              <div class="funnel-info">
+                <span class="funnel-count" id="funnel-count-interview">0</span>
+                <span class="funnel-label">Interview</span>
+              </div>
+            </div>
+            <div class="funnel-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <div class="funnel-stage" data-status="offer">
+              <div class="funnel-bar">
+                <div class="funnel-fill offer" id="funnel-offer"></div>
+              </div>
+              <div class="funnel-info">
+                <span class="funnel-count" id="funnel-count-offer">0</span>
+                <span class="funnel-label">Offer</span>
+              </div>
+            </div>
+          </div>
+          <div class="funnel-rates">
+            <div class="rate-item">
+              <span class="rate-value" id="rate-interview">0%</span>
+              <span class="rate-label">Interview rate</span>
+            </div>
+            <div class="rate-item">
+              <span class="rate-value" id="rate-offer">0%</span>
+              <span class="rate-label">Offer rate</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Two Column Layout -->
+        <div class="stats-grid">
+          <!-- Waiting for Response -->
+          <div class="stats-section stats-card">
+            <h3 class="section-title">Waiting for Response</h3>
+            <div class="waiting-list" id="waiting-list">
+              <div class="empty-state-small">No applications waiting</div>
+            </div>
+          </div>
+
+          <!-- Status Breakdown -->
+          <div class="stats-section stats-card">
+            <h3 class="section-title">Status Breakdown</h3>
+            <div class="status-breakdown" id="status-breakdown">
+              <div class="breakdown-row">
+                <div class="breakdown-label">
+                  <span class="breakdown-dot applied"></span>
+                  Applied
+                </div>
+                <span class="breakdown-count" id="breakdown-applied">0</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label">
+                  <span class="breakdown-dot interview"></span>
+                  Interview
+                </div>
+                <span class="breakdown-count" id="breakdown-interview">0</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label">
+                  <span class="breakdown-dot offer"></span>
+                  Offer
+                </div>
+                <span class="breakdown-count" id="breakdown-offer">0</span>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label">
+                  <span class="breakdown-dot rejected"></span>
+                  Rejected
+                </div>
+                <span class="breakdown-count" id="breakdown-rejected">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="stats-section">
+          <h3 class="section-title">Recent Activity</h3>
+          <div class="activity-list" id="activity-list">
+            <div class="empty-state-small">No recent activity</div>
+          </div>
+        </div>
+
   </main>
 
   <!-- Auth Guard - Shows login required if not authenticated -->

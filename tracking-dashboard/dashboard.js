@@ -288,6 +288,14 @@ class DashboardUI {
       }
     });
 
+    // Refresh button
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        this.refreshData();
+      });
+    }
+
     // Pagination controls
     const prevPageBtn = document.getElementById('prev-page-btn');
     const nextPageBtn = document.getElementById('next-page-btn');
@@ -316,6 +324,39 @@ class DashboardUI {
     this.compactMode = !this.compactMode;
     document.body.classList.toggle('compact-mode', this.compactMode);
     await chrome.storage.local.set({ compactMode: this.compactMode });
+  }
+
+  async refreshData() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.classList.add('spinning');
+    }
+
+    try {
+      // Reload jobs from storage
+      if (window.jobTracker) {
+        await window.jobTracker.loadJobs();
+      }
+
+      // Re-render the current view
+      this.render();
+
+      // Update stats view if active
+      if (this.currentView === 'stats' && window.statsManager) {
+        window.statsManager.jobs = window.jobTracker.jobs;
+        window.statsManager.render();
+      }
+
+      console.log('[Dashboard] Data refreshed');
+    } catch (error) {
+      console.error('[Dashboard] Refresh failed:', error);
+    } finally {
+      if (refreshBtn) {
+        setTimeout(() => {
+          refreshBtn.classList.remove('spinning');
+        }, 500);
+      }
+    }
   }
 
   switchView(view) {
