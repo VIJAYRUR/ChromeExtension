@@ -80,19 +80,22 @@ function setupPasswordToggles() {
 async function saveAuthTokens(token, refreshToken, user) {
   try {
     if (typeof chrome !== 'undefined' && chrome.storage) {
+      // Clear old job data when new user logs in/registers
       await chrome.storage.local.set({
         authToken: token,
         refreshToken: refreshToken,
         currentUser: user,
-        isAuthenticated: true
+        isAuthenticated: true,
+        trackedJobs: [] // Clear old jobs for new user
       });
     } else {
       localStorage.setItem('authToken', token);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('currentUser', JSON.stringify(user));
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.removeItem('trackedJobs'); // Clear old jobs for new user
     }
-    console.log('[Auth] Tokens saved successfully');
+    console.log('[Auth] Tokens saved successfully, cleared old job data');
   } catch (error) {
     console.error('[Auth] Error saving tokens:', error);
   }
