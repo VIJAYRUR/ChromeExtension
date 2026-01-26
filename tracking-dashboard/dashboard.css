@@ -594,11 +594,11 @@ body {
 
 .main-content {
   width: 100%;
-  margin: 0 auto;
-  padding: 16px 48px 24px;
+  margin: 0;
+  padding: 16px 0 24px 0;
   background: var(--bg-soft);
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .view-container {
@@ -608,10 +608,8 @@ body {
 .view-container.active {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 24px;
 }
 
 /* Notion-style column headers with light background colors */
@@ -716,7 +714,6 @@ body {
   overflow-y: hidden;
   padding-bottom: 8px;
   width: 100%;
-  max-width: 100%;
   margin: 0;
 }
 
@@ -738,9 +735,8 @@ body {
 }
 
 .kanban-column {
-  flex: 1;
-  min-width: 280px;
-  max-width: 340px;
+  flex: 0 0 320px;
+  width: 320px;
   padding: 0;
   margin-bottom: 16px;
   box-sizing: border-box;
@@ -1850,6 +1846,18 @@ body {
 }
 
 /* Form Styles */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -1939,6 +1947,17 @@ body {
 
   .btn-profile {
     padding: 8px 12px;
+  }
+
+  /* Stack form columns on mobile */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .modal-content {
+    max-width: 95% !important;
+  }
   }
 
   .search-section {

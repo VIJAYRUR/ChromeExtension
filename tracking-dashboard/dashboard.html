@@ -506,7 +506,7 @@
   <!-- Add Job Modal -->
   <div id="add-job-modal" class="modal" style="display: none;">
     <div class="modal-overlay"></div>
-    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 style="font-size: 20px; font-weight: 600; color: #111; margin: 0;">Add Job Manually</h2>
         <button class="modal-close" id="close-add-job-modal">
@@ -518,69 +518,79 @@
       </div>
       <div class="modal-body">
         <form id="add-job-form">
-          <!-- Company (Required) -->
-          <div class="form-group">
-            <label for="manual-company">Company <span style="color: #e03e3e;">*</span></label>
-            <input type="text" id="manual-company" required placeholder="e.g., Google, Microsoft, Startup Inc.">
+          <!-- Two Column Layout -->
+          <div class="form-row">
+            <!-- Left Column -->
+            <div class="form-column">
+              <!-- Company (Required) -->
+              <div class="form-group">
+                <label for="manual-company">Company <span style="color: #e03e3e;">*</span></label>
+                <input type="text" id="manual-company" required placeholder="e.g., Google, Microsoft, Startup Inc.">
+              </div>
+
+              <!-- Position (Required) -->
+              <div class="form-group">
+                <label for="manual-title">Position <span style="color: #e03e3e;">*</span></label>
+                <input type="text" id="manual-title" required placeholder="e.g., Software Engineer, Product Manager">
+              </div>
+
+              <!-- Location -->
+              <div class="form-group">
+                <label for="manual-location">Location</label>
+                <input type="text" id="manual-location" placeholder="e.g., San Francisco, CA or Remote">
+              </div>
+
+              <!-- Work Type -->
+              <div class="form-group">
+                <label for="manual-work-type">Work Type</label>
+                <select id="manual-work-type">
+                  <option value="Not specified">Not specified</option>
+                  <option value="Remote">Remote</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="On-site">On-site</option>
+                </select>
+              </div>
+
+              <!-- Job URL -->
+              <div class="form-group">
+                <label for="manual-url">Job URL</label>
+                <input type="url" id="manual-url" placeholder="https://...">
+              </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="form-column">
+              <!-- Salary -->
+              <div class="form-group">
+                <label for="manual-salary">Salary Range</label>
+                <input type="text" id="manual-salary" placeholder="e.g., $120k - $150k">
+              </div>
+
+              <!-- Status -->
+              <div class="form-group">
+                <label for="manual-status">Status</label>
+                <select id="manual-status">
+                  <option value="applied">Applied</option>
+                  <option value="saved">Saved</option>
+                  <option value="screening">Screening</option>
+                  <option value="interview">Interview</option>
+                  <option value="offer">Offer</option>
+                </select>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-group">
+                <label for="manual-notes">Notes</label>
+                <textarea id="manual-notes" rows="7" placeholder="Add any additional notes..."></textarea>
+              </div>
+            </div>
           </div>
 
-          <!-- Position (Required) -->
-          <div class="form-group">
-            <label for="manual-title">Position <span style="color: #e03e3e;">*</span></label>
-            <input type="text" id="manual-title" required placeholder="e.g., Software Engineer, Product Manager">
-          </div>
-
+          <!-- Full Width Fields -->
           <!-- Job Description (Required) -->
           <div class="form-group">
             <label for="manual-description">Job Description <span style="color: #e03e3e;">*</span></label>
-            <textarea id="manual-description" required rows="4" placeholder="Paste the job description here..."></textarea>
-          </div>
-
-          <!-- Location -->
-          <div class="form-group">
-            <label for="manual-location">Location</label>
-            <input type="text" id="manual-location" placeholder="e.g., San Francisco, CA or Remote">
-          </div>
-
-          <!-- Work Type -->
-          <div class="form-group">
-            <label for="manual-work-type">Work Type</label>
-            <select id="manual-work-type">
-              <option value="Not specified">Not specified</option>
-              <option value="Remote">Remote</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="On-site">On-site</option>
-            </select>
-          </div>
-
-          <!-- Job URL -->
-          <div class="form-group">
-            <label for="manual-url">Job URL</label>
-            <input type="url" id="manual-url" placeholder="https://...">
-          </div>
-
-          <!-- Salary -->
-          <div class="form-group">
-            <label for="manual-salary">Salary Range</label>
-            <input type="text" id="manual-salary" placeholder="e.g., $120k - $150k">
-          </div>
-
-          <!-- Status -->
-          <div class="form-group">
-            <label for="manual-status">Status</label>
-            <select id="manual-status">
-              <option value="applied">Applied</option>
-              <option value="saved">Saved</option>
-              <option value="screening">Screening</option>
-              <option value="interview">Interview</option>
-              <option value="offer">Offer</option>
-            </select>
-          </div>
-
-          <!-- Notes -->
-          <div class="form-group">
-            <label for="manual-notes">Notes</label>
-            <textarea id="manual-notes" rows="3" placeholder="Add any additional notes..."></textarea>
+            <textarea id="manual-description" required rows="6" placeholder="Paste the job description here..."></textarea>
           </div>
 
           <!-- Buttons -->
