@@ -35,7 +35,14 @@
         "https://*/*careers*",
         "https://*/*jobs/*"
       ],
-      "js": ["autofill/resume-manager.js", "autofill/autofill-engine.js", "autofill/autofill-content.js"],
+      "js": [
+        "autofill/resume-manager.js",
+        "autofill/semantic-matcher.js",
+        "autofill/intelligent-value-mapper.js",
+        "autofill/ats-platform-intelligence.js",
+        "autofill/autofill-engine.js",
+        "autofill/autofill-content.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -83,7 +90,6 @@
         "auth/register.html",
         "auth/auth.css",
         "auth/auth.js",
-        "shared/backup-manager.js",
         "shared/auth-manager.js",
         "shared/api-client.js",
         "shared/sync-manager.js"

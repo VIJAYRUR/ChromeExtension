@@ -718,7 +718,7 @@ class DashboardUI {
     if (editBtn) {
       editBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.showEditJobModal(job);
+        this.showJobDetail(job);
       });
     }
 

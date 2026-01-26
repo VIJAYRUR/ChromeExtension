@@ -74,7 +74,7 @@ const jobSchema = new mongoose.Schema({
   location: { type: String, trim: true, index: true },
   workType: {
     type: String,
-    enum: ['Remote', 'On-site', 'Hybrid', 'Not specified'],
+    enum: ['Remote', 'On-site', 'Onsite', 'Hybrid', 'Not specified'],
     default: 'Not specified',
     index: true
   },
