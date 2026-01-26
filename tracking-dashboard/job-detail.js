@@ -93,6 +93,22 @@ class JobDetailPage {
       }
     });
 
+    // View resume
+    const viewResumeBtn = document.getElementById('view-resume');
+    if (viewResumeBtn) {
+      viewResumeBtn.addEventListener('click', () => {
+        this.viewResume();
+      });
+    }
+
+    // Download resume
+    const downloadResumeBtn = document.getElementById('download-resume');
+    if (downloadResumeBtn) {
+      downloadResumeBtn.addEventListener('click', () => {
+        this.downloadResume();
+      });
+    }
+
     // Remove resume
     const removeResumeBtn = document.getElementById('remove-resume');
     if (removeResumeBtn) {
@@ -245,23 +261,141 @@ class JobDetailPage {
     if (this.job.resumeFileName) {
       emptyState.style.display = 'none';
       uploadedState.style.display = 'block';
-      fileName.textContent = this.job.resumeFileName;
+
+      // Format file size
+      let fileInfo = this.job.resumeFileName;
+      if (this.job.resumeFileSize) {
+        const sizeKB = (this.job.resumeFileSize / 1024).toFixed(1);
+        const sizeMB = (this.job.resumeFileSize / (1024 * 1024)).toFixed(1);
+        const sizeStr = this.job.resumeFileSize > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+        fileInfo += ` (${sizeStr})`;
+      }
+
+      fileName.textContent = fileInfo;
     } else {
       emptyState.style.display = 'flex';
       uploadedState.style.display = 'none';
     }
   }
 
-  handleResumeUpload(file) {
-    this.job.resumeFileName = file.name;
-    this.updateResumeState();
-    // TODO: Actually upload the file to storage
+  async handleResumeUpload(file) {
+    try {
+      // Convert file to base64 for storage
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+
+        // Store file data in job object
+        this.job.resumeFileName = file.name;
+        this.job.resumeFileData = base64Data;
+        this.job.resumeFileType = file.type;
+        this.job.resumeFileSize = file.size;
+
+        // Save to job tracker
+        await window.jobTracker.updateJob(this.jobId, {
+          resumeFileName: file.name,
+          resumeFileData: base64Data,
+          resumeFileType: file.type,
+          resumeFileSize: file.size
+        });
+
+        this.updateResumeState();
+        console.log('[Job Detail] ✅ Resume uploaded:', file.name);
+      };
+
+      reader.onerror = (error) => {
+        console.error('[Job Detail] Failed to read file:', error);
+        alert('❌ Failed to upload resume. Please try again.');
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('[Job Detail] Resume upload error:', error);
+      alert('❌ Failed to upload resume. Please try again.');
+    }
   }
 
-  removeResume() {
-    this.job.resumeFileName = null;
-    this.updateResumeState();
-    document.getElementById('resume-upload').value = '';
+  viewResume() {
+    if (!this.job.resumeFileData) {
+      alert('⚠️ Resume file not found.');
+      return;
+    }
+
+    try {
+      // Open resume in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>${this.job.resumeFileName}</title>
+              <style>
+                body { margin: 0; padding: 0; }
+                iframe { width: 100%; height: 100vh; border: none; }
+              </style>
+            </head>
+            <body>
+              <iframe src="${this.job.resumeFileData}"></iframe>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      } else {
+        alert('⚠️ Please allow popups to view the resume.');
+      }
+    } catch (error) {
+      console.error('[Job Detail] Failed to view resume:', error);
+      alert('❌ Failed to view resume. Please try downloading instead.');
+    }
+  }
+
+  downloadResume() {
+    if (!this.job.resumeFileData) {
+      alert('⚠️ Resume file not found.');
+      return;
+    }
+
+    try {
+      // Create download link
+      const link = document.createElement('a');
+      link.href = this.job.resumeFileData;
+      link.download = this.job.resumeFileName || 'resume.pdf';
+      link.click();
+
+      console.log('[Job Detail] ✅ Resume downloaded:', this.job.resumeFileName);
+    } catch (error) {
+      console.error('[Job Detail] Failed to download resume:', error);
+      alert('❌ Failed to download resume. Please try again.');
+    }
+  }
+
+  async removeResume() {
+    const confirmed = confirm('Are you sure you want to remove this resume?');
+    if (!confirmed) return;
+
+    try {
+      this.job.resumeFileName = null;
+      this.job.resumeFileData = null;
+      this.job.resumeFileType = null;
+      this.job.resumeFileSize = null;
+
+      // Update job tracker
+      await window.jobTracker.updateJob(this.jobId, {
+        resumeFileName: null,
+        resumeFileData: null,
+        resumeFileType: null,
+        resumeFileSize: null
+      });
+
+      this.updateResumeState();
+      document.getElementById('resume-upload').value = '';
+
+      console.log('[Job Detail] ✅ Resume removed');
+    } catch (error) {
+      console.error('[Job Detail] Failed to remove resume:', error);
+      alert('❌ Failed to remove resume. Please try again.');
+    }
   }
 
   renderEmptyState(icon, title, description) {
