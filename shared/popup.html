@@ -12,31 +12,32 @@
     }
 
     :root {
-      --black: #000000;
-      --gray-900: #111111;
-      --gray-800: #1a1a1a;
-      --gray-700: #2a2a2a;
-      --gray-600: #3a3a3a;
-      --gray-500: #6b6b6b;
-      --gray-400: #9b9b9b;
-      --gray-300: #d4d4d4;
-      --gray-200: #e5e5e5;
-      --gray-100: #f5f5f5;
-      --white: #ffffff;
-      --success: #22c55e;
-      --error: #ef4444;
+      --bg-main: #ffffff;
+      --bg-soft: #f7f6f3;
+      --bg-hover: rgba(55, 53, 47, 0.08);
+      --text-primary: rgb(55, 53, 47);
+      --text-secondary: rgba(55, 53, 47, 0.65);
+      --text-muted: rgba(55, 53, 47, 0.4);
+      --border-subtle: rgba(55, 53, 47, 0.09);
+      --border-medium: rgba(55, 53, 47, 0.16);
+      --blue: rgb(35, 131, 226);
+      --blue-bg: rgba(35, 131, 226, 0.1);
+      --red: rgb(235, 87, 87);
+      --red-bg: rgba(235, 87, 87, 0.1);
     }
 
     body {
-      width: 340px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-      background: var(--white);
+      width: 360px;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+      background: var(--bg-main);
       padding: 0;
+      margin: 0;
       -webkit-font-smoothing: antialiased;
+      color: var(--text-primary);
     }
 
     .container {
-      padding: 20px;
+      padding: 16px;
     }
 
     /* Loading State */
@@ -45,17 +46,17 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px 20px;
+      padding: 48px 20px;
       text-align: center;
     }
 
     .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--gray-200);
-      border-top-color: var(--black);
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border-subtle);
+      border-top-color: var(--text-primary);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.6s linear infinite;
     }
 
     @keyframes spin {
@@ -63,9 +64,10 @@
     }
 
     .loading-text {
-      margin-top: 12px;
-      color: var(--gray-500);
-      font-size: 13px;
+      margin-top: 14px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 400;
     }
 
     /* Login Required State */
@@ -73,15 +75,15 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      padding: 30px 20px;
+      padding: 32px 20px;
       text-align: center;
     }
 
     .login-icon {
-      width: 56px;
-      height: 56px;
-      background: var(--gray-100);
-      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      background: var(--bg-soft);
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -89,28 +91,30 @@
     }
 
     .login-icon svg {
-      color: var(--gray-600);
+      color: var(--text-secondary);
+      stroke-width: 1.5;
     }
 
     .login-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      color: var(--gray-900);
-      margin-bottom: 8px;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
     }
 
     .login-subtitle {
-      font-size: 14px;
-      color: var(--gray-500);
-      margin-bottom: 24px;
-      line-height: 1.4;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.5;
     }
 
     .auth-buttons {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     /* Main Content */
@@ -122,53 +126,59 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--gray-200);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .header-left h1 {
-      font-size: 18px;
-      color: var(--black);
+      font-size: 16px;
+      color: var(--text-primary);
       font-weight: 600;
-      margin-bottom: 4px;
-      letter-spacing: -0.3px;
+      margin-bottom: 2px;
+      letter-spacing: -0.01em;
     }
 
     .subtitle {
-      font-size: 13px;
-      color: var(--gray-500);
+      font-size: 12px;
+      color: var(--text-secondary);
       font-weight: 400;
     }
 
     /* User Avatar */
     .user-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--black);
-      color: var(--white);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: var(--text-primary);
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       position: relative;
+      transition: opacity 0.15s;
+    }
+
+    .user-avatar:hover {
+      opacity: 0.85;
     }
 
     .user-dropdown {
       position: absolute;
       top: 100%;
       right: 0;
-      margin-top: 8px;
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      min-width: 200px;
+      margin-top: 6px;
+      background: white;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
+      min-width: 220px;
       z-index: 100;
       display: none;
+      overflow: hidden;
     }
 
     .user-dropdown.show {
@@ -176,196 +186,163 @@
     }
 
     .user-info {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--gray-200);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .user-name {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--gray-900);
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
     }
 
     .user-email {
       font-size: 12px;
-      color: var(--gray-500);
-      margin-top: 2px;
+      color: var(--text-secondary);
     }
 
     .dropdown-item {
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-size: 13px;
-      color: var(--gray-700);
+      color: var(--text-primary);
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
       transition: background 0.1s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
     }
 
     .dropdown-item:hover {
-      background: var(--gray-100);
+      background: var(--bg-hover);
     }
 
     .dropdown-item.logout {
-      color: var(--error);
-      border-top: 1px solid var(--gray-200);
+      color: var(--red);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .dropdown-item svg {
+      flex-shrink: 0;
     }
 
     .buttons {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
     }
 
     .btn {
-      padding: 11px 16px;
-      border: 1px solid var(--gray-300);
+      padding: 8px 12px;
+      border: 1px solid var(--border-subtle);
       border-radius: 6px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.1s, border-color 0.1s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      background: var(--white);
+      gap: 6px;
+      background: white;
+      color: var(--text-primary);
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
     }
 
     .btn-primary {
-      background: var(--black);
-      color: var(--white);
-      border-color: var(--black);
+      background: var(--text-primary);
+      color: white;
+      border-color: var(--text-primary);
     }
 
     .btn-primary:hover {
-      background: var(--gray-900);
+      background: rgba(55, 53, 47, 0.9);
+      border-color: rgba(55, 53, 47, 0.9);
     }
 
     .btn-secondary {
-      background: var(--white);
-      color: var(--gray-700);
-      border-color: var(--gray-300);
+      background: white;
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
     }
 
     .btn-secondary:hover {
-      background: var(--gray-100);
+      background: var(--bg-hover);
     }
 
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
+    .btn:active {
+      transform: scale(0.98);
+    }
+
     .stats {
-      background: var(--gray-100);
+      background: var(--bg-soft);
       border-radius: 6px;
-      padding: 14px;
-      margin-top: 16px;
-      border: 1px solid var(--gray-200);
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px solid var(--border-subtle);
     }
 
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 0;
-      color: var(--gray-900);
+      padding: 6px 0;
       font-size: 13px;
     }
 
     .stat-row:not(:last-child) {
-      border-bottom: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .stat-label {
-      color: var(--gray-600);
-      font-weight: 500;
+      color: var(--text-secondary);
+      font-weight: 400;
     }
 
     .stat-value {
       font-weight: 600;
-      font-size: 16px;
-      color: var(--black);
-    }
-
-    .section {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--gray-200);
-    }
-
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--gray-500);
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .backup-info {
-      background: var(--gray-100);
-      border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 12px;
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-
-    .info-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .info-row span:first-child {
-      color: var(--gray-500);
-    }
-
-    .info-row span:last-child {
-      font-weight: 500;
-      color: var(--gray-900);
-    }
-
-    .backup-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .btn-small {
-      padding: 10px 12px;
-      font-size: 13px;
+      font-size: 15px;
+      color: var(--text-primary);
+      font-feature-settings: 'tnum';
     }
 
     .footer {
       text-align: center;
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--gray-200);
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
     }
 
     .footer-text {
       font-size: 11px;
-      color: var(--gray-500);
+      color: var(--text-muted);
+      font-weight: 400;
     }
 
     /* Offline Warning */
     .offline-warning {
-      background: #fef3c7;
-      color: #92400e;
-      padding: 8px 12px;
+      background: rgba(251, 191, 36, 0.1);
+      color: rgb(146, 64, 14);
+      padding: 8px 10px;
       border-radius: 6px;
       font-size: 12px;
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(251, 191, 36, 0.2);
     }
 
     /* Spinning animation for sync */
@@ -419,6 +396,13 @@
               </svg>
               Sync Now
             </div>
+            <div class="dropdown-item" id="profile-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Profile
+            </div>
             <div class="dropdown-item logout" id="logout-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
@@ -456,33 +440,6 @@
           <span class="stat-label">Interviews</span>
           <span class="stat-value" id="stat-interviews">0</span>
         </div>
-      </div>
-
-      <!-- Backup Section -->
-      <div class="section">
-        <div class="section-title">Data Backup</div>
-
-        <div class="backup-info" id="backup-info">
-          <div class="info-row">
-            <span>Profile:</span>
-            <span id="profile-status">Loading...</span>
-          </div>
-          <div class="info-row">
-            <span>Tracked Jobs:</span>
-            <span id="jobs-count">0</span>
-          </div>
-        </div>
-
-        <div class="backup-buttons">
-          <button class="btn btn-primary btn-small" id="export-btn">
-            Export Backup
-          </button>
-          <button class="btn btn-secondary btn-small" id="import-btn">
-            Import Backup
-          </button>
-        </div>
-
-        <input type="file" id="import-file" accept=".json" style="display: none;">
       </div>
 
       <div class="footer">

@@ -337,21 +337,7 @@ class DashboardUI {
       });
     }
 
-    // Export button (if exists)
-    const exportBtn = document.getElementById('export-btn');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', () => {
-        this.exportData();
-      });
-    }
 
-    // Remove duplicates button (if exists)
-    const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
-    if (removeDuplicatesBtn) {
-      removeDuplicatesBtn.addEventListener('click', () => {
-        this.handleRemoveDuplicates();
-      });
-    }
 
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
@@ -888,20 +874,7 @@ class DashboardUI {
     alert('Add job manually - feature coming soon!\nFor now, use the "Track Application" button on LinkedIn job pages.');
   }
 
-  exportData() {
-    const jobs = window.jobTracker.jobs;
-    const dataStr = JSON.stringify(jobs, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `job-applications-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-
-    URL.revokeObjectURL(url);
-    console.log('[Dashboard] 📊 Exported', jobs.length, 'jobs');
-  }
 
   escapeHtml(text) {
     const div = document.createElement('div');
@@ -1087,52 +1060,7 @@ class DashboardUI {
     }, 3000);
   }
 
-  async handleRemoveDuplicates() {
-    console.log('[Dashboard] 🔍 Checking for duplicates...');
 
-    // First, do a dry run to show what will be removed
-    const dryRunResult = await window.jobTracker.removeDuplicates(true);
-
-    if (dryRunResult.found === 0) {
-      alert('✅ No duplicates found!\n\nYour job tracker is clean.');
-      return;
-    }
-
-    // Build a detailed message
-    let message = `🔍 Found ${dryRunResult.found} duplicate job(s):\n\n`;
-
-    dryRunResult.duplicates.forEach((dup, i) => {
-      const dupDate = new Date(dup.duplicate.dateApplied).toLocaleDateString();
-      const origDate = new Date(dup.original.dateApplied).toLocaleDateString();
-
-      message += `${i + 1}. ${dup.duplicate.company} - ${dup.duplicate.title}\n`;
-      message += `   Duplicate tracked: ${dupDate}\n`;
-      message += `   Original tracked: ${origDate}\n`;
-      message += `   Matched by: ${dup.matchedBy}\n\n`;
-    });
-
-    message += `\nThe OLDEST entry for each job will be kept.\n`;
-    message += `The newer duplicates will be removed.\n\n`;
-    message += `Do you want to remove these duplicates?`;
-
-    const confirmed = confirm(message);
-
-    if (!confirmed) {
-      console.log('[Dashboard] ❌ User cancelled duplicate removal');
-      return;
-    }
-
-    // Actually remove duplicates
-    const result = await window.jobTracker.removeDuplicates(false);
-
-    // Refresh the dashboard
-    this.render();
-
-    // Show success message
-    alert(`✅ Success!\n\nRemoved ${result.removed} duplicate job(s).\n\nYour dashboard has been cleaned up.`);
-
-    console.log('[Dashboard] ✅ Removed', result.removed, 'duplicates');
-  }
 
   // Calendar methods
   initCalendar() {

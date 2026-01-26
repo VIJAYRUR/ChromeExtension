@@ -101,7 +101,6 @@ function showMainContent() {
   }
 
   loadStats();
-  loadBackupInfo();
 }
 
 function showOfflineWarning() {
@@ -136,20 +135,7 @@ async function loadStats() {
   document.getElementById('stat-interviews').textContent = interviews;
 }
 
-async function loadBackupInfo() {
-  // Load backup manager dynamically
-  const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('shared/backup-manager.js');
-  document.head.appendChild(script);
 
-  script.onload = async () => {
-    const info = await window.backupManager.getBackupInfo();
-
-    document.getElementById('profile-status').textContent =
-      info.hasProfile ? `${info.profileName}` : 'Not set';
-    document.getElementById('jobs-count').textContent = info.jobCount;
-  };
-}
 
 // ========================================
 // EVENT LISTENERS
@@ -213,6 +199,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('user-dropdown')?.classList.remove('show');
   });
 
+  // Profile button in dropdown
+  document.getElementById('profile-btn')?.addEventListener('click', () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('autofill/profile.html')
+    });
+    window.close();
+  });
+
   // Logout button
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     const confirmed = confirm('Are you sure you want to logout?');
@@ -234,77 +228,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await chrome.storage.local.remove(['authToken', 'refreshToken', 'currentUser', 'isAuthenticated']);
     showLoginRequired();
-  });
-
-  // Export button
-  document.getElementById('export-btn')?.addEventListener('click', async () => {
-    if (!window.backupManager) {
-      alert('Backup manager not loaded. Please try again.');
-      return;
-    }
-
-    const result = await window.backupManager.exportAllData();
-
-    if (result.success) {
-      alert(`Backup saved!\n\nFile: ${result.filename}`);
-    } else {
-      alert(`Export failed!\n\n${result.error}`);
-    }
-  });
-
-  // Import button
-  document.getElementById('import-btn')?.addEventListener('click', () => {
-    document.getElementById('import-file').click();
-  });
-
-  // File input change
-  document.getElementById('import-file')?.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.json')) {
-      alert('Invalid file type!\n\nPlease select a JSON backup file.');
-      e.target.value = '';
-      return;
-    }
-
-    const confirmed = confirm(
-      'Import Backup?\n\n' +
-      'This will REPLACE all current data.\n\n' +
-      'Continue?'
-    );
-
-    if (!confirmed) {
-      e.target.value = '';
-      return;
-    }
-
-    const importBtn = document.getElementById('import-btn');
-    const originalText = importBtn.textContent;
-    importBtn.textContent = 'Importing...';
-    importBtn.disabled = true;
-
-    try {
-      const result = await window.backupManager.importData(file, 'replace');
-
-      if (result.success) {
-        alert(
-          `Backup restored!\n\n` +
-          `Jobs: ${result.jobCount}\n` +
-          `Profile: ${result.hasProfile ? 'Yes' : 'No'}`
-        );
-        loadStats();
-        loadBackupInfo();
-      } else {
-        alert(`Import failed!\n\n${result.error}`);
-      }
-    } catch (error) {
-      alert(`Import failed!\n\n${error.message}`);
-    } finally {
-      importBtn.textContent = originalText;
-      importBtn.disabled = false;
-      e.target.value = '';
-    }
   });
 
   // Sync button
