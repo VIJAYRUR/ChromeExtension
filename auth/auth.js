@@ -77,25 +77,34 @@ function setupPasswordToggles() {
 }
 
 // Save auth tokens
-async function saveAuthTokens(token, refreshToken, user) {
+async function saveAuthTokens(token, refreshToken, user, clearJobs = false) {
   try {
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      // Clear old job data when new user logs in/registers
-      await chrome.storage.local.set({
+      const data = {
         authToken: token,
         refreshToken: refreshToken,
         currentUser: user,
-        isAuthenticated: true,
-        trackedJobs: [] // Clear old jobs for new user
-      });
+        isAuthenticated: true
+      };
+
+      // Only clear jobs if explicitly requested (e.g., on registration)
+      if (clearJobs) {
+        data.trackedJobs = [];
+      }
+
+      await chrome.storage.local.set(data);
     } else {
       localStorage.setItem('authToken', token);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('currentUser', JSON.stringify(user));
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.removeItem('trackedJobs'); // Clear old jobs for new user
+
+      // Only clear jobs if explicitly requested (e.g., on registration)
+      if (clearJobs) {
+        localStorage.removeItem('trackedJobs');
+      }
     }
-    console.log('[Auth] Tokens saved successfully, cleared old job data');
+    console.log('[Auth] Tokens saved successfully' + (clearJobs ? ', cleared old job data' : ''));
   } catch (error) {
     console.error('[Auth] Error saving tokens:', error);
   }

@@ -31,6 +31,9 @@ class DashboardUI {
 
     this.showLoadingState();
 
+    // Initialize sync manager and API client
+    await this.initializeSync();
+
     await this.waitForTracker();
     await this.loadCompactMode();
     await this.setupUserMenu();
@@ -129,6 +132,32 @@ class DashboardUI {
           }
         });
       }
+    }
+  }
+
+  async initializeSync() {
+    try {
+      // Initialize API client
+      if (typeof window.apiClient === 'undefined' && typeof APIClient !== 'undefined') {
+        window.apiClient = new APIClient();
+      }
+
+      // Initialize sync manager
+      if (typeof window.syncManager === 'undefined' && typeof SyncManager !== 'undefined') {
+        window.syncManager = new SyncManager();
+      }
+
+      // Trigger initial sync if authenticated
+      if (window.apiClient?.isAuthenticated() && window.syncManager) {
+        console.log('[Dashboard] Triggering initial sync...');
+        await window.syncManager.syncAll();
+
+        // Reload jobs after sync
+        await window.jobTracker.loadJobs();
+        console.log('[Dashboard] Sync complete, jobs reloaded');
+      }
+    } catch (error) {
+      console.error('[Dashboard] Sync initialization failed:', error);
     }
   }
 
