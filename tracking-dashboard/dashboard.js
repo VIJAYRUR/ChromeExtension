@@ -294,6 +294,49 @@ class DashboardUI {
       this.showAddJobModal();
     });
 
+    // Manual Add Job button
+    const addJobManualBtn = document.getElementById('add-job-manual-btn');
+    if (addJobManualBtn) {
+      addJobManualBtn.addEventListener('click', () => {
+        this.showManualAddJobModal();
+      });
+    }
+
+    // Close manual add job modal
+    const closeAddJobModal = document.getElementById('close-add-job-modal');
+    if (closeAddJobModal) {
+      closeAddJobModal.addEventListener('click', () => {
+        this.hideManualAddJobModal();
+      });
+    }
+
+    // Cancel manual add job
+    const cancelAddJob = document.getElementById('cancel-add-job');
+    if (cancelAddJob) {
+      cancelAddJob.addEventListener('click', () => {
+        this.hideManualAddJobModal();
+      });
+    }
+
+    // Manual add job form submission
+    const addJobForm = document.getElementById('add-job-form');
+    if (addJobForm) {
+      addJobForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.handleAddJobManually();
+      });
+    }
+
+    // Close modal on overlay click
+    const addJobModal = document.getElementById('add-job-modal');
+    if (addJobModal) {
+      addJobModal.addEventListener('click', (e) => {
+        if (e.target === addJobModal) {
+          this.hideManualAddJobModal();
+        }
+      });
+    }
+
     // Export button (if exists)
     const exportBtn = document.getElementById('export-btn');
     if (exportBtn) {
@@ -864,6 +907,184 @@ class DashboardUI {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Manual Add Job Modal Methods
+  showManualAddJobModal() {
+    const modal = document.getElementById('add-job-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  hideManualAddJobModal() {
+    const modal = document.getElementById('add-job-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      // Reset form
+      const form = document.getElementById('add-job-form');
+      if (form) {
+        form.reset();
+      }
+    }
+  }
+
+  async handleAddJobManually() {
+    // Get form values
+    const company = document.getElementById('manual-company').value.trim();
+    const title = document.getElementById('manual-title').value.trim();
+    const description = document.getElementById('manual-description').value.trim();
+    const location = document.getElementById('manual-location').value.trim();
+    const workType = document.getElementById('manual-work-type').value;
+    const linkedinUrl = document.getElementById('manual-url').value.trim();
+    const salary = document.getElementById('manual-salary').value.trim();
+    const status = document.getElementById('manual-status').value;
+    const notes = document.getElementById('manual-notes').value.trim();
+
+    // Validate required fields
+    if (!company || !title || !description) {
+      alert('⚠️ Please fill in all required fields:\n- Company\n- Position\n- Job Description');
+      return;
+    }
+
+    // Format the description HTML (same as LinkedIn formatting)
+    const descriptionHtml = this.formatJobDescription(description);
+
+    // Create job object
+    const jobData = {
+      company,
+      title,
+      description,  // Plain text version
+      descriptionHtml,  // Formatted HTML version (like LinkedIn)
+      location: location || '',
+      workType: workType || 'Not specified',
+      linkedinUrl: linkedinUrl || '',
+      salary: salary || '',
+      status: status || 'applied',
+      notes: notes || '',
+      dateApplied: new Date().toISOString(),
+      timeline: [
+        {
+          date: new Date().toISOString(),
+          event: 'Job added manually',
+          type: 'applied'
+        }
+      ]
+    };
+
+    try {
+      // Add job to tracker
+      await window.jobTracker.addJob(jobData);
+
+      // Hide modal
+      this.hideManualAddJobModal();
+
+      // Refresh dashboard
+      this.render();
+
+      // Show success message
+      console.log('[Dashboard] ✅ Job added manually:', company, '-', title);
+
+      // Optional: Show a subtle success notification
+      this.showSuccessNotification(`✅ ${company} - ${title} added successfully!`);
+    } catch (error) {
+      console.error('[Dashboard] Failed to add job:', error);
+      alert('❌ Failed to add job. Please try again.');
+    }
+  }
+
+  formatJobDescription(text) {
+    if (!text) return '';
+
+    // Patterns for detecting headings
+    const headingPatterns = [
+      /^(About|Overview|Summary|Description|Role|Position|Opportunity)/i,
+      /^(Responsibilities|Duties|What [Yy]ou'?ll [Dd]o|Your [Rr]ole)/i,
+      /^(Requirements|Qualifications|Skills|Experience|What [Ww]e'?re [Ll]ooking [Ff]or)/i,
+      /^(Nice [Tt]o [Hh]ave|Preferred|Bonus|Plus)/i,
+      /^(Benefits|Perks|What [Ww]e [Oo]ffer|Compensation)/i,
+      /^(About [Uu]s|About [Tt]he [Cc]ompany|Company|Our [Tt]eam)/i,
+      /^(How [Tt]o [Aa]pply|Application|Next [Ss]teps)/i,
+      /^(Equal [Oo]pportunity|Diversity|Inclusion)/i
+    ];
+
+    // Split by double newlines to get paragraphs
+    const paragraphs = text.split(/\n\n+/);
+
+    const formatted = paragraphs.map(para => {
+      para = para.trim();
+      if (!para) return '';
+
+      const lines = para.split('\n');
+      const firstLine = lines[0].trim();
+
+      // Check if this is a heading
+      const isHeading = headingPatterns.some(pattern => pattern.test(firstLine));
+      const isShortHeading = firstLine.length < 60 && firstLine.endsWith(':');
+
+      if (isHeading || isShortHeading) {
+        // This is a heading - wrap in <p><strong>
+        const headingText = firstLine.replace(/:$/, '');
+        const restOfPara = lines.slice(1).join('<br>');
+
+        if (restOfPara) {
+          return `<p><strong>${headingText}</strong></p><p>${restOfPara}</p>`;
+        } else {
+          return `<p><strong>${headingText}</strong></p>`;
+        }
+      }
+
+      // Check if paragraph contains bullet points
+      const bulletPattern = /^[\-\*\•]\s+/;
+      const hasBullets = lines.some(line => bulletPattern.test(line.trim()));
+
+      if (hasBullets) {
+        // Convert to HTML list
+        const listItems = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const cleaned = line.trim().replace(bulletPattern, '');
+            return `<li>${cleaned}</li>`;
+          })
+          .join('');
+        return `<ul>${listItems}</ul>`;
+      }
+
+      // Regular paragraph - preserve line breaks
+      return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+    }).filter(p => p).join('');
+
+    return formatted;
+  }
+
+  showSuccessNotification(message) {
+    // Create a simple toast notification
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #000;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10001;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideIn 0.3s ease-out;
+    `;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    }, 3000);
   }
 
   async handleRemoveDuplicates() {

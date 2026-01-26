@@ -15,6 +15,13 @@
         <h1>Job Tracker</h1>
       </div>
       <div class="header-actions">
+        <button class="btn-add-job" id="add-job-manual-btn" title="Add Job Manually">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add Job</span>
+        </button>
         <button class="btn-profile" id="openProfileBtn" title="Open Profile">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -494,6 +501,96 @@
       <p style="color: #6b6b6b; font-size: 14px;">Loading...</p>
     </div>
     <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  </div>
+
+  <!-- Add Job Modal -->
+  <div id="add-job-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 style="font-size: 20px; font-weight: 600; color: #111; margin: 0;">Add Job Manually</h2>
+        <button class="modal-close" id="close-add-job-modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="add-job-form">
+          <!-- Company (Required) -->
+          <div class="form-group">
+            <label for="manual-company">Company <span style="color: #e03e3e;">*</span></label>
+            <input type="text" id="manual-company" required placeholder="e.g., Google, Microsoft, Startup Inc.">
+          </div>
+
+          <!-- Position (Required) -->
+          <div class="form-group">
+            <label for="manual-title">Position <span style="color: #e03e3e;">*</span></label>
+            <input type="text" id="manual-title" required placeholder="e.g., Software Engineer, Product Manager">
+          </div>
+
+          <!-- Job Description (Required) -->
+          <div class="form-group">
+            <label for="manual-description">Job Description <span style="color: #e03e3e;">*</span></label>
+            <textarea id="manual-description" required rows="4" placeholder="Paste the job description here..."></textarea>
+          </div>
+
+          <!-- Location -->
+          <div class="form-group">
+            <label for="manual-location">Location</label>
+            <input type="text" id="manual-location" placeholder="e.g., San Francisco, CA or Remote">
+          </div>
+
+          <!-- Work Type -->
+          <div class="form-group">
+            <label for="manual-work-type">Work Type</label>
+            <select id="manual-work-type">
+              <option value="Not specified">Not specified</option>
+              <option value="Remote">Remote</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="On-site">On-site</option>
+            </select>
+          </div>
+
+          <!-- Job URL -->
+          <div class="form-group">
+            <label for="manual-url">Job URL</label>
+            <input type="url" id="manual-url" placeholder="https://...">
+          </div>
+
+          <!-- Salary -->
+          <div class="form-group">
+            <label for="manual-salary">Salary Range</label>
+            <input type="text" id="manual-salary" placeholder="e.g., $120k - $150k">
+          </div>
+
+          <!-- Status -->
+          <div class="form-group">
+            <label for="manual-status">Status</label>
+            <select id="manual-status">
+              <option value="applied">Applied</option>
+              <option value="saved">Saved</option>
+              <option value="screening">Screening</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label for="manual-notes">Notes</label>
+            <textarea id="manual-notes" rows="3" placeholder="Add any additional notes..."></textarea>
+          </div>
+
+          <!-- Buttons -->
+          <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+            <button type="button" class="btn-secondary" id="cancel-add-job">Cancel</button>
+            <button type="submit" class="btn-primary">Add Job</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script src="../shared/config.js"></script>
