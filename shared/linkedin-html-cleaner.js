@@ -97,26 +97,125 @@ class LinkedInHTMLCleaner {
   }
 
   /**
-   * Format HTML for display - ensures proper paragraph spacing
+   * Common section heading patterns in job descriptions
+   */
+  get headingPatterns() {
+    return [
+      /^About\s+(the\s+)?(job|role|position|company|us|team)/i,
+      /^(The\s+)?Role/i,
+      /^What\s+You('ll|'ll|\s+will)\s+(Do|Be\s+Doing)/i,
+      /^(Your\s+)?Responsibilities/i,
+      /^(Key\s+)?Requirements/i,
+      /^(Required|Preferred)\s+(Skills|Qualifications|Experience)/i,
+      /^Qualifications/i,
+      /^(Must|Nice)\s+(Have|to\s+Have)/i,
+      /^Skills/i,
+      /^Experience/i,
+      /^Benefits/i,
+      /^Perks/i,
+      /^Compensation/i,
+      /^Why\s+(Join|Work)/i,
+      /^Who\s+(You\s+Are|We('re|\s+Are)\s+Looking)/i,
+      /^(Technical|Functional)\s+Skills/i,
+      /^Roles?\s+(&|and)\s+Responsibilities/i,
+      /^Job\s+Description/i,
+      /^Overview/i,
+      /^Summary/i
+    ];
+  }
+
+  /**
+   * Check if text looks like a section heading
+   */
+  isHeadingText(text) {
+    if (!text) return false;
+    const trimmed = text.trim();
+    // Short text (under 60 chars) matching heading patterns
+    if (trimmed.length > 60) return false;
+    return this.headingPatterns.some(pattern => pattern.test(trimmed));
+  }
+
+  /**
+   * Format HTML for display - ensures proper paragraph spacing and headings
    */
   format(html) {
-    const cleaned = this.cleanHTML(html);
+    if (!html) return '';
 
-    // Parse cleaned HTML
+    const cleaned = this.cleanHTML(html);
     const temp = document.createElement('div');
     temp.innerHTML = cleaned;
 
-    // Process all paragraphs
+    // First pass: process existing structure
     const paragraphs = temp.querySelectorAll('p');
     paragraphs.forEach(p => {
-      // Check if paragraph contains only a <strong> tag
+      const text = p.textContent.trim();
+
+      // Check if paragraph contains only a <strong> tag (heading)
       if (p.children.length === 1 && p.children[0].tagName === 'STRONG') {
-        // This is a heading paragraph - add heading class
-        p.classList.add('heading');
+        p.classList.add('section-heading');
+      }
+      // Check if text matches heading patterns
+      else if (this.isHeadingText(text)) {
+        p.classList.add('section-heading');
+        p.innerHTML = `<strong>${p.innerHTML}</strong>`;
       }
     });
 
-    return temp.innerHTML;
+    // Second pass: handle text that's not in paragraphs (plain text with <br> only)
+    let result = temp.innerHTML;
+
+    // If the content looks like it's just text with <br> tags (no real structure)
+    if (paragraphs.length === 0 || (paragraphs.length === 1 && temp.textContent.length > 500)) {
+      result = this.structureContent(result);
+    }
+
+    return result;
+  }
+
+  /**
+   * Add structure to unstructured content (text with only <br> tags)
+   */
+  structureContent(html) {
+    if (!html) return '';
+
+    // Split by double line breaks or <br><br>
+    let sections = html
+      .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .split(/\n\n+/);
+
+    const result = sections.map(section => {
+      const trimmed = section.trim();
+      if (!trimmed) return '';
+
+      // Check if this section is a heading
+      const plainText = trimmed.replace(/<[^>]*>/g, '').trim();
+
+      if (this.isHeadingText(plainText)) {
+        return `<p class="section-heading"><strong>${trimmed}</strong></p>`;
+      }
+
+      // Check if it's a list (starts with bullet points, dashes, or numbers)
+      const lines = trimmed.split('\n').filter(l => l.trim());
+      const looksLikeList = lines.length > 1 && lines.every(line => {
+        const t = line.trim();
+        return /^[•\-\*\d+\.]\s/.test(t) || /^[a-z]\)\s/i.test(t);
+      });
+
+      if (looksLikeList) {
+        const items = lines.map(line => {
+          const cleanLine = line.trim().replace(/^[•\-\*\d+\.]\s*/, '').replace(/^[a-z]\)\s*/i, '');
+          return `<li>${cleanLine}</li>`;
+        }).join('');
+        return `<ul>${items}</ul>`;
+      }
+
+      // Regular paragraph - preserve line breaks within
+      const withBreaks = trimmed.replace(/\n/g, '<br>');
+      return `<p>${withBreaks}</p>`;
+    }).filter(s => s).join('\n');
+
+    return result;
   }
 }
 

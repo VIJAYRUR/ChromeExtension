@@ -27,8 +27,21 @@ class JobDetailPage {
     // Setup event listeners
     this.setupEventListeners();
 
+    // Initialize global notifications
+    this.setupGlobalNotifications();
+
     // Render job data
     this.render();
+  }
+
+  setupGlobalNotifications() {
+    // Initialize global notifications
+    if (window.globalNotifications) {
+      window.globalNotifications.injectInto('#notification-bell-wrapper');
+      console.log('[Job Detail] ✅ Global notifications initialized');
+    } else {
+      console.warn('[Job Detail] Global notifications not available');
+    }
   }
 
   async waitForTracker() {

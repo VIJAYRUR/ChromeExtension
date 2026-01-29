@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Groups - Job Tracker</title>
+  <link rel="stylesheet" href="whatsapp-groups.css?v=21">
+</head>
+<body>
+  <!-- WhatsApp-like Two-Column Layout -->
+  <div class="groups-container">
+
+    <!-- LEFT SIDEBAR: Groups List -->
+    <aside class="groups-sidebar" id="groups-sidebar">
+      <div class="sidebar-header">
+        <button class="btn-back-dashboard" id="back-to-dashboard" title="Back to Dashboard">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h2>Groups</h2>
+        <div class="sidebar-header-actions">
+          <div id="notification-bell-wrapper"></div>
+          <button class="btn-new-group" id="new-group-btn" title="Create Group">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Groups -->
+      <div class="sidebar-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input type="text" id="search-groups" placeholder="Search groups..." autocomplete="off">
+      </div>
+
+      <!-- Groups List -->
+      <div class="groups-list" id="groups-list">
+        <!-- Group items will be inserted here -->
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading groups...</p>
+        </div>
+      </div>
+
+      <!-- Discover Groups Button -->
+      <button class="btn-discover" id="discover-groups-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4M12 8h.01"></path>
+        </svg>
+        Discover Public Groups
+      </button>
+
+      <!-- Join Group Button -->
+      <button class="btn-join-group-sidebar" id="join-group-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="8.5" cy="7" r="4"></circle>
+          <line x1="20" y1="8" x2="20" y2="14"></line>
+          <line x1="23" y1="11" x2="17" y2="11"></line>
+        </svg>
+        Join Private Group by Link
+      </button>
+    </aside>
+
+    <!-- RIGHT PANEL: Selected Group Content -->
+    <main class="group-content" id="group-content">
+      <!-- Empty State (shown when no group is selected) -->
+      <div class="empty-group-state" id="empty-group-state">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#d4d4d4" stroke-width="1.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <h3>Select a group to start</h3>
+        <p>Choose a group from the list to view shared jobs and chat</p>
+      </div>
+
+      <!-- Group View (shown when a group is selected) -->
+      <div class="group-view" id="group-view" style="display: none;">
+        <!-- Group Header -->
+        <header class="group-header">
+          <button class="btn-mobile-back" id="mobile-back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <div class="group-header-info">
+            <div class="group-avatar" id="group-avatar">G</div>
+            <div class="group-details">
+              <h1 class="group-name" id="group-name">Group Name</h1>
+              <p class="group-meta" id="group-meta">0 members • Public</p>
+            </div>
+          </div>
+          <div class="group-header-actions">
+            <button class="btn-header-action" id="invite-members-btn" title="Invite Members">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+            </button>
+            <button class="btn-header-action" id="group-menu-btn" title="Group Menu">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="group-tabs">
+          <button class="tab-btn active" data-tab="chat" id="tab-chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Chat
+          </button>
+          <button class="tab-btn" data-tab="jobs" id="tab-jobs">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            Jobs
+            <span class="tab-badge" id="jobs-count">0</span>
+          </button>
+          <button class="tab-btn" data-tab="members" id="tab-members">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Members
+            <span class="tab-badge" id="members-count">0</span>
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-container">
+          <!-- Chat Tab -->
+          <div class="tab-content active" id="content-chat">
+            <div class="messages-container" id="messages-container">
+              <!-- Messages will be inserted here -->
+            </div>
+            <div class="message-input-container">
+              <input type="text" id="message-input" placeholder="Add a comment..." autocomplete="off">
+              <button class="btn-send" id="send-message-btn" title="Post">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Jobs Tab -->
+          <div class="tab-content" id="content-jobs">
+            <div class="jobs-header">
+              <button class="btn-share-job" id="share-job-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Share Job
+              </button>
+            </div>
+            <div class="jobs-list" id="jobs-list">
+              <!-- Shared jobs will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Members Tab -->
+          <div class="tab-content" id="content-members">
+            <div class="members-list" id="members-list">
+              <!-- Members will be inserted here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <!-- Create Group Modal -->
+  <div class="modal-overlay" id="create-group-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create New Group</h3>
+        <button class="btn-close-modal" id="close-create-modal">×</button>
+      </div>
+      <form class="modal-body" id="create-group-form">
+        <div class="form-group">
+          <label for="group-name-input">Group Name</label>
+          <input type="text" id="group-name-input" placeholder="Enter group name" required>
+        </div>
+        <div class="form-group">
+          <label for="group-description-input">Description (optional)</label>
+          <textarea id="group-description-input" placeholder="What's this group about?" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Group Type</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="group-type" value="public" checked>
+              <div>
+                <span style="font-weight: 500;">🌍 Public</span>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Anyone can discover and join this group</div>
+              </div>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="group-type" value="private">
+              <div>
+                <span style="font-weight: 500;">🔒 Private</span>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Only people with an invite link can join</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-create-btn">Cancel</button>
+          <button type="submit" class="btn-primary">Create Group</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Discover Groups Modal -->
+  <div class="modal-overlay" id="discover-modal" style="display: none;">
+    <div class="modal modal-large">
+      <div class="modal-header">
+        <h3>🌍 Discover Public Groups</h3>
+        <button class="btn-close-modal" id="close-discover-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Browse and join public groups - anyone can join these groups directly
+        </p>
+        <div class="discover-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input type="text" id="discover-search-input" placeholder="Search public groups...">
+        </div>
+        <div class="discover-groups-list" id="discover-groups-list">
+          <!-- Public groups will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite Link Modal -->
+  <div class="modal-overlay" id="invite-link-modal" style="display: none;">
+    <div class="modal modal-small">
+      <div class="modal-header">
+        <h3>Invite to Group</h3>
+        <button class="btn-close-modal" id="close-invite-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Share this link with others to invite them to the group
+        </p>
+        <div class="invite-link-container">
+          <input type="text" id="invite-link-input" readonly>
+          <button class="btn-copy-link" id="copy-invite-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+          </button>
+        </div>
+        <div class="copy-success" id="copy-success" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Link copied to clipboard!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Group Modal -->
+  <div class="modal-overlay" id="join-group-modal" style="display: none;">
+    <div class="modal modal-small">
+      <div class="modal-header">
+        <h3>🔒 Join Private Group</h3>
+        <button class="btn-close-modal" id="close-join-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Paste the invite link you received to join a private group
+        </p>
+        <div class="form-group">
+          <label for="join-link-input">Invite Link</label>
+          <input type="text" id="join-link-input" placeholder="Paste invite link here..." autocomplete="off">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-join-btn">Cancel</button>
+          <button type="button" class="btn-primary" id="confirm-join-btn">Join Group</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Details Modal -->
+  <div class="modal-overlay" id="job-details-modal" style="display: none;">
+    <div class="modal modal-large">
+      <div class="modal-header">
+        <h3>Job Details</h3>
+        <button class="btn-close-modal" id="close-job-details-modal">×</button>
+      </div>
+      <div class="modal-body" id="job-details-content">
+        <!-- Job details will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../shared/socket.io.min.js"></script>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/auth-manager.js"></script>
+  <script src="../shared/socket-client.js"></script>
+  <script src="../shared/group-api.js"></script>
+  <script src="../shared/shared-jobs-api.js"></script>
+  <script src="../shared/notification-manager.js"></script>
+  <script src="../shared/global-notifications.js"></script>
+  <script src="../shared/linkedin-html-cleaner.js?v=2"></script>
+  <script src="job-tracker.js"></script>
+  <script src="whatsapp-groups.js?v=26"></script>
+</body>
+</html>
+
+

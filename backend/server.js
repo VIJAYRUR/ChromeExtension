@@ -6,14 +6,14 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
-const connectDB = require('./config/database');
+const { connectDB } = require('./config/database');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 // Initialize express app
 const app = express();
 
-// Connect to MongoDB
+// Connect to MongoDB (Production + Local Chat)
 connectDB();
 
 // Security middleware
@@ -55,7 +55,7 @@ app.use(cors(corsOptions));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500, // Increased for development
   message: {
     success: false,
     message: 'Too many requests, please try again later'
@@ -111,6 +111,23 @@ const server = app.listen(PORT, () => {
 ╚════════════════════════════════════════════════════════════════╝
   `);
 });
+
+// Initialize Socket.io for real-time chat (OPTIONAL FEATURE)
+const { initializeSocketServer } = require('./socket/socketServer');
+const { registerChatHandlers } = require('./socket/chatHandlers');
+const { registerGroupHandlers } = require('./socket/groupHandlers');
+const { setSocketIO } = require('./socket/socketHelper');
+
+const io = initializeSocketServer(server);
+registerChatHandlers(io);
+registerGroupHandlers(io);
+
+// Make io accessible to controllers
+setSocketIO(io);
+app.set('io', io);
+
+console.log('✅ Socket.io initialized for real-time chat');
+console.log(`   WebSocket: ws://localhost:${PORT}`);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {

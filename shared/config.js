@@ -16,7 +16,7 @@ const CONFIG = {
 };
 
 // Auto-detect environment or set manually
-const CURRENT_ENV = 'production'; // Change to 'development' for local testing
+const CURRENT_ENV = 'development'; // Change to 'development' for local testing
 
 // Export the active configuration
 const API_CONFIG = CONFIG[CURRENT_ENV];

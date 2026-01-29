@@ -145,6 +145,12 @@
       font-weight: 400;
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     /* User Avatar */
     .user-avatar {
       width: 32px;
@@ -349,6 +355,66 @@
     .spinning {
       animation: spin 1s linear infinite;
     }
+
+    /* Notification bell adjustments for popup - override fixed positioning */
+    .notification-bell-container {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      z-index: 100 !important;
+    }
+
+    .notification-bell-btn {
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 5px !important;
+      box-shadow: none !important;
+      background: rgba(55, 53, 47, 0.08) !important;
+      color: rgba(55, 53, 47, 0.65) !important;
+    }
+
+    .notification-bell-btn:hover {
+      background: rgba(55, 53, 47, 0.16) !important;
+      color: rgba(55, 53, 47, 0.9) !important;
+    }
+
+    .notification-bell-btn svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+
+    .notification-dropdown {
+      position: absolute !important;
+      width: 300px !important;
+      right: 0 !important;
+      max-height: 320px !important;
+    }
+
+    .notification-badge {
+      top: -4px !important;
+      right: -4px !important;
+      min-width: 14px !important;
+      height: 14px !important;
+      font-size: 9px !important;
+      padding: 0 3px !important;
+      border-width: 1px !important;
+    }
+
+    /* Toast positioning for popup */
+    .notion-toast {
+      position: fixed !important;
+      top: 8px !important;
+      right: 8px !important;
+      left: auto !important;
+      transform: translateX(120%) !important;
+      max-width: 300px !important;
+      min-width: 240px !important;
+      font-size: 12px !important;
+    }
+
+    .notion-toast.show {
+      transform: translateX(0) !important;
+    }
   </style>
 </head>
 <body>
@@ -382,9 +448,11 @@
           <h1>Job Tracker</h1>
           <div class="subtitle">Track & manage your applications</div>
         </div>
-        <div class="user-avatar" id="user-avatar">
-          <span id="user-initials">U</span>
-          <div class="user-dropdown" id="user-dropdown">
+        <div class="header-right">
+          <div id="notification-bell-wrapper"></div>
+          <div class="user-avatar" id="user-avatar">
+            <span id="user-initials">U</span>
+            <div class="user-dropdown" id="user-dropdown">
             <div class="user-info">
               <div class="user-name" id="user-name">User</div>
               <div class="user-email" id="user-email">user@email.com</div>
@@ -412,6 +480,7 @@
               Logout
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -448,6 +517,11 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
+  <script src="socket.io.min.js"></script>
+  <script src="auth-manager.js"></script>
+  <script src="socket-client.js"></script>
+  <script src="global-notifications.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

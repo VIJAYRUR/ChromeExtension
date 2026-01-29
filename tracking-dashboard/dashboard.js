@@ -41,9 +41,133 @@ class DashboardUI {
     console.log('[Dashboard] ✅ JobTracker loaded with', window.jobTracker.jobs.length, 'jobs');
 
     this.setupEventListeners();
+    this.setupSocketListeners();
+    this.setupGlobalNotifications();
     this.render();
 
     console.log('[Dashboard] 🎨 Dashboard initialized');
+  }
+
+  setupGlobalNotifications() {
+    // Initialize global notifications
+    if (window.globalNotifications) {
+      window.globalNotifications.injectInto('#notification-bell-wrapper');
+      console.log('[Dashboard] ✅ Global notifications initialized');
+    } else {
+      console.warn('[Dashboard] Global notifications not available');
+    }
+  }
+
+  async setupSocketListeners() {
+    // Connect to socket if available and authenticated
+    if (typeof window.socketClient !== 'undefined' && window.authManager) {
+      try {
+        // Wait for auth manager to initialize
+        await window.authManager.init();
+
+        const token = window.authManager.getToken();
+        if (token) {
+          await window.socketClient.connect(token);
+          console.log('[Dashboard] Socket connected');
+
+          // Join all user's groups to receive notifications
+          await this.joinAllUserGroups();
+
+          // NOTE: job-shared notifications are now handled by global-notifications.js
+          // to avoid duplicate notifications. The global-notifications.js file
+          // listens to the socket event and shows both the notification panel entry
+          // and the Notion-style toast.
+
+          // NOTE: new-message notifications are now handled by global-notifications.js
+          // to avoid duplicate notifications.
+
+          // Listen for mention notifications
+          window.socketClient.on('mention-notification', (data) => {
+            console.log('[Dashboard] Mention notification:', data);
+
+            const message = `${data.mentionedBy.userName} mentioned you in a message`;
+
+            // Add to global notifications
+            if (window.globalNotifications) {
+              window.globalNotifications.addNotification({
+                type: 'mention',
+                title: 'You were mentioned',
+                message: message,
+                data: {
+                  groupId: data.groupId,
+                  messageId: data.messageId,
+                  mentionedBy: data.mentionedBy
+                }
+              });
+              console.log('[Dashboard] ✅ Added mention notification to global notifications');
+            }
+
+            // Show Notion-style toast notification
+            if (window.globalNotifications) {
+              window.globalNotifications.showNotionToast(message, 'warning', 5000);
+            }
+
+            // Show browser notification via background script
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+              chrome.runtime.sendMessage({
+                action: 'showNotification',
+                notificationId: `mention-${Date.now()}`,
+                title: 'You were mentioned',
+                message: message,
+                priority: 2,
+                requireInteraction: true,
+                data: { type: 'mention', groupId: data.groupId }
+              });
+            }
+          });
+
+          // Listen for member joined
+          window.socketClient.on('member-joined', (data) => {
+            console.log('[Dashboard] Member joined:', data);
+            if (window.globalNotifications) {
+              window.globalNotifications.showNotionToast(`${data.member.name} joined a group!`, 'success', 3000);
+            }
+          });
+
+          // Listen for job application
+          window.socketClient.on('job-application', (data) => {
+            console.log('[Dashboard] Job application:', data);
+            if (window.globalNotifications && data.job) {
+              window.globalNotifications.showNotionToast(`${data.appliedBy.name} applied to ${data.job.company}`, 'success', 4000);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('[Dashboard] Socket setup failed:', error);
+      }
+    }
+  }
+
+  async joinAllUserGroups() {
+    try {
+      console.log('[Dashboard] 🔗 Joining all user groups for notifications...');
+
+      // Get user's groups from API
+      if (!window.groupAPI) {
+        console.warn('[Dashboard] groupAPI not available');
+        return;
+      }
+
+      const groups = await window.groupAPI.getMyGroups();
+      console.log(`[Dashboard] Found ${groups.length} groups to join`);
+
+      // Join each group room
+      for (const group of groups) {
+        if (window.socketClient && window.socketClient.isConnected) {
+          window.socketClient.joinGroup(group._id);
+          console.log(`[Dashboard] ✅ Joined group: ${group.name}`);
+        }
+      }
+
+      console.log('[Dashboard] ✅ Joined all user groups');
+    } catch (error) {
+      console.error('[Dashboard] Error joining groups:', error);
+    }
   }
 
   async setupUserMenu() {
@@ -188,11 +312,30 @@ class DashboardUI {
     while (!window.jobTracker.isLoaded) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+
+    // Wait for auth manager to be initialized
+    if (window.authManager && !window.authManager.initialized) {
+      console.log('[Dashboard] ⏳ Waiting for AuthManager...');
+      await window.authManager.init();
+    }
+
+    // IMPORTANT: Reload jobs for the current user after auth is ready
+    // This ensures we load from the correct user-specific storage key
+    // (JobTracker may have loaded before auth was ready)
+    if (window.authManager?.currentUser?._id) {
+      const currentStorageKey = window.jobTracker.getStorageKey();
+      const expectedKey = `trackedJobs_${window.authManager.currentUser._id}`;
+
+      if (currentStorageKey !== expectedKey) {
+        console.log('[Dashboard] 🔄 Reloading jobs for authenticated user...');
+        await window.jobTracker.reloadForUser();
+      }
+    }
   }
 
   showLoadingState() {
     // Show loading in Kanban columns
-    const columns = ['applied', 'interview', 'offer', 'rejected'];
+    const columns = ['saved', 'applied', 'interview', 'offer', 'rejected'];
     columns.forEach(status => {
       const column = document.getElementById(`column-${status}`);
       if (column) {
@@ -289,10 +432,18 @@ class DashboardUI {
       });
     });
 
-    // Add job button
+    // Add job button (New button)
     document.getElementById('add-job-btn').addEventListener('click', () => {
-      this.showAddJobModal();
+      this.showManualAddJobModal();
     });
+
+    // Groups button - navigate to groups page
+    const openGroupsBtn = document.getElementById('open-groups-btn');
+    if (openGroupsBtn) {
+      openGroupsBtn.addEventListener('click', () => {
+        window.location.href = 'groups.html';
+      });
+    }
 
     // Manual Add Job button
     const addJobManualBtn = document.getElementById('add-job-manual-btn');
@@ -508,7 +659,7 @@ class DashboardUI {
   }
 
   renderKanban(jobs) {
-    const statuses = ['applied', 'interview', 'offer', 'rejected'];
+    const statuses = ['saved', 'applied', 'interview', 'offer', 'rejected'];
 
     statuses.forEach(status => {
       const column = document.getElementById(`column-${status}`);
@@ -529,6 +680,7 @@ class DashboardUI {
       addButton.className = 'add-card-btn';
 
       const statusColors = {
+        'saved': 'var(--c-purTexAccPri)',
         'applied': 'var(--c-graTexAccPri)',
         'interview': 'var(--c-bluTexAccPri)',
         'offer': 'var(--c-greTexAccPri)',
@@ -659,17 +811,25 @@ class DashboardUI {
   }
 
   showStatusUpdateFeedback(status) {
-    const toast = document.createElement('div');
-    toast.className = 'status-toast';
-    toast.textContent = `✓ Moved to ${status.charAt(0).toUpperCase() + status.slice(1)}`;
-    document.body.appendChild(toast);
+    const message = `Moved to ${status.charAt(0).toUpperCase() + status.slice(1)}`;
 
-    setTimeout(() => toast.classList.add('show'), 10);
+    // Use Notion-style toast if available
+    if (window.globalNotifications) {
+      window.globalNotifications.showNotionToast(message, 'success', 2000);
+    } else {
+      // Fallback to old toast
+      const toast = document.createElement('div');
+      toast.className = 'status-toast';
+      toast.textContent = `✓ ${message}`;
+      document.body.appendChild(toast);
 
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 2000);
+      setTimeout(() => toast.classList.add('show'), 10);
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+    }
   }
 
   createJobCard(job) {
@@ -680,6 +840,11 @@ class DashboardUI {
 
     card.innerHTML = `
       <div class="job-actions">
+        <div role="button" tabindex="0" class="job-action-btn" title="Share to Group">
+          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: inherit; flex-shrink: 0;">
+            <path d="M8.5 1a.5.5 0 0 0-1 0v6H1.5a.5.5 0 0 0 0 1h6v6a.5.5 0 0 0 1 0V8h6a.5.5 0 0 0 0-1h-6V1z"></path>
+          </svg>
+        </div>
         <div role="button" tabindex="0" class="job-action-btn" title="Edit">
           <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: inherit; flex-shrink: 0;">
             <path d="M11.243 3.457a.803.803 0 0 0-1.13 0l-.554.552a.075.075 0 0 0 0 .106l1.03 1.03a.075.075 0 0 0 .107 0l.547-.546a.1.1 0 0 0 .019-.032.804.804 0 0 0-.02-1.11m-2.246 1.22a.075.075 0 0 0-.106 0l-6.336 6.326a1.1 1.1 0 0 0-.237.393l-.27.87v.002c-.062.232.153.466.389.383l.863-.267q.221-.061.397-.239l6.332-6.331a.075.075 0 0 0 0-.106zm-3.355 6.898a.08.08 0 0 0-.053.022l-1.1 1.1a.075.075 0 0 0 .053.128h9.06a.625.625 0 1 0 0-1.25z"></path>
@@ -712,8 +877,16 @@ class DashboardUI {
       }
     });
 
+    const shareBtn = card.querySelector('.job-action-btn[title="Share to Group"]');
     const editBtn = card.querySelector('.job-action-btn[title="Edit"]');
     const moreBtn = card.querySelector('.job-action-btn[title="More"]');
+
+    if (shareBtn) {
+      shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showShareToGroupModal(job);
+      });
+    }
 
     if (editBtn) {
       editBtn.addEventListener('click', (e) => {
@@ -1297,6 +1470,7 @@ class DashboardUI {
 
   getStatusStyle(status) {
     const statusColors = {
+      'saved': { bg: 'rgba(232, 222, 238, 0.9)', color: 'rgb(103, 36, 131)' },
       'applied': { bg: 'rgba(206, 205, 202, 0.5)', color: 'rgba(55, 53, 47, 0.85)' },
       'interview': { bg: 'rgba(219, 237, 255, 0.9)', color: 'rgb(11, 110, 153)' },
       'offer': { bg: 'rgba(219, 237, 219, 0.9)', color: 'rgb(0, 135, 107)' },
@@ -1330,33 +1504,48 @@ class DashboardUI {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(15, 15, 15, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10000;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(3px);
+      padding: 20px;
     `;
 
-    // Create modal container - smaller, more compact
+    // Create modal container - clean and minimal
     const modal = document.createElement('div');
     modal.className = 'day-jobs-modal';
     modal.style.cssText = `
       background: white;
-      border-radius: 6px;
-      width: 420px;
+      border-radius: 8px;
+      width: 400px;
       max-width: 90vw;
-      max-height: 480px;
+      max-height: 70vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
+      animation: modalFadeIn 0.2s ease;
     `;
 
-    // Modal header - more compact
+    // Add animation keyframes if not already present
+    if (!document.querySelector('#modal-animation-styles')) {
+      const style = document.createElement('style');
+      style.id = 'modal-animation-styles';
+      style.textContent = `
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Modal header - clean and minimal
     const header = document.createElement('div');
     header.style.cssText = `
-      padding: 12px 16px;
+      padding: 16px 20px;
       border-bottom: 1px solid rgba(55, 53, 47, 0.09);
       display: flex;
       align-items: center;
@@ -1366,34 +1555,36 @@ class DashboardUI {
 
     const headerTitle = document.createElement('div');
     headerTitle.style.cssText = `
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
       color: rgb(55, 53, 47);
+      line-height: 1.2;
     `;
     headerTitle.textContent = `${dateTitle}`;
 
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '×';
+    closeBtn.setAttribute('aria-label', 'Close');
     closeBtn.style.cssText = `
-      background: none;
+      background: transparent;
       border: none;
       font-size: 24px;
       color: rgba(55, 53, 47, 0.5);
       cursor: pointer;
       padding: 0;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 4px;
+      border-radius: 3px;
       transition: background 20ms ease-in;
     `;
     closeBtn.addEventListener('mouseover', () => {
       closeBtn.style.background = 'rgba(55, 53, 47, 0.08)';
     });
     closeBtn.addEventListener('mouseout', () => {
-      closeBtn.style.background = 'none';
+      closeBtn.style.background = 'transparent';
     });
     closeBtn.addEventListener('click', () => {
       document.body.removeChild(overlay);
@@ -1402,29 +1593,31 @@ class DashboardUI {
     header.appendChild(headerTitle);
     header.appendChild(closeBtn);
 
-    // Modal body with Notion-style list - compact and scrollable
+    // Modal body with clean list
     const body = document.createElement('div');
     body.style.cssText = `
-      padding: 4px 0;
+      padding: 8px 0;
       overflow-y: auto;
       flex: 1;
       min-height: 0;
     `;
 
-    // Create Notion-style list items - more compact
+    // Create clean list items matching the screenshot
     jobs.forEach((job, index) => {
       const listItem = document.createElement('div');
       listItem.style.cssText = `
         display: flex;
         align-items: center;
-        padding: 4px 16px;
+        justify-content: space-between;
+        padding: 10px 20px;
         cursor: pointer;
         transition: background 20ms ease-in;
-        min-height: 32px;
+        min-height: 44px;
+        gap: 12px;
       `;
 
       listItem.addEventListener('mouseover', () => {
-        listItem.style.background = 'rgba(55, 53, 47, 0.08)';
+        listItem.style.background = 'rgba(55, 53, 47, 0.04)';
       });
       listItem.addEventListener('mouseout', () => {
         listItem.style.background = 'transparent';
@@ -1434,66 +1627,77 @@ class DashboardUI {
         this.showJobDetail(job);
       });
 
-      // Bullet point - smaller
-      const bullet = document.createElement('div');
-      bullet.style.cssText = `
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: rgba(55, 53, 47, 0.4);
-        margin-right: 10px;
-        flex-shrink: 0;
-      `;
-
-      // Job content
-      const content = document.createElement('div');
-      content.style.cssText = `
-        flex: 1;
+      // Left side: Bullet + Job info
+      const leftSide = document.createElement('div');
+      leftSide.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 12px;
+        flex: 1;
         min-width: 0;
       `;
 
-      // Job title and company
+      // Bullet point
+      const bullet = document.createElement('div');
+      bullet.style.cssText = `
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: rgba(55, 53, 47, 0.4);
+        flex-shrink: 0;
+      `;
+
+      // Job title and company container
       const textContainer = document.createElement('div');
       textContainer.style.cssText = `
         flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      `;
+
+      // Job title
+      const titleText = document.createElement('div');
+      titleText.style.cssText = `
+        color: rgb(55, 53, 47);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.3;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       `;
-
-      const titleText = document.createElement('span');
-      titleText.style.cssText = `
-        color: rgb(55, 53, 47);
-        font-size: 13px;
-        font-weight: 500;
-      `;
       titleText.textContent = job.title;
 
-      const companyText = document.createElement('span');
+      // Company name
+      const companyText = document.createElement('div');
       companyText.style.cssText = `
-        color: rgba(55, 53, 47, 0.65);
+        color: rgba(55, 53, 47, 0.6);
         font-size: 13px;
-        margin-left: 4px;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       `;
       companyText.textContent = `at ${job.company}`;
 
       textContainer.appendChild(titleText);
       textContainer.appendChild(companyText);
 
-      // Status badge - smaller
+      leftSide.appendChild(bullet);
+      leftSide.appendChild(textContainer);
+
+      // Right side: Status badge
       const statusStyle = this.getStatusStyle(job.status);
       const statusBadge = document.createElement('span');
       statusBadge.style.cssText = `
         display: inline-flex;
         align-items: center;
-        height: 20px;
-        padding: 0 6px;
-        border-radius: 3px;
-        font-size: 11px;
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 4px;
+        font-size: 12px;
         font-weight: 500;
         background: ${statusStyle.bg};
         color: ${statusStyle.color};
@@ -1505,15 +1709,13 @@ class DashboardUI {
         'interview': 'Interview',
         'offer': 'Offer',
         'rejected': 'Rejected',
-        'withdrawn': 'Withdrawn'
+        'withdrawn': 'Withdrawn',
+        'saved': 'Saved'
       };
       statusBadge.textContent = statusLabels[job.status] || job.status;
 
-      content.appendChild(textContainer);
-      content.appendChild(statusBadge);
-
-      listItem.appendChild(bullet);
-      listItem.appendChild(content);
+      listItem.appendChild(leftSide);
+      listItem.appendChild(statusBadge);
 
       body.appendChild(listItem);
     });
@@ -1530,6 +1732,232 @@ class DashboardUI {
     });
 
     document.body.appendChild(overlay);
+  }
+
+  async showShareToGroupModal(job) {
+    console.log('[Dashboard] Opening share to group modal for job:', job.id);
+
+    const modal = document.getElementById('share-to-group-modal');
+    const closeBtn = document.getElementById('close-share-to-group-modal');
+    const jobInfoDiv = document.getElementById('share-job-info');
+    const groupsListDiv = document.getElementById('share-groups-list');
+
+    if (!modal) {
+      console.error('[Dashboard] Share to group modal not found');
+      return;
+    }
+
+    // Store current job for sharing
+    this.currentJobToShare = job;
+
+    // Populate job info
+    jobInfoDiv.innerHTML = `
+      <div class="share-job-title">${this.escapeHtml(job.title)}</div>
+      <div class="share-job-company">${this.escapeHtml(job.company)}</div>
+      <div class="share-job-meta">
+        ${job.location ? `<span>📍 ${this.escapeHtml(job.location)}</span>` : ''}
+        ${job.workType ? `<span>💼 ${this.escapeHtml(job.workType)}</span>` : ''}
+      </div>
+    `;
+
+    // Show modal
+    modal.style.display = 'flex';
+
+    // Load groups
+    await this.loadGroupsForSharing(groupsListDiv);
+
+    // Close button handler
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+      this.currentJobToShare = null;
+    };
+
+    // Close on overlay click
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+        this.currentJobToShare = null;
+      }
+    };
+  }
+
+  async loadGroupsForSharing(container) {
+    try {
+      container.innerHTML = '<div class="loading-state">Loading groups...</div>';
+
+      // Check if groupAPI is available
+      if (typeof groupAPI === 'undefined') {
+        console.error('[Dashboard] groupAPI not available');
+        container.innerHTML = '<div class="empty-state">Group API not available. Please refresh the page.</div>';
+        return;
+      }
+
+      const groups = await groupAPI.getMyGroups();
+
+      if (!groups || groups.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>You haven't joined any groups yet.</p>
+            <p style="margin-top: 8px; font-size: 13px;">Join or create a group to share jobs with others.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render groups - simple calendar day jobs style
+      container.innerHTML = groups.map(group => {
+        const memberCount = group.memberCount || 0;
+
+        return `
+          <div class="share-group-item" data-group-id="${group._id}">
+            <div class="share-group-info">
+              <div class="share-group-details">
+                <div class="share-group-name">${this.escapeHtml(group.name)}</div>
+                <div class="share-group-meta">${memberCount} member${memberCount !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+            <button class="share-group-btn" data-group-id="${group._id}">Share</button>
+          </div>
+        `;
+      }).join('');
+
+      // Attach click handlers to share buttons
+      container.querySelectorAll('.share-group-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const groupId = btn.dataset.groupId;
+          await this.shareJobToGroup(groupId, btn);
+        });
+      });
+
+    } catch (error) {
+      console.error('[Dashboard] Error loading groups:', error);
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>Failed to load groups</p>
+          <p style="margin-top: 8px; font-size: 13px; color: var(--text-muted);">${error.message}</p>
+        </div>
+      `;
+    }
+  }
+
+  async shareJobToGroup(groupId, button) {
+    if (!this.currentJobToShare) {
+      console.error('[Dashboard] No job selected for sharing');
+      return;
+    }
+
+    try {
+      console.log('[Dashboard] Sharing job to group:', groupId);
+
+      // Disable button
+      button.disabled = true;
+      button.textContent = 'Sharing...';
+
+      const job = this.currentJobToShare;
+
+      const jobData = {
+        company: job.company,
+        title: job.title,
+        position: job.title,
+        description: job.description || '',
+        descriptionHtml: job.descriptionHtml || '',
+        location: job.location || '',
+        salary: job.salary || '',
+        workType: job.workType || '',
+        link: job.linkedinUrl || job.jobUrl || '',
+        linkedinUrl: job.linkedinUrl || '',
+        jobUrl: job.jobUrl || '',
+        linkedinJobId: job.linkedinJobId || '',
+        jobPostedHoursAgo: job.jobPostedHoursAgo || null,
+        applicantsAtApplyTime: job.applicantsAtApplyTime || null,
+        applicantsText: job.applicantsText || null,
+        timeToApplyBucket: job.timeToApplyBucket || null,
+        competitionBucket: job.competitionBucket || null,
+        source: job.source || 'Manual'
+      };
+
+      // STEP 1: Create SharedJob record so it appears in Jobs section
+      if (window.sharedJobsAPI) {
+        console.log('[Dashboard] Creating SharedJob record via API...');
+        await window.sharedJobsAPI.shareJob(groupId, jobData);
+        console.log('[Dashboard] SharedJob record created successfully');
+      } else {
+        console.warn('[Dashboard] sharedJobsAPI not available, job will only appear in chat');
+      }
+
+      // STEP 2: Send job as inline message in chat via Socket.io
+      if (window.socketClient && window.socketClient.isConnected) {
+        console.log('[Dashboard] Sending job as inline chat message');
+
+        window.socketClient.sendMessage(groupId, {
+          content: `Shared a job: ${job.title} at ${job.company}`,
+          messageType: 'job_share',
+          jobData: jobData
+        });
+      } else {
+        console.warn('[Dashboard] Socket not connected, job saved but chat message not sent');
+      }
+
+      // Update button
+      button.textContent = '✓ Shared';
+      button.classList.add('shared');
+
+      // Show success notification
+      this.showNotification('Job shared to group!', 'success');
+
+      // Close modal after a short delay
+      setTimeout(() => {
+        const modal = document.getElementById('share-to-group-modal');
+        if (modal) {
+          modal.style.display = 'none';
+        }
+        this.currentJobToShare = null;
+      }, 1000);
+
+    } catch (error) {
+      console.error('[Dashboard] Error sharing job:', error);
+      this.showNotification(error.message || 'Failed to share job', 'error');
+
+      // Reset button
+      button.disabled = false;
+      button.textContent = 'Share';
+    }
+  }
+
+  showNotification(message, type = 'info') {
+    // Use global Notion-style toast if available
+    if (window.globalNotifications && window.globalNotifications.showNotionToast) {
+      window.globalNotifications.showNotionToast(message, type);
+      return;
+    }
+
+    // Fallback to simple toast
+    const toast = document.createElement('div');
+    toast.className = 'status-toast';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 10001;
+      animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 }
 

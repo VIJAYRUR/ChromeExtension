@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Details</title>
+  <link rel="stylesheet" href="shared-job-detail.css?v=3">
+</head>
+<body>
+  <div class="page-container">
+    <!-- Header - Notion Style -->
+    <header class="page-header">
+      <button class="btn-back" id="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h1 class="page-title">Shared Job</h1>
+      <div class="header-actions">
+        <button class="btn-primary" id="save-job-btn">
+          Save to Tracker
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Loading state -->
+      <div class="loading-state" id="loading-state">
+        <div class="spinner"></div>
+        <p>Loading job details...</p>
+      </div>
+
+      <!-- Job content will be inserted here -->
+      <div class="job-content" id="job-content" style="display: none;">
+        <!-- Content will be dynamically generated -->
+      </div>
+
+      <!-- Error state -->
+      <div class="error-state" id="error-state" style="display: none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h2>Job Not Found</h2>
+        <p>The job you're looking for doesn't exist or has been removed.</p>
+        <button class="btn-primary" onclick="window.history.back()">Go Back</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../shared/config.js"></script>
+  <script src="../shared/auth-manager.js"></script>
+  <script src="../shared/linkedin-html-cleaner.js?v=2"></script>
+  <script src="../shared/shared-jobs-api.js"></script>
+  <script src="job-tracker.js"></script>
+  <script src="shared-job-detail.js?v=3"></script>
+</body>
+</html>
+

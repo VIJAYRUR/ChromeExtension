@@ -4,7 +4,8 @@
   "version": "2.2.0",
   "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard and smart autofill",
   "permissions": [
-    "storage"
+    "storage",
+    "notifications"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*"
@@ -74,6 +75,9 @@
         "tracking-dashboard/job-detail.js",
         "tracking-dashboard/job-tracker.js",
         "tracking-dashboard/auth-guard.js",
+        "tracking-dashboard/group-detail.html",
+        "tracking-dashboard/group-detail.css",
+        "tracking-dashboard/group-detail.js",
         "autofill/semantic-matcher.js",
         "autofill/intelligent-value-mapper.js",
         "autofill/ats-platform-intelligence.js",
@@ -92,7 +96,13 @@
         "auth/auth.js",
         "shared/auth-manager.js",
         "shared/api-client.js",
-        "shared/sync-manager.js"
+        "shared/sync-manager.js",
+        "shared/socket-client.js",
+        "shared/socket.io.min.js",
+        "shared/config.js",
+        "shared/group-api.js",
+        "shared/shared-jobs-api.js",
+        "shared/notification-manager.js"
       ],
       "matches": ["<all_urls>"]
     }

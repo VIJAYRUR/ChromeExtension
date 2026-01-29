@@ -1,7 +1,12 @@
 // Popup script with Authentication
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:3000/api';
+// Get API base URL from config
+const getAPIBaseURL = () => {
+  if (typeof window !== 'undefined' && window.API_CONFIG) {
+    return window.API_CONFIG.API_URL;
+  }
+  return 'https://job-tracker-api-j7ef.onrender.com/api'; // Fallback
+};
 
 // ========================================
 // AUTHENTICATION CHECK
@@ -24,7 +29,7 @@ async function checkAuth() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${getAPIBaseURL()}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${result.authToken}`
         },
@@ -101,6 +106,32 @@ function showMainContent() {
   }
 
   loadStats();
+
+  // Initialize notifications and socket
+  initializeNotifications();
+}
+
+async function initializeNotifications() {
+  try {
+    // Get auth token
+    const result = await chrome.storage.local.get(['authToken']);
+    if (!result.authToken) return;
+
+    // Inject notification bell
+    if (window.globalNotifications) {
+      window.globalNotifications.injectInto('#notification-bell-wrapper');
+      console.log('[Popup] Global notifications injected');
+    }
+
+    // Connect socket for real-time notifications
+    if (window.socketClient && !window.socketClient.isConnected) {
+      console.log('[Popup] Connecting socket...');
+      await window.socketClient.connect(result.authToken);
+      console.log('[Popup] Socket connected:', window.socketClient.isConnected);
+    }
+  } catch (error) {
+    console.error('[Popup] Error initializing notifications:', error);
+  }
 }
 
 function showOfflineWarning() {
@@ -215,7 +246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const result = await chrome.storage.local.get(['authToken']);
       if (result.authToken) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(`${getAPIBaseURL()}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${result.authToken}`
@@ -254,7 +285,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Sync jobs
       const jobs = result.trackedJobs || [];
-      const syncResponse = await fetch(`${API_BASE_URL}/jobs/sync`, {
+      const syncResponse = await fetch(`${getAPIBaseURL()}/jobs/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

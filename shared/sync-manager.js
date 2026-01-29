@@ -8,9 +8,46 @@ class SyncManager {
     this.syncQueue = [];
     this.lastSyncTime = null;
     this.syncInterval = null;
+    this.currentUserId = null;
     this.SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
     this.init();
+  }
+
+  // Get current user ID from auth manager
+  getCurrentUserId() {
+    if (this.currentUserId) return this.currentUserId;
+
+    if (window.authManager?.currentUser?._id) {
+      this.currentUserId = window.authManager.currentUser._id;
+      return this.currentUserId;
+    }
+
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user?._id) {
+          this.currentUserId = user._id;
+          return this.currentUserId;
+        }
+      }
+    } catch (e) {}
+
+    return null;
+  }
+
+  // Get storage key namespaced by userId
+  getStorageKey(baseKey) {
+    const userId = this.getCurrentUserId();
+    return userId ? `${baseKey}_${userId}` : `${baseKey}_anonymous`;
+  }
+
+  // Reset user-specific state (call on logout)
+  resetUserState() {
+    this.currentUserId = null;
+    this.syncQueue = [];
+    this.lastSyncTime = null;
   }
 
   async init() {
@@ -30,12 +67,13 @@ class SyncManager {
   }
 
   async loadLastSyncTime() {
+    const storageKey = this.getStorageKey('lastSyncTime');
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.local.get(['lastSyncTime']);
-        this.lastSyncTime = result.lastSyncTime ? new Date(result.lastSyncTime) : null;
+        const result = await chrome.storage.local.get([storageKey]);
+        this.lastSyncTime = result[storageKey] ? new Date(result[storageKey]) : null;
       } else {
-        const stored = localStorage.getItem('lastSyncTime');
+        const stored = localStorage.getItem(storageKey);
         this.lastSyncTime = stored ? new Date(stored) : null;
       }
     } catch (error) {
@@ -44,12 +82,15 @@ class SyncManager {
   }
 
   async saveLastSyncTime() {
+    const storageKey = this.getStorageKey('lastSyncTime');
     const now = new Date().toISOString();
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ lastSyncTime: now });
+        const data = {};
+        data[storageKey] = now;
+        await chrome.storage.local.set(data);
       } else {
-        localStorage.setItem('lastSyncTime', now);
+        localStorage.setItem(storageKey, now);
       }
       this.lastSyncTime = new Date(now);
     } catch (error) {
@@ -111,11 +152,14 @@ class SyncManager {
   }
 
   async saveQueue() {
+    const storageKey = this.getStorageKey('syncQueue');
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ syncQueue: this.syncQueue });
+        const data = {};
+        data[storageKey] = this.syncQueue;
+        await chrome.storage.local.set(data);
       } else {
-        localStorage.setItem('syncQueue', JSON.stringify(this.syncQueue));
+        localStorage.setItem(storageKey, JSON.stringify(this.syncQueue));
       }
     } catch (error) {
       console.error('[Sync Manager] Error saving queue:', error);
@@ -123,12 +167,13 @@ class SyncManager {
   }
 
   async loadQueue() {
+    const storageKey = this.getStorageKey('syncQueue');
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.local.get(['syncQueue']);
-        this.syncQueue = result.syncQueue || [];
+        const result = await chrome.storage.local.get([storageKey]);
+        this.syncQueue = result[storageKey] || [];
       } else {
-        const stored = localStorage.getItem('syncQueue');
+        const stored = localStorage.getItem(storageKey);
         this.syncQueue = stored ? JSON.parse(stored) : [];
       }
     } catch (error) {
@@ -225,14 +270,15 @@ class SyncManager {
   }
 
   async syncJobs() {
+    const storageKey = this.getStorageKey('trackedJobs');
     try {
       // Get local jobs
       let localJobs = [];
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.local.get(['trackedJobs']);
-        localJobs = result.trackedJobs || [];
+        const result = await chrome.storage.local.get([storageKey]);
+        localJobs = result[storageKey] || [];
       } else {
-        const stored = localStorage.getItem('trackedJobs');
+        const stored = localStorage.getItem(storageKey);
         localJobs = stored ? JSON.parse(stored) : [];
       }
 
@@ -264,14 +310,15 @@ class SyncManager {
   }
 
   async syncProfile() {
+    const storageKey = this.getStorageKey('userProfile');
     try {
       // Get local profile
       let localProfile = null;
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.local.get(['userProfile']);
-        localProfile = result.userProfile;
+        const result = await chrome.storage.local.get([storageKey]);
+        localProfile = result[storageKey];
       } else {
-        const stored = localStorage.getItem('userProfile');
+        const stored = localStorage.getItem(storageKey);
         localProfile = stored ? JSON.parse(stored) : null;
       }
 
@@ -319,13 +366,16 @@ class SyncManager {
       archived: job.isArchived
     }));
 
+    const storageKey = this.getStorageKey('trackedJobs');
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ trackedJobs: localJobs });
+        const data = {};
+        data[storageKey] = localJobs;
+        await chrome.storage.local.set(data);
       } else {
-        localStorage.setItem('trackedJobs', JSON.stringify(localJobs));
+        localStorage.setItem(storageKey, JSON.stringify(localJobs));
       }
-      console.log(`[Sync Manager] Saved ${localJobs.length} jobs locally`);
+      console.log(`[Sync Manager] Saved ${localJobs.length} jobs locally for user:`, this.getCurrentUserId());
     } catch (error) {
       console.error('[Sync Manager] Error saving local jobs:', error);
     }
@@ -360,13 +410,16 @@ class SyncManager {
       coverLetterFile: profile.coverLetterFile || null
     };
 
+    const storageKey = this.getStorageKey('userProfile');
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ userProfile: localProfile });
+        const data = {};
+        data[storageKey] = localProfile;
+        await chrome.storage.local.set(data);
       } else {
-        localStorage.setItem('userProfile', JSON.stringify(localProfile));
+        localStorage.setItem(storageKey, JSON.stringify(localProfile));
       }
-      console.log('[Sync Manager] Profile saved locally');
+      console.log('[Sync Manager] Profile saved locally for user:', this.getCurrentUserId());
     } catch (error) {
       console.error('[Sync Manager] Error saving local profile:', error);
     }
@@ -400,13 +453,16 @@ class SyncManager {
       throw new Error('Not authenticated');
     }
 
+    const jobsKey = this.getStorageKey('trackedJobs');
+    const profileKey = this.getStorageKey('userProfile');
+
     // Push jobs
     let localJobs = [];
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.local.get(['trackedJobs']);
-      localJobs = result.trackedJobs || [];
+      const result = await chrome.storage.local.get([jobsKey]);
+      localJobs = result[jobsKey] || [];
     } else {
-      const stored = localStorage.getItem('trackedJobs');
+      const stored = localStorage.getItem(jobsKey);
       localJobs = stored ? JSON.parse(stored) : [];
     }
 
@@ -415,10 +471,10 @@ class SyncManager {
     // Push profile
     let localProfile = null;
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.local.get(['userProfile']);
-      localProfile = result.userProfile;
+      const result = await chrome.storage.local.get([profileKey]);
+      localProfile = result[profileKey];
     } else {
-      const stored = localStorage.getItem('userProfile');
+      const stored = localStorage.getItem(profileKey);
       localProfile = stored ? JSON.parse(stored) : null;
     }
 

@@ -3,7 +3,10 @@
 
 class AuthManager {
   constructor() {
-    this.API_BASE_URL = 'http://localhost:3000/api';
+    // Get API URL from config
+    this.API_BASE_URL = (typeof window !== 'undefined' && window.API_CONFIG)
+      ? window.API_CONFIG.API_URL
+      : 'https://job-tracker-api-j7ef.onrender.com/api';
     this.isAuthenticated = false;
     this.currentUser = null;
     this.token = null;
@@ -204,6 +207,9 @@ class AuthManager {
 
       await this.saveAuthState();
 
+      // Reload user-specific data in other managers
+      this.reloadUserData();
+
       console.log('[AuthManager] Login successful');
       return { success: true, user: this.currentUser };
 
@@ -237,12 +243,37 @@ class AuthManager {
 
       await this.saveAuthState();
 
+      // Reload user-specific data in other managers
+      this.reloadUserData();
+
       console.log('[AuthManager] Registration successful');
       return { success: true, user: this.currentUser };
 
     } catch (error) {
       console.error('[AuthManager] Registration error:', error);
       return { success: false, error: error.message };
+    }
+  }
+
+  // Reload user-specific data in other managers after login/register
+  reloadUserData() {
+    try {
+      // Reload job tracker data for the new user
+      if (window.jobTracker?.reloadForUser) {
+        window.jobTracker.reloadForUser();
+      }
+      // Reload sync manager state
+      if (window.syncManager) {
+        window.syncManager.currentUserId = null;
+        window.syncManager.loadLastSyncTime();
+        window.syncManager.loadQueue();
+      }
+      // Reload notifications for the new user
+      if (window.globalNotifications?.reloadForUser) {
+        window.globalNotifications.reloadForUser();
+      }
+    } catch (error) {
+      console.error('[AuthManager] Error reloading user data:', error);
     }
   }
 
@@ -261,7 +292,33 @@ class AuthManager {
       console.error('[AuthManager] Logout error:', error);
     }
 
+    // Clear user-specific cached data from other managers
+    // This prevents data leakage between users
+    try {
+      if (window.jobTracker?.clearUserData) {
+        await window.jobTracker.clearUserData();
+      }
+      if (window.syncManager?.resetUserState) {
+        window.syncManager.resetUserState();
+      }
+      if (window.globalNotifications?.clearUserData) {
+        window.globalNotifications.clearUserData();
+      }
+    } catch (error) {
+      console.error('[AuthManager] Error clearing user data:', error);
+    }
+
     await this.clearAuth();
+  }
+
+  // Get current token
+  getToken() {
+    return this.token;
+  }
+
+  // Get current user
+  getUser() {
+    return this.currentUser;
   }
 
   // Get auth header for API requests

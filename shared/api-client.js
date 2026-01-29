@@ -3,7 +3,10 @@
 
 class APIClient {
   constructor() {
-    this.baseUrl = 'http://localhost:3000/api';
+    // Get API URL from config
+    this.baseUrl = (typeof window !== 'undefined' && window.API_CONFIG)
+      ? window.API_CONFIG.API_URL
+      : 'https://job-tracker-api-j7ef.onrender.com/api';
     this.token = null;
     this.refreshToken = null;
     this.isRefreshing = false;
@@ -107,6 +110,12 @@ class APIClient {
     const data = await response.json();
 
     if (!response.ok) {
+      // Log full error details for debugging
+      console.error('[API Client] Response error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      });
       throw new Error(data.message || 'Request failed');
     }
 

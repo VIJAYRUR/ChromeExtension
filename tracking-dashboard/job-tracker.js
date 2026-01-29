@@ -4,58 +4,124 @@ class JobTracker {
   constructor() {
     this.jobs = [];
     this.isLoaded = false;
+    this.currentUserId = null;
     this.init();
   }
 
   async init() {
     await this.loadJobs();
     this.isLoaded = true;
-    console.log('[Job Tracker] 📊 Loaded', this.jobs.length, 'tracked jobs');
+    console.log('[Job Tracker] 📊 Loaded', this.jobs.length, 'tracked jobs for user:', this.getCurrentUserId());
+  }
+
+  // Get storage key namespaced by userId to prevent data leakage between users
+  getStorageKey() {
+    const userId = this.getCurrentUserId();
+    return userId ? `trackedJobs_${userId}` : 'trackedJobs_anonymous';
+  }
+
+  // Get current user ID from auth manager
+  getCurrentUserId() {
+    if (this.currentUserId) return this.currentUserId;
+
+    // Try to get from auth manager
+    if (window.authManager?.currentUser?._id) {
+      this.currentUserId = window.authManager.currentUser._id;
+      return this.currentUserId;
+    }
+
+    // Try localStorage as fallback
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user?._id) {
+          this.currentUserId = user._id;
+          return this.currentUserId;
+        }
+      }
+    } catch (e) {}
+
+    return null;
+  }
+
+  // Reload jobs for current user (call after login)
+  async reloadForUser() {
+    this.currentUserId = null; // Reset cached userId
+    this.jobs = [];
+    await this.loadJobs();
+    console.log('[Job Tracker] 🔄 Reloaded jobs for user:', this.getCurrentUserId());
+  }
+
+  // Clear jobs for current user (call on logout)
+  async clearUserData() {
+    const storageKey = this.getStorageKey();
+    console.log('[Job Tracker] 🗑️ Clearing cached data for key:', storageKey);
+
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.local.remove([storageKey]);
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error('[Job Tracker] Error clearing user data:', error);
+    }
+
+    this.jobs = [];
+    this.currentUserId = null;
   }
 
   async loadJobs() {
+    const storageKey = this.getStorageKey();
+
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         // Extension mode
         return new Promise((resolve) => {
-          chrome.storage.local.get(['trackedJobs'], (result) => {
-            this.jobs = result.trackedJobs || [];
+          chrome.storage.local.get([storageKey], (result) => {
+            this.jobs = result[storageKey] || [];
             resolve();
           });
         });
       } else {
         // Standalone mode - use localStorage
-        const stored = localStorage.getItem('trackedJobs');
+        const stored = localStorage.getItem(storageKey);
         this.jobs = stored ? JSON.parse(stored) : [];
         return Promise.resolve();
       }
     } catch (error) {
       console.log('[Job Tracker] Running in standalone mode');
-      const stored = localStorage.getItem('trackedJobs');
+      const storageKey = this.getStorageKey();
+      const stored = localStorage.getItem(storageKey);
       this.jobs = stored ? JSON.parse(stored) : [];
       return Promise.resolve();
     }
   }
 
   async saveJobs() {
+    const storageKey = this.getStorageKey();
+
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         // Extension mode
         return new Promise((resolve) => {
-          chrome.storage.local.set({ trackedJobs: this.jobs }, () => {
+          const data = {};
+          data[storageKey] = this.jobs;
+          chrome.storage.local.set(data, () => {
             console.log('[Job Tracker] 💾 Saved', this.jobs.length, 'jobs');
             resolve();
           });
         });
       } else {
         // Standalone mode - use localStorage
-        localStorage.setItem('trackedJobs', JSON.stringify(this.jobs));
+        localStorage.setItem(storageKey, JSON.stringify(this.jobs));
         console.log('[Job Tracker] 💾 Saved', this.jobs.length, 'jobs');
         return Promise.resolve();
       }
     } catch (error) {
       console.error('[Job Tracker] Error saving jobs:', error);
-      localStorage.setItem('trackedJobs', JSON.stringify(this.jobs));
+      localStorage.setItem(storageKey, JSON.stringify(this.jobs));
       return Promise.resolve();
     }
   }
@@ -73,7 +139,7 @@ class JobTracker {
       workType: jobData.workType || 'Not specified', // onsite, remote, hybrid
       linkedinUrl: jobData.linkedinUrl || '',
       dateApplied: new Date().toISOString(),
-      status: 'applied', // applied, interview, offer, rejected, withdrawn
+      status: jobData.status || 'applied', // applied, interview, offer, rejected, withdrawn, saved
       resumeFile: null, // Will store base64 or file reference
       coverLetter: '',
       notes: '',
@@ -94,11 +160,56 @@ class JobTracker {
       archived: false
     };
 
+    // Check for duplicates before adding
+    const existingJob = this.findExistingJob(jobData);
+    if (existingJob) {
+      console.log('[Job Tracker] ⚠️ Job already exists:', existingJob.company, '-', existingJob.title, '(status:', existingJob.status, ')');
+      return { duplicate: true, existingJob };
+    }
+
     this.jobs.unshift(job); // Add to beginning
     await this.saveJobs();
-    
+
     console.log('[Job Tracker] ✅ Added job:', job.company, '-', job.title);
     return job;
+  }
+
+  // Check if a job already exists in the tracker
+  findExistingJob(jobData) {
+    const normalizeString = (str) => (str || '').toLowerCase().trim();
+
+    return this.jobs.find(existingJob => {
+      // Match by LinkedIn Job ID (most reliable)
+      if (jobData.linkedinJobId && existingJob.linkedinJobId) {
+        if (jobData.linkedinJobId === existingJob.linkedinJobId) {
+          return true;
+        }
+      }
+
+      // Match by LinkedIn URL
+      if (jobData.linkedinUrl && existingJob.linkedinUrl) {
+        // Extract job ID from URL for comparison
+        const getJobIdFromUrl = (url) => {
+          const match = url.match(/\/jobs\/view\/(\d+)/);
+          return match ? match[1] : null;
+        };
+        const newJobId = getJobIdFromUrl(jobData.linkedinUrl);
+        const existingJobId = getJobIdFromUrl(existingJob.linkedinUrl);
+        if (newJobId && existingJobId && newJobId === existingJobId) {
+          return true;
+        }
+      }
+
+      // Match by company + title (fallback)
+      const sameCompany = normalizeString(jobData.company) === normalizeString(existingJob.company);
+      const sameTitle = normalizeString(jobData.title) === normalizeString(existingJob.title);
+
+      if (sameCompany && sameTitle) {
+        return true;
+      }
+
+      return false;
+    });
   }
 
   // Update job status

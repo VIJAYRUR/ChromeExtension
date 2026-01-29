@@ -1,0 +1,1889 @@
+/* ============================================
+   GROUP DETAIL PAGE - NOTION DESIGN SYSTEM
+   Matches Job Tracker Dashboard aesthetic
+   ============================================ */
+
+/* ==================== CSS Variables ==================== */
+:root {
+  /* Notion-style warm colors */
+  --bg-page: #FAFAF9;
+  --bg-surface: #ffffff;
+  --bg-hover: rgba(55, 53, 47, 0.04);
+  --bg-active: rgba(55, 53, 47, 0.06);
+  --bg-subtle: rgba(55, 53, 47, 0.03);
+
+  /* Borders */
+  --border-subtle: rgba(55, 53, 47, 0.09);
+  --border-light: rgba(55, 53, 47, 0.06);
+
+  /* Text colors */
+  --text-primary: #37352f;
+  --text-secondary: #6b6f76;
+  --text-muted: #9a9a97;
+  --text-placeholder: rgba(55, 53, 47, 0.4);
+
+  /* Accent - muted, not bright blue */
+  --accent-subtle: rgba(55, 53, 47, 0.65);
+
+  /* Status colors (muted) */
+  --status-success: rgb(0, 135, 107);
+  --status-warning: rgb(203, 145, 47);
+  --status-error: rgb(212, 76, 71);
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* Border radius - Notion uses subtle rounding */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+/* ==================== Reset & Base ==================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  background: var(--bg-page);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== Header ==================== */
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--bg-page);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 20ms ease-in, color 20ms ease-in;
+  flex-shrink: 0;
+}
+
+.btn-back:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.group-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.group-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.group-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.member-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-type-badge {
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.group-type-badge.private {
+  background: rgba(203, 145, 47, 0.1);
+  color: var(--status-warning);
+}
+
+.group-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.btn-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.btn-header:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-header.btn-danger {
+  color: var(--status-error);
+}
+
+.btn-header.btn-danger:hover {
+  background: rgba(212, 76, 71, 0.08);
+}
+
+.btn-header svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* ==================== Mobile Tabs ==================== */
+.mobile-tabs {
+  display: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.mobile-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-md) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 20ms ease-in;
+}
+
+.mobile-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.mobile-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+
+.mobile-tab svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+/* ==================== Main Layout ==================== */
+.group-main {
+  display: grid;
+  grid-template-columns: 300px 1fr 260px;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg-page);
+}
+
+/* ==================== Section Common Styles ==================== */
+.section-jobs,
+.section-chat,
+.section-members {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.section-jobs {
+  border-right: 1px solid var(--border-subtle);
+}
+
+.section-chat {
+  background: var(--bg-page);
+}
+
+.section-members {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.member-count-badge {
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ==================== Shared Jobs Section ==================== */
+.jobs-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+.jobs-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.jobs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jobs-container::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.15);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.jobs-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 53, 47, 0.25);
+  background-clip: padding-box;
+}
+
+/* Job Card - Notion database card style */
+.job-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  transition: background 20ms ease-in;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.job-card:hover {
+  background: var(--bg-subtle);
+}
+
+.job-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.job-company-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.job-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+  line-height: 1.4;
+}
+
+.job-company {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.job-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.job-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.job-detail-item svg {
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.job-shared-by {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.shared-by-text strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.shared-time {
+  color: var(--text-muted);
+}
+
+/* Job Reactions - Notion property tag style */
+.job-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--space-md);
+}
+
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-subtle);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.reaction-btn:hover {
+  background: var(--bg-active);
+}
+
+.reaction-btn.active {
+  background: var(--bg-active);
+}
+
+.reaction-btn span {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Job Stats */
+.job-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.job-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.job-stat svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+}
+
+/* Job Actions - Secondary text buttons */
+.job-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.btn-job-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 20ms ease-in, color 20ms ease-in;
+}
+
+.btn-job-action:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-job-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-job-action.saved,
+.btn-job-action.applied {
+  color: var(--status-success);
+}
+
+.btn-job-action svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+/* ==================== Chat Section - Notion Discussion Style ==================== */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-xl) var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.15);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 53, 47, 0.25);
+  background-clip: padding-box;
+}
+
+/* ==================== Message Block - Notion Comment Style ==================== */
+/* NO chat bubbles, NO left/right alignment, NO speech tails */
+.chat-message {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  transition: background 20ms ease-in;
+}
+
+.chat-message:hover {
+  background: var(--bg-hover);
+  margin-left: calc(-1 * var(--space-md));
+  margin-right: calc(-1 * var(--space-md));
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
+}
+
+/* REMOVE own-message differentiation - all messages look the same */
+.chat-message.own-message {
+  flex-direction: row; /* Keep same direction */
+}
+
+.chat-message.own-message .message-content {
+  align-items: flex-start; /* Same alignment */
+}
+
+.chat-message.own-message .message-header {
+  flex-direction: row; /* Same direction */
+}
+
+.chat-message.own-message .message-text {
+  background: transparent; /* NO colored background */
+  padding: 0;
+  border-radius: 0;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.message-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: 2px;
+}
+
+.message-user {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.message-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.message-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* Message Status Indicators */
+.message-pending {
+  opacity: 0.6;
+}
+
+.message-failed {
+  opacity: 0.5;
+}
+
+.message-failed .message-text {
+  color: var(--status-error);
+}
+
+.message-status {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 4px;
+  display: block;
+}
+
+.message-edited {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: var(--space-sm);
+}
+
+/* Message Reactions - Subtle inline style */
+.message-reactions {
+  display: flex;
+  gap: 4px;
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.chat-message:hover .message-reactions,
+.message-reactions.has-reactions {
+  opacity: 1;
+}
+
+.message-reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background: var(--bg-subtle);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  line-height: 1;
+}
+
+.message-reaction-btn:hover {
+  background: var(--bg-active);
+}
+
+.message-reaction-btn.active {
+  background: var(--bg-active);
+}
+
+.message-reaction-btn span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  padding: var(--space-sm) var(--space-2xl);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.typing-indicator .typing-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-indicator .typing-text::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: typingDots 1.4s infinite;
+}
+
+@keyframes typingDots {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+/* ==================== Message Input - Notion Inline Editor Style ==================== */
+.message-input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-2xl);
+  background: var(--bg-page);
+  position: relative;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn-attach-job {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 20ms ease-in, color 20ms ease-in;
+  flex-shrink: 0;
+}
+
+.btn-attach-job:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-attach-job svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Message Input - Minimal Notion style */
+.message-input {
+  flex: 1;
+  min-height: 36px;
+  max-height: 120px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  outline: none;
+  resize: none;
+  transition: border-color 100ms ease;
+  line-height: 1.5;
+}
+
+.message-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.message-input:focus {
+  border-color: rgba(55, 53, 47, 0.2);
+}
+
+/* Send Button - Muted icon style */
+.btn-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 20ms ease-in, color 20ms ease-in;
+  flex-shrink: 0;
+}
+
+.btn-send:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-send:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-send svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Job Picker Dropdown */
+.job-picker-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: var(--space-2xl);
+  right: var(--space-2xl);
+  margin-bottom: var(--space-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.job-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.job-picker-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.job-picker-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.job-picker-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.job-picker-search {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.job-picker-search input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 100ms ease;
+}
+
+.job-picker-search input:focus {
+  border-color: rgba(55, 53, 47, 0.2);
+}
+
+.job-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+}
+
+.job-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.job-picker-item:hover {
+  background: var(--bg-hover);
+}
+
+.job-picker-item-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.job-picker-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-picker-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-picker-item-company {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Inline Job Card in Chat - Notion embedded database card */
+.message-job-card {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.message-job-card:hover {
+  background: var(--bg-subtle);
+}
+
+.message-job-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.message-job-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.message-job-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-job-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.message-job-company {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.message-job-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.message-job-detail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-job-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.message-job-action {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.message-job-action:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ==================== Members Section ==================== */
+.members-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+}
+
+.members-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.members-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.members-container::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.15);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  transition: background 20ms ease-in;
+}
+
+.member-card:hover {
+  background: var(--bg-hover);
+}
+
+.member-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-role-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.member-role-badge.admin {
+  background: rgba(212, 76, 71, 0.1);
+  color: var(--status-error);
+}
+
+.member-role-badge.moderator {
+  background: rgba(203, 145, 47, 0.1);
+  color: var(--status-warning);
+}
+
+/* ==================== Buttons ==================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.btn-primary:hover {
+  background: #2b2b2b;
+}
+
+.btn-primary.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn-primary svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+}
+
+/* ==================== Empty States ==================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+}
+
+.empty-state svg {
+  margin-bottom: var(--space-lg);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.empty-state-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 260px;
+}
+
+/* ==================== Share Job Modal ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 15, 0.6);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-container {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 560px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+  animation: modalIn 150ms ease;
+}
+
+.modal-container.modal-large {
+  max-width: 720px;
+  max-height: 85vh;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  color: var(--text-muted);
+}
+
+.modal-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.15);
+  border-radius: 4px;
+}
+
+.share-search-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  transition: border-color 100ms ease;
+}
+
+.share-search-container:focus-within {
+  border-color: rgba(55, 53, 47, 0.2);
+}
+
+.share-search-container svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.share-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.share-search-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.share-jobs-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.share-job-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: background 20ms ease-in;
+}
+
+.share-job-item:hover {
+  background: var(--bg-subtle);
+}
+
+.share-job-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.share-job-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-job-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+  line-height: 1.4;
+}
+
+.share-job-company {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.share-job-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.share-job-detail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-job-status {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.share-job-status.applied {
+  background: rgba(0, 135, 107, 0.1);
+  color: var(--status-success);
+}
+
+.share-job-status.interview {
+  background: rgba(203, 145, 47, 0.1);
+  color: var(--status-warning);
+}
+
+.share-job-status.offer {
+  background: rgba(0, 135, 107, 0.1);
+  color: var(--status-success);
+}
+
+.share-job-status.rejected {
+  background: rgba(212, 76, 71, 0.1);
+  color: var(--status-error);
+}
+
+.btn-share-to-group {
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 20ms ease-in, color 20ms ease-in;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-share-to-group:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-share-to-group:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-share-to-group.shared {
+  background: rgba(0, 135, 107, 0.1);
+  color: var(--status-success);
+  border-color: var(--status-success);
+}
+
+.share-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+}
+
+.share-empty-state svg {
+  margin-bottom: var(--space-lg);
+  opacity: 0.4;
+}
+
+/* Job Details Modal */
+#job-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.job-details-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-lg);
+}
+
+.job-details-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: var(--radius-lg);
+  font-size: 22px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.job-details-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-details-company {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.job-details-title-text {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.job-details-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.job-details-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.job-details-meta-item svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.job-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.job-details-section-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.job-details-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.job-details-description p {
+  margin: 0 0 var(--space-md) 0;
+}
+
+.job-details-description ul,
+.job-details-description ol {
+  margin: 0 0 var(--space-md) 0;
+  padding-left: var(--space-xl);
+}
+
+.job-details-description li {
+  margin-bottom: var(--space-sm);
+}
+
+/* Formatted description styles (LinkedIn-style) */
+.job-details-description.formatted h1,
+.job-details-description.formatted h2,
+.job-details-description.formatted h3 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.job-details-description.formatted h1 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.job-details-description.formatted h2 {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.job-details-description.formatted h3 {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.job-details-description.formatted p {
+  margin-bottom: 16px;
+  line-height: 1.65;
+}
+
+.job-details-description.formatted p:last-child {
+  margin-bottom: 0;
+}
+
+.job-details-description.formatted ul,
+.job-details-description.formatted ol {
+  margin-left: 28px;
+  margin-bottom: 16px;
+  padding-left: 0;
+}
+
+.job-details-description.formatted li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.job-details-description.formatted li:last-child {
+  margin-bottom: 0;
+}
+
+.job-details-description.formatted strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Headings in paragraphs (bold text as headings) */
+.job-details-description.formatted p strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 20px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.job-details-description.formatted > p:first-child strong:first-child {
+  margin-top: 0;
+}
+
+.job-details-description.formatted a {
+  color: rgb(35, 131, 226);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(35, 131, 226, 0.3);
+}
+
+.job-details-description.formatted a:hover {
+  border-bottom-color: rgb(35, 131, 226);
+}
+
+.job-details-description .empty-description {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Section headings in job descriptions */
+.job-details-description .section-heading,
+.job-details-description.formatted .section-heading {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.job-details-description .section-heading:first-child,
+.job-details-description.formatted .section-heading:first-child {
+  margin-top: 0;
+}
+
+.job-details-description .section-heading strong,
+.job-details-description.formatted .section-heading strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.job-details-shared-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.job-details-shared-by {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.job-details-shared-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+}
+
+.job-details-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--space-sm);
+}
+
+.job-details-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.job-details-stat-value {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.job-details-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.job-details-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.job-details-actions .btn-job-action {
+  flex: 1;
+  justify-content: center;
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 1024px) {
+  .group-main {
+    grid-template-columns: 260px 1fr 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Show mobile tabs */
+  .mobile-tabs {
+    display: flex;
+  }
+
+  /* Single column layout */
+  .group-main {
+    display: block;
+    position: relative;
+  }
+
+  /* Hide all sections by default */
+  .section-jobs,
+  .section-chat,
+  .section-members {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+  }
+
+  /* Show active section */
+  .section-jobs.active,
+  .section-chat.active,
+  .section-members.active {
+    display: flex;
+  }
+
+  /* Header adjustments */
+  .group-header {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .group-name {
+    font-size: 16px;
+  }
+
+  .btn-header span {
+    display: none;
+  }
+
+  .btn-header {
+    padding: var(--space-sm);
+  }
+
+  /* Chat adjustments */
+  .messages-container {
+    padding: var(--space-lg);
+  }
+
+  .message-input-container {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .chat-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-header-left {
+    gap: var(--space-sm);
+  }
+
+  .group-name {
+    font-size: 15px;
+  }
+
+  .group-meta {
+    font-size: 11px;
+  }
+
+  .section-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .jobs-container,
+  .messages-container {
+    padding: var(--space-md);
+  }
+
+  .message-input-container {
+    padding: var(--space-sm) var(--space-md);
+  }
+}

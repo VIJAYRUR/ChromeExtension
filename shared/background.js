@@ -1,5 +1,7 @@
 // Background script - handles extension icon clicks and job tracking
 
+console.log('🚀🚀🚀 BACKGROUND.JS LOADED - VERSION 2.0 - FIXED STATUS BUG 🚀🚀🚀');
+
 chrome.action.onClicked.addListener((tab) => {
   // Only work on LinkedIn jobs pages
   if (tab.url && tab.url.includes('linkedin.com/jobs')) {
@@ -14,6 +16,9 @@ chrome.action.onClicked.addListener((tab) => {
 // Handle messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'trackJob') {
+    console.log('[Background] 🔍 Received trackJob message:', message);
+    console.log('[Background] 🔍 Status received:', message.jobData?.status);
+
     // Save job to storage
     chrome.storage.local.get(['trackedJobs'], (result) => {
       const jobs = result.trackedJobs || [];
@@ -51,6 +56,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       // Create job entry
+      const jobStatus = message.jobData.status || 'applied';
+      console.log('[Background] 🔍 Creating job with status:', jobStatus);
+
       const job = {
         id: 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         company: message.jobData.company || 'Unknown Company',
@@ -62,7 +70,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         workType: message.jobData.workType || 'Not specified',
         linkedinUrl: message.jobData.linkedinUrl || '',
         dateApplied: new Date().toISOString(),
-        status: 'applied',
+        status: jobStatus,  // Use status from jobData (e.g., 'saved' from WhatsApp groups)
         // Timing and competition data
         jobPostedHoursAgo: message.jobData.jobPostedHoursAgo || null,
         applicantsAtApplyTime: message.jobData.applicantsAtApplyTime || null,
@@ -75,7 +83,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         timeline: [
           {
             date: new Date().toISOString(),
-            event: 'Application tracked from LinkedIn',
+            event: message.jobData.source === 'WhatsApp Group'
+              ? 'Job saved from WhatsApp group'
+              : 'Application tracked from LinkedIn',
             type: 'created'
           }
         ],
@@ -93,6 +103,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       chrome.storage.local.set({ trackedJobs: jobs }, () => {
         console.log('[Background] ✅ Job tracked:', job.company, '-', job.title);
+        console.log('[Background] ✅ Final job status:', job.status);
+        console.log('[Background] ✅ Full job object:', job);
         sendResponse({ success: true, job: job });
       });
     });
@@ -127,5 +139,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       url: chrome.runtime.getURL('autofill/profile.html')
     });
   }
+
+  if (message.action === 'showNotification') {
+    // Show browser notification
+    chrome.notifications.create(message.notificationId || `notif_${Date.now()}`, {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+      title: message.title || 'Job Tracker',
+      message: message.message || '',
+      priority: message.priority || 1,
+      requireInteraction: message.requireInteraction || false
+    }, (notificationId) => {
+      console.log('[Background] Notification created:', notificationId);
+
+      // Store notification data for click handling
+      if (message.data) {
+        chrome.storage.local.get(['notificationData'], (result) => {
+          const notificationData = result.notificationData || {};
+          notificationData[notificationId] = message.data;
+          chrome.storage.local.set({ notificationData });
+        });
+      }
+    });
+  }
+});
+
+// Handle notification clicks
+chrome.notifications.onClicked.addListener((notificationId) => {
+  console.log('[Background] Notification clicked:', notificationId);
+
+  // Get notification data
+  chrome.storage.local.get(['notificationData'], (result) => {
+    const notificationData = result.notificationData || {};
+    const data = notificationData[notificationId];
+
+    if (!data) {
+      console.log('[Background] No data for notification');
+      return;
+    }
+
+    // Handle different notification types
+    if (data.type === 'job-shared' && data.groupId) {
+      // Open group detail page
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`tracking-dashboard/group-detail.html?id=${data.groupId}`)
+      });
+    } else if (data.type === 'new-message' && data.groupId) {
+      // Open group detail page (chat tab)
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`tracking-dashboard/group-detail.html?id=${data.groupId}&tab=chat`)
+      });
+    } else if (data.type === 'mention' && data.groupId) {
+      // Open group detail page (chat tab)
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`tracking-dashboard/group-detail.html?id=${data.groupId}&tab=chat`)
+      });
+    }
+
+    // Clear notification
+    chrome.notifications.clear(notificationId);
+
+    // Clean up notification data
+    delete notificationData[notificationId];
+    chrome.storage.local.set({ notificationData });
+  });
+});
+
+// Handle notification closed
+chrome.notifications.onClosed.addListener((notificationId) => {
+  // Clean up notification data
+  chrome.storage.local.get(['notificationData'], (result) => {
+    const notificationData = result.notificationData || {};
+    delete notificationData[notificationId];
+    chrome.storage.local.set({ notificationData });
+  });
 });
 

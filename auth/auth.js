@@ -1,7 +1,12 @@
 // Authentication JavaScript - Handles Login & Register
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:3000/api';
+// Get API base URL from config
+const getAPIBaseURL = () => {
+  if (typeof window !== 'undefined' && window.API_CONFIG) {
+    return window.API_CONFIG.API_URL;
+  }
+  return 'https://job-tracker-api-j7ef.onrender.com/api'; // Fallback
+};
 
 // ==================== Utility Functions ====================
 
@@ -40,7 +45,7 @@ async function checkServerStatus() {
   const statusText = statusEl.querySelector('.status-text');
 
   try {
-    const response = await fetch(`${API_BASE_URL}/health`);
+    const response = await fetch(`${getAPIBaseURL()}/health`);
     if (response.ok) {
       statusEl.classList.remove('offline');
       statusEl.classList.add('online');
@@ -138,7 +143,7 @@ async function checkExistingAuth() {
 
     if (token) {
       // Verify token is still valid
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${getAPIBaseURL()}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -192,7 +197,7 @@ async function handleLogin(e) {
   setLoading(button, true);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${getAPIBaseURL()}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -304,7 +309,7 @@ async function handleRegister(e) {
   setLoading(button, true);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${getAPIBaseURL()}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

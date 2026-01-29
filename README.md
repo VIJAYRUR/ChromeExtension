@@ -1,20 +1,26 @@
-# 🎯 LinkedIn Jobs Extension
+# 🚀 Job Tracker Chrome Extension
 
-**Supercharge your job search with smart filtering, application tracking, analytics, and one-click autofill.**
+**Supercharge your job search with smart filtering, application tracking, analytics, real-time group collaboration, and one-click autofill.**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://www.google.com/chrome/)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/VIJAYRUR/ChromeExtension)
+[![Node.js Backend](https://img.shields.io/badge/Backend-Node.js-brightgreen.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB-green.svg)](https://www.mongodb.com/)
+[![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-black.svg)](https://socket.io/)
 
 ---
 
 ## What This Does
 
-This Chrome extension is an all-in-one job search companion that solves major pain points:
+This Chrome extension is an all-in-one job search companion with **real-time collaboration** that solves major pain points:
 
 1. **🔍 Filter LinkedIn Jobs** - Hide reposted jobs, filter by time, blacklist companies
-2. **📊 Track Applications** - Beautiful Notion-style dashboard with kanban, table, calendar, and stats views
+2. **📊 Track Applications** - Beautiful Notion-style dashboard with 5-column kanban (Saved, Applied, Interview, Offer, Rejected)
 3. **📈 Analytics & Insights** - Visualize your job search progress with charts and metrics
 4. **⚡ Autofill Forms** - One-click autofill for job applications across 10+ platforms with intelligent field detection
+5. **👥 Group Collaboration** - Create/join groups, share jobs, real-time chat, and collaborate with peers (NEW!)
+6. **💬 Real-time Chat** - Socket.io powered group chat with typing indicators and message reactions (NEW!)
+7. **🔔 Live Notifications** - Get notified when jobs are shared, messages sent, and more (NEW!)
 
 ---
 
@@ -22,23 +28,78 @@ This Chrome extension is an all-in-one job search companion that solves major pa
 
 ### Installation
 
-**Option 1: Clone from GitHub (Recommended)**
+**Prerequisites:**
+- Node.js v14+ (for backend)
+- MongoDB (local or cloud)
+- Chrome Browser
+
+**Step 1: Clone Repository**
 ```bash
 git clone https://github.com/VIJAYRUR/ChromeExtension.git
 cd ChromeExtension
 ```
 
-**Option 2: Download ZIP**
-1. Visit [GitHub Repository](https://github.com/VIJAYRUR/ChromeExtension)
-2. Click "Code" → "Download ZIP"
-3. Extract the ZIP file
+**Step 2: Backend Setup (Required for Group Features)**
 
-**Load in Chrome:**
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" (top right toggle)
-3. Click "Load unpacked"
-4. Select the extension folder (ChromeExtension)
-5. Pin the extension to your toolbar for easy access
+1. **Install dependencies:**
+```bash
+cd backend
+npm install
+```
+
+2. **Configure environment variables:**
+Create a `.env` file in the `backend` directory:
+```env
+PORT=3000
+MONGODB_URI=your_production_mongodb_uri
+MONGODB_LOCAL_URI=mongodb://localhost:27017/job-tracker-groups
+JWT_SECRET=your_jwt_secret_key_here
+NODE_ENV=development
+```
+
+3. **Start MongoDB locally:**
+```bash
+# macOS (with Homebrew)
+brew services start mongodb-community
+
+# Linux
+sudo systemctl start mongod
+
+# Windows
+net start MongoDB
+```
+
+4. **Start the backend server:**
+```bash
+npm start
+```
+
+The backend will run on `http://localhost:3000`
+
+**Step 3: Chrome Extension Setup**
+
+1. **Configure API URL:**
+Edit `shared/config.js`:
+```javascript
+const API_CONFIG = {
+  API_URL: 'http://localhost:3000/api', // For local development
+  SOCKET_URL: 'http://localhost:3000' // For local development
+};
+```
+
+2. **Load extension in Chrome:**
+- Open Chrome and go to `chrome://extensions/`
+- Enable "Developer mode" (top right toggle)
+- Click "Load unpacked"
+- Select the extension folder (ChromeExtension)
+- Pin the extension to your toolbar for easy access
+
+**Step 4: Create Account**
+1. Click the extension icon
+2. Click "Sign Up"
+3. Enter your name, email, and password
+4. Click "Create Account"
+5. You're ready to use all features!
 
 ### Usage
 
@@ -73,9 +134,92 @@ cd ChromeExtension
 - Click the floating "Autofill" button
 - Review auto-filled fields and submit
 
+**Group Collaboration (NEW!):**
+
+*Create a Group:*
+1. Click "Groups" button in dashboard sidebar
+2. Click "Create Group" button
+3. Enter group name and description
+4. Choose Public or Private
+5. Click "Create Group"
+6. Share the 6-character invite code with others
+
+*Join a Group:*
+1. Click "Groups" button in dashboard sidebar
+2. Click "Join Group" button
+3. Enter the invite code you received
+4. Click "Join Group"
+
+*Chat with Group Members:*
+1. Open a group from the groups dashboard
+2. Type a message in the chat input (left column)
+3. Press Enter to send
+4. React to messages by clicking the 😊 icon
+5. See typing indicators when others are typing
+6. Green dot shows who's online
+
+*Share Jobs in Chat:*
+1. Click the 📎 (attach) icon in chat input
+2. Select a job from your personal tracker
+3. Job appears as a rich card in the chat
+4. Click the job card to view full details
+
+*Share Jobs to Group:*
+1. Go to "Shared Jobs" section (middle column)
+2. Click "Share Job" button
+3. Fill in job details (company, title, location, etc.)
+4. Click "Share to Group"
+5. Job appears in shared jobs list
+
+*Save Shared Jobs:*
+1. Browse shared jobs in the "Shared Jobs" section
+2. Click "Save to My Jobs" on any job card
+3. Job appears in your personal dashboard's "Saved" column
+4. Click "Mark as Applied" when you apply to the job
+5. Job moves to "Applied" column
+
+*View Group Members:*
+1. Go to "Members" section (right column)
+2. See all members with their roles
+3. Green dot indicates online status
+4. View member stats (jobs shared, messages sent)
+
 ---
 
 ## Features
+
+### 👥 Group Collaboration (NEW!)
+
+**Create & Join Groups:**
+- ✅ **Public/Private Groups** - Create groups with custom names and descriptions
+- ✅ **Invite Codes** - Share unique 6-character codes to invite members
+- ✅ **Role-based Access** - Admin, Moderator, and Member roles
+- ✅ **Member Management** - View all group members with their roles and stats
+
+**Real-time Chat:**
+- ✅ **Socket.io Powered** - Instant message delivery with WebSocket technology
+- ✅ **Typing Indicators** - See when others are typing in real-time
+- ✅ **Online Status** - Green dot shows who's currently online
+- ✅ **Message Reactions** - React with 👍 ❤️ 🔥 😂 emojis
+- ✅ **Message Alignment** - Your messages on right, others on left
+- ✅ **User Avatars** - Colorful initials for each member
+- ✅ **Timestamps** - See when each message was sent
+
+**Share Jobs:**
+- ✅ **Share to Group** - Share job opportunities with all group members
+- ✅ **Inline Job Sharing** - Share jobs directly in chat messages with rich cards
+- ✅ **Job Details** - Company, title, location, salary, work type, description
+- ✅ **Save to My Jobs** - Save shared jobs to your personal "Saved" kanban column
+- ✅ **Mark as Applied** - Track when you apply to shared jobs
+- ✅ **Job Statistics** - See how many members viewed, saved, or applied
+- ✅ **Clickable Job Cards** - Click to view full job details in modal
+
+**Group Features:**
+- ✅ **Three-Column Layout** - Chat, Shared Jobs, and Members in one view
+- ✅ **Job Filters** - Filter shared jobs by work type, date, or search
+- ✅ **Member Stats** - See each member's contribution (jobs shared, messages sent)
+- ✅ **Group Dashboard** - View all your groups in one place
+- ✅ **Leave Group** - Leave groups you no longer want to be part of
 
 ### 🔍 LinkedIn Jobs Filter
 - **Time Filters**: 1h, 3h, 6h, 12h, 24h, 3d, 7d
@@ -88,10 +232,10 @@ cd ChromeExtension
 ### 📊 Job Application Tracker
 
 **Dashboard Views:**
-- **Kanban Board**: Drag-and-drop cards by status (Applied, Interview, Offer, Rejected, Withdrawn)
+- **Kanban Board**: Drag-and-drop cards by status (Saved, Applied, Interview, Offer, Rejected)
 - **Table View**: Sortable table with all job details
 - **Calendar View**: See applications by date with monthly view
-- **Stats Overview**: Analytics and insights (NEW!)
+- **Stats Overview**: Analytics and insights
 
 **Job Details Captured:**
 - Company name
@@ -121,11 +265,11 @@ cd ChromeExtension
 - Compact mode
 
 **Status Options:**
+- Saved (purple) - NEW! Jobs saved from groups or for later
 - Applied (gray)
-- Interview (yellow)
+- Interview (blue)
 - Offer (green)
 - Rejected (red)
-- Withdrawn (dark gray)
 
 ### 📈 Stats Overview (NEW!)
 
@@ -221,6 +365,36 @@ cd ChromeExtension
 
 ```
 ChromeExtension/
+├── backend/                    # Node.js + Express backend (NEW!)
+│   ├── controllers/            # API controllers
+│   │   ├── authController.js   # User authentication
+│   │   ├── groupController.js  # Group management
+│   │   ├── chatController.js   # Chat messages
+│   │   ├── sharedJobController.js # Shared jobs
+│   │   └── groupAnalyticsController.js # Analytics
+│   ├── models/                 # MongoDB models
+│   │   ├── User.js             # User model
+│   │   ├── Group.js            # Group model
+│   │   ├── GroupMember.js      # Group membership
+│   │   ├── ChatMessage.js      # Chat messages
+│   │   ├── SharedJob.js        # Shared jobs
+│   │   └── Comment.js          # Job comments
+│   ├── routes/                 # API routes
+│   │   ├── auth.js             # Auth endpoints
+│   │   ├── groups.js           # Group endpoints
+│   │   ├── chat.js             # Chat endpoints
+│   │   ├── sharedJobs.js       # Shared job endpoints
+│   │   └── groupAnalytics.js   # Analytics endpoints
+│   ├── socket/                 # Socket.io handlers
+│   │   ├── chatHandlers.js     # Chat events
+│   │   └── groupHandlers.js    # Group events
+│   ├── middleware/             # Express middleware
+│   │   ├── auth.js             # JWT authentication
+│   │   └── rateLimiter.js      # Rate limiting
+│   ├── config/                 # Configuration
+│   │   └── database.js         # MongoDB connections
+│   └── server.js               # Main server file
+│
 ├── job-filter/
 │   ├── content.js              # LinkedIn page filtering & job extraction
 │   ├── filter-panel.css        # Filter panel styles
@@ -234,9 +408,15 @@ ChromeExtension/
 │   ├── job-detail.css          # Job detail styles
 │   ├── job-detail.js           # Job detail logic
 │   ├── job-tracker.js          # Job data management
-│   ├── stats.js                # Stats/analytics logic (NEW)
-│   ├── stats.css               # Stats view styles (NEW)
-│   └── chart.min.js            # Chart.js library (NEW)
+│   ├── stats.js                # Stats/analytics logic
+│   ├── stats.css               # Stats view styles
+│   ├── chart.min.js            # Chart.js library
+│   ├── groups.html             # Groups dashboard (NEW!)
+│   ├── groups.css              # Groups styles (NEW!)
+│   ├── groups.js               # Groups logic (NEW!)
+│   ├── group-detail.html       # Group detail page (NEW!)
+│   ├── group-detail.css        # Group detail styles (NEW!)
+│   └── group-detail.js         # Group detail logic (NEW!)
 │
 ├── autofill/
 │   ├── profile-setup.html      # Profile setup page
@@ -250,7 +430,11 @@ ChromeExtension/
 │   ├── popup.html              # Extension popup
 │   ├── popup.css               # Popup styles
 │   ├── popup.js                # Popup logic
-│   └── linkedin-html-cleaner.js # HTML cleaner for job descriptions (NEW)
+│   ├── linkedin-html-cleaner.js # HTML cleaner for job descriptions
+│   ├── config.js               # API configuration (NEW!)
+│   ├── auth-api.js             # Authentication API wrapper (NEW!)
+│   ├── group-api.js            # Group API wrapper (NEW!)
+│   └── socket-client.js        # Socket.io client (NEW!)
 │
 └── manifest.json               # Extension configuration
 ```
@@ -259,7 +443,167 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
 
 ---
 
+## API Documentation
+
+### Authentication Endpoints
+
+**POST /api/auth/register**
+- Register a new user account
+- Body: `{ name, email, password }`
+- Returns: `{ token, user }`
+
+**POST /api/auth/login**
+- Login to existing account
+- Body: `{ email, password }`
+- Returns: `{ token, user }`
+
+**GET /api/auth/me**
+- Get current user profile
+- Headers: `Authorization: Bearer <token>`
+- Returns: `{ user }`
+
+### Group Endpoints
+
+**GET /api/groups**
+- Get all groups for current user
+- Headers: `Authorization: Bearer <token>`
+- Returns: `{ groups[] }`
+
+**POST /api/groups**
+- Create a new group
+- Body: `{ name, description, isPublic }`
+- Returns: `{ group, inviteCode }`
+
+**GET /api/groups/:id**
+- Get group details
+- Returns: `{ group }`
+
+**POST /api/groups/:id/join**
+- Join a group with invite code
+- Body: `{ inviteCode }`
+- Returns: `{ group, member }`
+
+**POST /api/groups/:id/leave**
+- Leave a group
+- Returns: `{ success: true }`
+
+**GET /api/groups/:id/members**
+- Get all group members
+- Returns: `{ members[] }`
+
+### Chat Endpoints
+
+**GET /api/groups/:id/messages**
+- Get chat messages for a group
+- Query: `?limit=50&before=messageId`
+- Returns: `{ messages[] }`
+
+**POST /api/groups/:id/messages/:msgId/reactions**
+- Add reaction to a message
+- Body: `{ reactionType: '👍' }`
+- Returns: `{ message }`
+
+### Shared Jobs Endpoints
+
+**GET /api/groups/:id/jobs**
+- Get all shared jobs in a group
+- Query: `?workType=remote&search=engineer`
+- Returns: `{ jobs[] }`
+
+**POST /api/groups/:id/jobs**
+- Share a new job to the group
+- Body: `{ company, title, location, salary, workType, description, linkedinUrl }`
+- Returns: `{ job }`
+
+**GET /api/groups/:id/jobs/:jobId**
+- Get shared job details
+- Returns: `{ job }`
+
+**POST /api/groups/:id/jobs/:jobId/save**
+- Save shared job to personal tracker
+- Returns: `{ success: true, job }`
+
+**POST /api/groups/:id/jobs/:jobId/apply**
+- Mark shared job as applied
+- Returns: `{ success: true, job }`
+
+**DELETE /api/groups/:id/jobs/:jobId**
+- Delete a shared job (admin/owner only)
+- Returns: `{ success: true }`
+
+### Analytics Endpoints
+
+**GET /api/groups/:id/analytics**
+- Get group analytics and statistics
+- Returns: `{ stats, charts }`
+
+**GET /api/groups/:id/leaderboard**
+- Get member leaderboard
+- Returns: `{ leaderboard[] }`
+
+### Socket.io Events
+
+**Client → Server:**
+- `chat:join` - Join a group room
+- `chat:leave` - Leave a group room
+- `chat:message` - Send a chat message
+- `chat:typing` - User is typing
+- `chat:reaction` - Add message reaction
+
+**Server → Client:**
+- `chat:message` - New message received
+- `chat:typing` - Someone is typing
+- `chat:reaction` - Reaction added
+- `job:shared` - New job shared
+- `job:saved` - Job saved by member
+- `job:applied` - Job applied by member
+- `member:joined` - New member joined
+- `member:left` - Member left group
+- `user:online` - User came online
+- `user:offline` - User went offline
+- `error` - Error occurred
+
+---
+
 ## Technical Details
+
+### Backend Architecture (NEW!)
+
+**Dual MongoDB Setup:**
+- **Production MongoDB (Cloud)** - Stores user accounts and personal job data
+- **Local MongoDB** - Stores group features, chat messages, and shared jobs
+- **Why Dual Setup?** - Separates personal data from collaborative features for better scalability
+
+**Cross-Database Data Fetching:**
+- Manual user data fetching instead of Mongoose `.populate()`
+- `.populate()` only works within the same database connection
+- Solution: Fetch user from production DB, attach to chat message, broadcast via Socket.io
+
+**Socket.io Real-time Events:**
+- `chat:message` - New chat message
+- `chat:typing` - User typing indicator
+- `chat:reaction` - Message reaction added
+- `job:shared` - New job shared to group
+- `job:saved` - Member saved a shared job
+- `job:applied` - Member applied to a shared job
+- `member:joined` - New member joined group
+- `member:left` - Member left group
+- `user:online` - User came online
+- `user:offline` - User went offline
+
+**API Endpoints:**
+- **Auth**: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
+- **Groups**: `/api/groups` (CRUD), `/api/groups/:id/join`, `/api/groups/:id/leave`
+- **Chat**: `/api/groups/:id/messages`, `/api/groups/:id/messages/:msgId/reactions`
+- **Shared Jobs**: `/api/groups/:id/jobs`, `/api/groups/:id/jobs/:jobId/save`, `/api/groups/:id/jobs/:jobId/apply`
+- **Analytics**: `/api/groups/:id/analytics`, `/api/groups/:id/leaderboard`
+
+**Security:**
+- JWT authentication with Bearer tokens
+- Rate limiting on all endpoints (100 requests/15 minutes)
+- Role-based authorization (Admin, Moderator, Member)
+- Input validation and sanitization
+- CORS enabled for Chrome extension
 
 ### GitHub Integration
 
@@ -361,7 +705,25 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 
 ## Recent Updates
 
-### v2.1 - Enhanced Autofill System (Latest - 2026-01-14)
+### v3.0 - Group Collaboration & Real-time Chat (Latest - 2026-01-27)
+- ✅ **Backend Infrastructure**: Node.js + Express + MongoDB + Socket.io
+- ✅ **Group Management**: Create/join groups with invite codes
+- ✅ **Real-time Chat**: Socket.io powered instant messaging
+- ✅ **Share Jobs**: Share job opportunities with group members
+- ✅ **Inline Job Sharing**: Share jobs directly in chat with rich cards
+- ✅ **Save to My Jobs**: Save shared jobs to personal "Saved" kanban column
+- ✅ **Mark as Applied**: Track applications from shared jobs
+- ✅ **Message Reactions**: React with 👍 ❤️ 🔥 😂 emojis
+- ✅ **Typing Indicators**: See when others are typing
+- ✅ **Online Status**: Green dot for online members
+- ✅ **Job Statistics**: Track views, saves, and applications
+- ✅ **Member Management**: View members with roles and stats
+- ✅ **Dual MongoDB Setup**: Production + Local databases
+- ✅ **JWT Authentication**: Secure user authentication
+- ✅ **Rate Limiting**: Prevent spam and abuse
+- ✅ **5-Column Kanban**: Added "Saved" column (purple)
+
+### v2.1 - Enhanced Autofill System (2026-01-14)
 - ✅ **Major Autofill Overhaul**: Completely redesigned autofill engine with 90+ field types
 - ✅ **7-Step Profile Setup**: Comprehensive wizard for profile creation
 - ✅ **Resume Parsing**: Automatic extraction of data from uploaded resumes
@@ -388,14 +750,17 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 - ✅ Notion-style design polish
 
 ### Implementation Files (Recent)
+- `backend/server.js` - Express + Socket.io server (NEW!)
+- `backend/controllers/` - 5 API controllers (NEW!)
+- `backend/models/` - 6 MongoDB models (NEW!)
+- `backend/socket/chatHandlers.js` - Socket.io chat events (NEW!)
+- `tracking-dashboard/groups.js` - Groups dashboard (NEW!)
+- `tracking-dashboard/group-detail.js` - Group detail page (2500+ lines) (NEW!)
+- `shared/socket-client.js` - Socket.io client wrapper (NEW!)
+- `shared/group-api.js` - Group API wrapper (NEW!)
 - `autofill/autofill-engine.js` - Enhanced autofill engine (950 lines)
 - `autofill/profile-setup.js` - 7-step profile wizard (501 lines)
-- `autofill/profile-setup.html` - Profile setup UI
-- `autofill/profile-setup.css` - Profile setup styles
-- `autofill/resume-manager.js` - Resume parsing and management
 - `tracking-dashboard/stats.js` - Stats manager class (382 lines)
-- `tracking-dashboard/stats.css` - Stats view styles
-- `tracking-dashboard/chart.min.js` - Chart.js library
 - `shared/linkedin-html-cleaner.js` - HTML cleaner (126 lines)
 
 ---
@@ -403,6 +768,8 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 ## Documentation
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture and module details
+- **[JOB_SHARE_SUMMARY.md](JOB_SHARE_SUMMARY.md)** - Group collaboration feature roadmap (NEW!)
+- **[JOB_SHARE_TASKS.md](JOB_SHARE_TASKS.md)** - Detailed task breakdown for group features (NEW!)
 - **manifest.json** - Extension configuration
 - **[DEBUG.md](DEBUG.md)** - Debugging guide for formatting issues
 - **[FEATURE-STATUS.md](FEATURE-STATUS.md)** - Feature implementation status
@@ -412,20 +779,27 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 ## Development
 
 **Tech Stack:**
-- Vanilla JavaScript (ES6+)
-- Chrome Extension Manifest V3
-- Chrome Storage API
-- Chart.js 4.4.1 for analytics
-- Modern CSS (Grid, Flexbox, CSS Variables)
-- No frameworks or build tools
+- **Frontend**: Vanilla JavaScript (ES6+), Chrome Extension Manifest V3
+- **Backend**: Node.js, Express.js, Socket.io
+- **Database**: MongoDB (Dual setup - Production + Local)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Real-time**: Socket.io WebSockets
+- **Charts**: Chart.js 4.4.1 for analytics
+- **Storage**: Chrome Storage API + MongoDB
+- **Styling**: Modern CSS (Grid, Flexbox, CSS Variables)
+- **No frontend frameworks** - Pure JavaScript for performance
 
 **Key Files:**
+- `backend/server.js` - Express + Socket.io server (NEW!)
+- `backend/socket/chatHandlers.js` - Real-time chat events (NEW!)
+- `tracking-dashboard/group-detail.js` - Group detail page (2500+ lines) (NEW!)
+- `shared/socket-client.js` - Socket.io client wrapper (NEW!)
+- `shared/group-api.js` - Group API wrapper (NEW!)
 - `job-filter/content.js` - LinkedIn filtering & data extraction (875 lines)
 - `tracking-dashboard/dashboard.js` - Dashboard UI & view switching (654 lines)
 - `tracking-dashboard/stats.js` - Analytics & charts (382 lines)
 - `autofill/autofill-engine.js` - Enhanced form autofill logic (950 lines)
 - `autofill/profile-setup.js` - Profile setup wizard (501 lines)
-- `autofill/resume-manager.js` - Resume parsing and data extraction
 - `shared/background.js` - Background service worker
 - `shared/linkedin-html-cleaner.js` - HTML cleaner (126 lines)
 
@@ -434,6 +808,14 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 - `chrome.runtime` - Message passing
 - `chrome.tabs` - Tab management
 - `chrome.action` - Extension icon clicks
+
+**Backend APIs:**
+- **Express.js** - RESTful API server
+- **Socket.io** - WebSocket server for real-time features
+- **Mongoose** - MongoDB ODM
+- **JWT** - Authentication tokens
+- **bcrypt** - Password hashing
+- **cors** - Cross-origin resource sharing
 
 **Design System:**
 - CSS Variables for colors
@@ -465,20 +847,45 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 
 ## Privacy
 
-- All data stored locally in Chrome storage
-- No data sent to external servers
-- No tracking or analytics
-- No permissions beyond necessary APIs
-- Open source - audit the code yourself
+**Personal Job Data:**
+- All personal job tracking data stored locally in Chrome storage
+- Synced to your personal MongoDB account (optional)
+- No third-party access to your job data
+
+**Group Collaboration Data:**
+- Group messages and shared jobs stored in MongoDB
+- Only visible to group members
+- Encrypted in transit (HTTPS/WSS)
+- No data sold to third parties
+
+**Authentication:**
+- Passwords hashed with bcrypt
+- JWT tokens for secure API access
+- Tokens stored securely in Chrome storage
+
+**Open Source:**
+- Full source code available on GitHub
+- Audit the code yourself
+- No hidden tracking or analytics
 
 ---
 
 ## Known Limitations
 
+**Extension:**
 - LinkedIn may change HTML structure (selectors may need updates)
 - Old jobs (tracked before v2.0) won't have location/salary/HTML
 - Charts require Chart.js to load (included locally)
 - Calendar view shows max 100 jobs per month
+
+**Group Collaboration:**
+- Backend server must be running for group features to work
+- Requires internet connection for real-time chat
+- Socket.io connection may timeout after 30 minutes of inactivity
+- Maximum 50 members per group (configurable)
+- Maximum 1000 messages per group (older messages archived)
+- File uploads not yet supported in chat
+- Cannot edit/delete messages yet (coming in v3.1)
 
 ---
 
@@ -499,6 +906,55 @@ const days = Math.round((response - applied) / (1000 * 60 * 60 * 24));
 1. Only NEW jobs will have HTML formatting
 2. Old jobs need to be re-tracked
 3. See DEBUG.md for detailed troubleshooting
+
+**Group features not working:**
+1. **Check backend server is running:**
+   ```bash
+   cd backend
+   npm start
+   ```
+2. **Verify MongoDB is running:**
+   ```bash
+   # macOS
+   brew services list | grep mongodb
+
+   # Linux
+   sudo systemctl status mongod
+   ```
+3. **Check API URL in `shared/config.js`:**
+   - Should be `http://localhost:3000/api` for local development
+   - Should be production URL if using deployed backend
+4. **Check browser console for errors:**
+   - Open DevTools (F12) → Console tab
+   - Look for authentication errors or network errors
+5. **Clear Chrome storage and re-login:**
+   - Go to `chrome://extensions/`
+   - Click "Remove" on the extension
+   - Reload the extension
+   - Login again
+
+**Chat messages not sending:**
+1. Check Socket.io connection in console (should see "Socket connected")
+2. Verify you're a member of the group
+3. Check network tab for WebSocket connection
+4. Reload the page
+
+**Shared jobs not appearing:**
+1. Refresh the page
+2. Check if you have permission to view shared jobs
+3. Verify the job was shared to the correct group
+4. Check console for API errors
+
+**"Unknown User" in chat:**
+1. This was a known issue in v3.0.0 - fixed in latest version
+2. Update to latest version from GitHub
+3. Reload the extension
+
+**Socket.io disconnecting:**
+1. Check your internet connection
+2. Backend server may have restarted
+3. Refresh the page to reconnect
+4. Check backend logs for errors
 
 ---
 
@@ -554,7 +1010,16 @@ We welcome contributions! Here's how to get started:
 
 ## Roadmap
 
-**Completed Features:**
+**Completed Features (v3.0):**
+- [x] Group collaboration with real-time chat
+- [x] Share jobs to groups
+- [x] Save shared jobs to personal tracker
+- [x] Inline job sharing in chat
+- [x] Message reactions and typing indicators
+- [x] Socket.io real-time communication
+- [x] Dual MongoDB setup (Production + Local)
+- [x] JWT authentication
+- [x] 5-column kanban with "Saved" status
 - [x] Enhanced autofill system with 90+ field types
 - [x] Resume parsing and automatic data extraction
 - [x] GitHub profile extraction and autofill
@@ -563,8 +1028,21 @@ We welcome contributions! Here's how to get started:
 - [x] Stats overview with 5 charts
 - [x] Application timing and competition tracking
 
-**Planned Features:**
-- [ ] GitHub API integration to pull repository stats and contributions
+**In Progress (v3.1):**
+- [ ] Share job from dashboard to groups
+- [ ] LinkedIn share integration (share while browsing)
+- [ ] Comments on shared jobs
+- [ ] Reactions on shared jobs (👍 🔥 ❤️)
+- [ ] @Mentions in chat
+- [ ] Group analytics dashboard
+
+**Planned Features (v3.2+):**
+- [ ] Edit/delete messages
+- [ ] Search and filter shared jobs
+- [ ] Group settings UI (admin controls)
+- [ ] Member management UI (promote/demote/remove)
+- [ ] Notifications system (badge counts)
+- [ ] GitHub API integration to pull repository stats
 - [ ] Colored skill pills in job descriptions
 - [ ] Export to PDF/CSV
 - [ ] Email reminders for follow-ups
@@ -587,7 +1065,27 @@ MIT License - feel free to use, modify, and distribute
 
 ## Changelog
 
-### v2.1.0 (2026-01-14)
+### v3.0.0 (2026-01-27) - Group Collaboration
+- **Backend Infrastructure**: Node.js + Express + MongoDB + Socket.io
+- **Group Management**: Create/join groups with invite codes
+- **Real-time Chat**: Socket.io powered instant messaging with typing indicators
+- **Share Jobs**: Share job opportunities with group members
+- **Inline Job Sharing**: Share jobs directly in chat with rich cards
+- **Save to My Jobs**: Save shared jobs to personal "Saved" kanban column
+- **Mark as Applied**: Track applications from shared jobs
+- **Message Reactions**: React with 👍 ❤️ 🔥 😂 emojis
+- **Online Status**: See who's currently online with green dot
+- **Job Statistics**: Track views, saves, and applications for shared jobs
+- **Member Management**: View members with roles (Admin, Moderator, Member)
+- **Dual MongoDB Setup**: Production (cloud) + Local databases
+- **JWT Authentication**: Secure user authentication with Bearer tokens
+- **Rate Limiting**: Prevent spam and abuse (100 req/15min)
+- **5-Column Kanban**: Added "Saved" column (purple) for saved jobs
+- **Cross-Database Fetching**: Manual user data fetching across MongoDB connections
+- **Socket Rooms**: Group-specific real-time broadcasts
+- **API Endpoints**: 30+ RESTful endpoints for groups, chat, jobs, analytics
+
+### v2.1.0 (2026-01-14) - Enhanced Autofill
 - **Major Autofill Overhaul**: Complete redesign of autofill engine
 - Enhanced profile setup with 7-step wizard
 - Resume parsing with automatic data extraction
@@ -679,7 +1177,8 @@ git pull origin main
 - Review [Recent Updates](#recent-updates) section
 
 **Version History:**
-- Current: v2.1.0 (Enhanced Autofill)
+- Current: v3.0.0 (Group Collaboration & Real-time Chat)
+- Previous: v2.1.0 (Enhanced Autofill)
 - Previous: v2.0.0 (Stats & Analytics)
 - Initial: v1.0.0 (Core Features)
 

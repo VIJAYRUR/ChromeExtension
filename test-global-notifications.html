@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Global Notifications</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 40px;
+      background: #f7f7f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #111;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: white;
+      border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+      margin: -40px -40px 40px -40px;
+    }
+    .test-buttons {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #3b82f6;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .info {
+      background: rgba(59, 130, 246, 0.1);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      color: #1e40af;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Global Notifications Test</h1>
+      <!-- Notification Bell will be injected here -->
+      <div id="notification-bell-wrapper"></div>
+    </div>
+
+    <div class="info">
+      Click the buttons below to test different notification types. The notification bell in the header will show a badge count and you can click it to view all notifications.
+    </div>
+
+    <div class="test-buttons">
+      <button onclick="testJobShared()">Test Job Shared Notification</button>
+      <button onclick="testNewMessage()">Test New Message Notification</button>
+      <button onclick="testMemberJoined()">Test Member Joined Notification</button>
+      <button onclick="testMention()">Test Mention Notification</button>
+      <button onclick="testMultiple()">Test Multiple Notifications</button>
+      <button onclick="clearNotifications()" style="background: #ef4444;">Clear All Notifications</button>
+    </div>
+  </div>
+
+  <script src="shared/notification-manager.js"></script>
+  <script src="shared/global-notifications.js"></script>
+  <script>
+    // Initialize global notifications
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.globalNotifications) {
+        window.globalNotifications.injectInto('#notification-bell-wrapper');
+      }
+    });
+
+    function testJobShared() {
+      window.globalNotifications.addNotification({
+        type: 'job-shared',
+        title: 'New Job Shared',
+        message: 'John Doe shared Software Engineer at Google',
+        data: { groupId: '123', jobId: '456' },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function testNewMessage() {
+      window.globalNotifications.addNotification({
+        type: 'message',
+        title: 'New Message',
+        message: 'Jane Smith: Hey, did you see that new job posting?',
+        data: { groupId: '123', messageId: '789' },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function testMemberJoined() {
+      window.globalNotifications.addNotification({
+        type: 'member-joined',
+        title: 'New Member',
+        message: 'Alex Johnson joined the group',
+        data: { groupId: '123' },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function testMention() {
+      window.globalNotifications.addNotification({
+        type: 'mention',
+        title: 'You were mentioned',
+        message: 'Sarah mentioned you in a message',
+        data: { groupId: '123' },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function testMultiple() {
+      testJobShared();
+      setTimeout(() => testNewMessage(), 500);
+      setTimeout(() => testMemberJoined(), 1000);
+      setTimeout(() => testMention(), 1500);
+    }
+
+    function clearNotifications() {
+      window.globalNotifications.clearAll();
+    }
+  </script>
+</body>
+</html>
+

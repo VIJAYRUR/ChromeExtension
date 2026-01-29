@@ -1,0 +1,537 @@
+/* ============================================
+   SHARED JOB DETAIL - NOTION UI STYLE
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Notion exact color palette */
+  --bg-main: #ffffff;
+  --bg-page: #f6f5f4;
+  --bg-soft: #f6f5f4;
+  --bg-hover: #eeeeec;
+  --bg-active: #e8e8e6;
+  --border-subtle: #e0dfde;
+  --border-light: #ebebea;
+  --text-primary: #191919;
+  --text-secondary: #6b6b6b;
+  --text-muted: #9a9a9a;
+  --text-placeholder: #a0a0a0;
+  --accent-blue: #2383e2;
+  --success-color: #0f7b6c;
+  --warning-color: #c19206;
+  --danger-color: #eb5757;
+}
+
+body {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   HEADER - NOTION STYLE
+   ============================================ */
+
+.page-header {
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 52px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.btn-back:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.page-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================
+   BUTTONS - NOTION STYLE
+   ============================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--accent-blue);
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: #1a73d1;
+}
+
+.btn-primary svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  font-family: inherit;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.main-content {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 96px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 24px 16px;
+  }
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+  text-align: center;
+}
+
+.error-state svg {
+  color: var(--danger-color);
+  opacity: 0.6;
+}
+
+.error-state h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.error-state p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ============================================
+   JOB CONTENT - NOTION PAGE STYLE
+   ============================================ */
+
+.job-content {
+  background: transparent;
+}
+
+/* Job Header - Notion page header style */
+.job-header {
+  margin-bottom: 32px;
+}
+
+.job-header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+/* Company Logo - Notion style icon */
+.company-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 78px;
+  background: var(--bg-soft);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 32px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.job-header-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+/* Job Title - Notion page title */
+.job-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* Company Name */
+.job-company {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+/* Meta Info - Shared by, time */
+.job-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.job-meta-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================
+   DETAILS GRID - NOTION PROPERTY STYLE
+   ============================================ */
+
+.job-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  min-height: 42px;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item:hover {
+  background: var(--bg-hover);
+}
+
+.detail-label {
+  width: 140px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.detail-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+/* Status Badge - Notion tag style */
+.job-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-soft);
+  color: var(--text-secondary);
+}
+
+.job-status-badge.status-applied {
+  background: rgba(35, 131, 226, 0.1);
+  color: #2383e2;
+}
+
+.job-status-badge.status-interviewing {
+  background: rgba(203, 145, 47, 0.1);
+  color: #c19206;
+}
+
+.job-status-badge.status-offer {
+  background: rgba(15, 123, 108, 0.1);
+  color: #0f7b6c;
+}
+
+.job-status-badge.status-rejected {
+  background: rgba(235, 87, 87, 0.1);
+  color: #eb5757;
+}
+
+.job-status-badge.status-wishlist,
+.job-status-badge.status-saved {
+  background: rgba(144, 101, 176, 0.1);
+  color: #9065b0;
+}
+
+/* ============================================
+   JOB SECTIONS - NOTION BLOCK STYLE
+   ============================================ */
+
+.job-section {
+  margin-top: 32px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ============================================
+   JOB DESCRIPTION - NOTION TEXT STYLE
+   ============================================ */
+
+.job-description {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
+.job-description.formatted {
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.job-description.formatted h1,
+.job-description.formatted h2,
+.job-description.formatted h3 {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.job-description.formatted h1 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+.job-description.formatted h2 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.job-description.formatted h3 {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.job-description.formatted p {
+  margin-bottom: 12px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.job-description.formatted p:last-child {
+  margin-bottom: 0;
+}
+
+.job-description.formatted ul,
+.job-description.formatted ol {
+  margin-left: 24px;
+  margin-bottom: 12px;
+  padding-left: 0;
+}
+
+.job-description.formatted li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.job-description.formatted li:last-child {
+  margin-bottom: 0;
+}
+
+.job-description.formatted strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Section headings in description */
+.job-description.formatted p strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 24px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.job-description.formatted > p:first-child strong:first-child {
+  margin-top: 0;
+}
+
+.job-description.formatted a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.job-description.formatted a:hover {
+  text-decoration: underline;
+}
+
+/* Section heading class */
+.job-description .section-heading,
+.job-description.formatted .section-heading {
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.job-description .section-heading:first-child,
+.job-description.formatted .section-heading:first-child {
+  margin-top: 0;
+}
+
+.job-description .section-heading strong,
+.job-description.formatted .section-heading strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* ============================================
+   ADDITIONAL INFO SECTION
+   ============================================ */
+
+.job-section .job-details-grid {
+  margin-top: 0;
+}
+
+/* View Job Button in detail item */
+.detail-value .btn-primary {
+  padding: 6px 12px;
+  font-size: 13px;
+}
