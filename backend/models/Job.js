@@ -149,7 +149,7 @@ const jobSchema = new mongoose.Schema({
   resumeFileType: { type: String },
   resumeFileSize: { type: Number },
   resumeS3Key: { type: String }, // S3 object key for the resume
-  resumeUploadedAt: { type: Date }
+  resumeUploadedAt: { type: Date },
 
   // Company Information (for enrichment)
   companyInfo: {
