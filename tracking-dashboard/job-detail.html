@@ -115,13 +115,13 @@
               Upload file
             </button>
           </div>
-          <div id="resume-uploaded-state" style="display: none; padding: 12px; background: var(--bg-hover); border-radius: 3px;">
+          <div id="resume-uploaded-state" style="display: none; padding: 12px; background: rgba(242, 241, 238, 0.6); border-radius: 3px; border: 1px solid rgba(55, 53, 47, 0.09);">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 20px;">📄</span>
               <span id="file-name" style="flex: 1; font-size: 14px; color: var(--text-primary);"></span>
-              <button id="view-resume" style="padding: 4px 8px; font-size: 12px; color: rgb(35, 131, 226); background: transparent; border: none; cursor: pointer; border-radius: 3px; font-weight: 500;" title="View resume">View</button>
-              <button id="download-resume" style="padding: 4px 8px; font-size: 12px; color: var(--text-primary); background: transparent; border: none; cursor: pointer; border-radius: 3px; font-weight: 500;" title="Download resume">Download</button>
-              <button id="remove-resume" style="padding: 4px 8px; font-size: 12px; color: var(--text-muted); background: transparent; border: none; cursor: pointer; border-radius: 3px;">Remove</button>
+              <button id="view-resume" style="padding: 6px 12px; font-size: 13px; color: rgb(35, 131, 226); background: rgba(35, 131, 226, 0.08); border: none; cursor: pointer; border-radius: 3px; font-weight: 500; transition: background 0.1s ease;" title="View resume" onmouseover="this.style.background='rgba(35, 131, 226, 0.12)'" onmouseout="this.style.background='rgba(35, 131, 226, 0.08)'">View</button>
+              <button id="download-resume" style="padding: 6px 12px; font-size: 13px; color: var(--text-primary); background: rgba(55, 53, 47, 0.08); border: none; cursor: pointer; border-radius: 3px; font-weight: 500; transition: background 0.1s ease;" title="Download resume" onmouseover="this.style.background='rgba(55, 53, 47, 0.12)'" onmouseout="this.style.background='rgba(55, 53, 47, 0.08)'">Download</button>
+              <button id="remove-resume" style="padding: 6px 12px; font-size: 13px; color: rgba(55, 53, 47, 0.65); background: transparent; border: none; cursor: pointer; border-radius: 3px; transition: background 0.1s ease;" onmouseover="this.style.background='rgba(55, 53, 47, 0.08)'; this.style.color='rgb(235, 87, 87)'" onmouseout="this.style.background='transparent'; this.style.color='rgba(55, 53, 47, 0.65)'">Remove</button>
             </div>
           </div>
         </div>
