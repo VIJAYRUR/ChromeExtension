@@ -5,6 +5,7 @@ class JobTracker {
     this.jobs = [];
     this.isLoaded = false;
     this.currentUserId = null;
+    this.storageChangeListeners = [];
     this.init();
   }
 
@@ -12,6 +13,52 @@ class JobTracker {
     await this.loadJobs();
     this.isLoaded = true;
     console.log('[Job Tracker] 📊 Loaded', this.jobs.length, 'tracked jobs for user:', this.getCurrentUserId());
+
+    // Set up storage change listener for real-time updates
+    this.setupStorageListener();
+  }
+
+  // Set up listener for storage changes (when jobs are tracked from content script)
+  setupStorageListener() {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') return;
+
+        // Check if any of the storage keys that start with 'trackedJobs_' have changed
+        const trackedJobsKeys = Object.keys(changes).filter(key => key.startsWith('trackedJobs_'));
+
+        if (trackedJobsKeys.length > 0) {
+          const changedKey = trackedJobsKeys[0];
+          const currentKey = this.getStorageKey();
+
+          // Only reload if the current user's jobs have changed
+          if (changedKey === currentKey) {
+            console.log('[Job Tracker] 🔄 Storage updated, reloading jobs...');
+            this.loadJobs().then(() => {
+              console.log('[Job Tracker] ✅ Jobs reloaded from storage:', this.jobs.length, 'jobs');
+              // Notify listeners that jobs have changed
+              this.notifyStorageChangeListeners();
+            });
+          }
+        }
+      });
+    }
+  }
+
+  // Register a callback to be notified when storage changes
+  onStorageChange(callback) {
+    this.storageChangeListeners.push(callback);
+  }
+
+  // Notify all listeners that storage has changed
+  notifyStorageChangeListeners() {
+    this.storageChangeListeners.forEach(callback => {
+      try {
+        callback(this.jobs);
+      } catch (error) {
+        console.error('[Job Tracker] Error in storage change listener:', error);
+      }
+    });
   }
 
   // Get storage key namespaced by userId to prevent data leakage between users
@@ -142,8 +189,8 @@ class JobTracker {
       status: jobData.status || 'applied', // applied, interview, offer, rejected, withdrawn, saved
       resumeFile: null, // Will store base64 or file reference
       coverLetter: '',
-      notes: '',
-      timeline: [
+      notes: jobData.notes || '',
+      timeline: jobData.timeline || [
         {
           date: new Date().toISOString(),
           event: 'Application tracked',
@@ -167,6 +214,29 @@ class JobTracker {
       return { duplicate: true, existingJob };
     }
 
+    // Save to MongoDB if authenticated
+    if (window.apiClient?.isAuthenticated()) {
+      try {
+        console.log('[Job Tracker] 📤 Creating job in MongoDB:', job.company, '-', job.title);
+        const response = await window.apiClient.createJob(job);
+
+        if (response.success && response.data) {
+          // Use MongoDB _id and update the job object with server response
+          job._id = response.data._id;
+          // Merge any additional fields from server response
+          Object.assign(job, response.data);
+          console.log('[Job Tracker] ✅ Job created in MongoDB with ID:', job._id);
+        }
+      } catch (error) {
+        console.error('[Job Tracker] ❌ Failed to create job in MongoDB:', error);
+        console.warn('[Job Tracker] Continuing with local storage only');
+        // Continue with local save even if MongoDB fails
+      }
+    } else {
+      console.warn('[Job Tracker] Not authenticated, saving to local storage only');
+    }
+
+    // Save locally
     this.jobs.unshift(job); // Add to beginning
     await this.saveJobs();
 
@@ -244,8 +314,14 @@ class JobTracker {
 
   // Update job details
   async updateJob(jobId, updates) {
-    const job = this.jobs.find(j => j.id === jobId);
-    if (!job) return false;
+    // Find job by id or _id (MongoDB compatibility)
+    const job = this.jobs.find(j => j.id === jobId || j._id === jobId);
+    if (!job) {
+      console.error('[Job Tracker] Job not found for update:', jobId);
+      return false;
+    }
+
+    console.log('[Job Tracker] Updating job:', job.company, 'with updates:', Object.keys(updates));
 
     Object.assign(job, updates);
 
@@ -255,19 +331,26 @@ class JobTracker {
       type: 'update'
     });
 
+    // Save locally first
+    await this.saveJobs();
+    console.log('[Job Tracker] 💾 Saved locally');
+
     // Update in API if authenticated
     if (window.apiClient?.isAuthenticated()) {
       try {
         const mongoId = job._id || job.id;
+        console.log('[Job Tracker] 📤 Syncing to MongoDB with ID:', mongoId);
+
         await window.apiClient.updateJob(mongoId, job);
-        console.log('[Job Tracker] 📝 Updated job in MongoDB:', job.company);
+        console.log('[Job Tracker] ✅ Updated job in MongoDB:', job.company);
       } catch (error) {
-        console.error('[Job Tracker] Failed to update job in MongoDB:', error);
+        console.error('[Job Tracker] ❌ Failed to update job in MongoDB:', error);
         // Continue with local update even if API fails
       }
+    } else {
+      console.warn('[Job Tracker] Not authenticated, skipping MongoDB sync');
     }
 
-    await this.saveJobs();
     return true;
   }
 

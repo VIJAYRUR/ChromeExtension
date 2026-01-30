@@ -696,11 +696,17 @@ class LinkedInJobsFilter {
       if (jobData) {
         console.log('[Job Tracker] 📝 Tracking job from detail panel:', jobData);
 
-        // Save to storage
-        chrome.runtime.sendMessage({
-          action: 'trackJob',
-          jobData: jobData
-        }, (response) => {
+        // Get current user ID and send trackJob message
+        chrome.storage.local.get(['currentUser'], (result) => {
+          const currentUser = result.currentUser;
+          const userId = currentUser?._id || null;
+
+          // Save to storage
+          chrome.runtime.sendMessage({
+            action: 'trackJob',
+            jobData: jobData,
+            userId: userId  // Include user ID so background.js doesn't have to look it up
+          }, (response) => {
           if (response && response.success) {
             // Update button state
             trackBtn.innerHTML = '✓ Tracked';
@@ -732,7 +738,8 @@ class LinkedInJobsFilter {
               trackBtn.style.borderColor = '#000000 !important';
             }, 3000);
           }
-        });
+          });  // Close chrome.runtime.sendMessage
+        });  // Close chrome.storage.local.get
       }
     });
 

@@ -10,6 +10,8 @@
     "db:init": "node scripts/init-database.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.980.0",
+    "@aws-sdk/s3-request-presigner": "^3.980.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -20,6 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "socket.io": "^4.8.3",
     "uuid": "^9.0.1"
   },

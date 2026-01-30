@@ -69,6 +69,14 @@ class APIClient {
     return !!this.token;
   }
 
+  async getToken() {
+    // Ensure tokens are loaded
+    if (!this.token) {
+      await this.loadTokens();
+    }
+    return this.token;
+  }
+
   // ==================== HTTP Methods ====================
 
   async request(endpoint, options = {}) {

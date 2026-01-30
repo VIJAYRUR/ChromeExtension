@@ -284,29 +284,69 @@ class SyncManager {
 
       if (localJobs.length === 0) {
         // No local jobs, just pull from server
-        const response = await window.apiClient.getJobs({ limit: 1000 });
-        if (response.success) {
-          await this.saveLocalJobs(response.data.jobs);
-        }
+        const allJobs = await this.fetchAllJobsFromServer();
+        await this.saveLocalJobs(allJobs);
         return;
       }
 
-      // Sync local jobs to server
-      const response = await window.apiClient.syncJobs(localJobs);
+      // CRITICAL FIX: Only sync jobs that don't already have a server _id
+      // This prevents duplicate creation in MongoDB
+      const jobsToSync = localJobs.filter(j => !j._id || j._id.startsWith('job_'));
 
-      if (response.success) {
-        console.log(`[Sync Manager] Jobs synced: ${response.data.created} created, ${response.data.updated} updated`);
+      if (jobsToSync.length > 0) {
+        console.log(`[Sync Manager] Syncing ${jobsToSync.length} unsynced jobs to server (filtered from ${localJobs.length} total)...`);
+        const response = await window.apiClient.syncJobs(jobsToSync);
 
-        // Pull all jobs from server to get the canonical state
-        const pullResponse = await window.apiClient.getJobs({ limit: 1000 });
-        if (pullResponse.success) {
-          await this.saveLocalJobs(pullResponse.data.jobs);
+        if (response.success) {
+          console.log(`[Sync Manager] Jobs synced: ${response.data.created} created, ${response.data.updated} updated`);
         }
+      } else {
+        console.log('[Sync Manager] No new jobs to sync (all already have server _id)');
       }
+
+      // Pull all jobs from server
+      const serverJobs = await this.fetchAllJobsFromServer();
+
+      // Merge: use server jobs as source of truth (they have proper _id and are deduplicated)
+      const mergedJobs = serverJobs;
+
+      console.log(`[Sync Manager] Merged ${mergedJobs.length} jobs (${localJobs.filter(j => j._id && !j._id.startsWith('job_')).length} local with server _id + ${serverJobs.length} from server)`);
+      await this.saveLocalJobs(mergedJobs);
     } catch (error) {
       console.error('[Sync Manager] Job sync failed:', error);
       throw error;
     }
+  }
+
+  async fetchAllJobsFromServer() {
+    // Fetch jobs in batches (max 100 per request due to API validation)
+    const allJobs = [];
+    let page = 1;
+    let hasMore = true;
+    const limit = 100; // Maximum allowed by backend validation
+
+    console.log('[Sync Manager] Fetching all jobs from server...');
+
+    while (hasMore) {
+      const response = await window.apiClient.getJobs({ page, limit });
+
+      if (response.success) {
+        const { jobs, pagination } = response.data;
+        allJobs.push(...jobs);
+
+        console.log(`[Sync Manager] Fetched page ${page}: ${jobs.length} jobs (${allJobs.length}/${pagination.total} total)`);
+
+        // Check if there are more pages
+        hasMore = page < pagination.pages;
+        page++;
+      } else {
+        console.error('[Sync Manager] Failed to fetch jobs page', page);
+        break;
+      }
+    }
+
+    console.log(`[Sync Manager] Fetched ${allJobs.length} total jobs from server`);
+    return allJobs;
   }
 
   async syncProfile() {
@@ -339,34 +379,66 @@ class SyncManager {
   }
 
   async saveLocalJobs(jobs) {
-    // Convert server jobs to local format
-    const localJobs = jobs.map(job => ({
-      id: job._id,
-      company: job.company,
-      title: job.title,
-      description: job.description,
-      descriptionHtml: job.descriptionHtml,
-      location: job.location,
-      salary: job.salary,
-      workType: job.workType,
-      linkedinUrl: job.linkedinUrl || job.jobUrl,
-      dateApplied: job.dateApplied,
-      status: job.status,
-      resumeFile: job.resumeUsed,
-      coverLetter: job.coverLetter,
-      notes: job.notes,
-      timeline: job.timeline,
-      tags: job.tags,
-      priority: job.priority,
-      deadline: job.deadline,
-      contactPerson: job.contactPerson,
-      contactEmail: job.contactEmail,
-      interviewDates: job.interviews?.map(i => i.date) || [],
-      followUpDate: job.followUpDate,
-      archived: job.isArchived
-    }));
-
+    // Get storage key
     const storageKey = this.getStorageKey('trackedJobs');
+
+    // Convert server jobs to local format
+    const localJobs = jobs.map(job => {
+      // Log S3 resume data from MongoDB
+      if (job.resumeFileName) {
+        console.log('[Sync Manager] 📄 Job from MongoDB has S3 resume:', {
+          jobId: job._id,
+          company: job.company,
+          resumeFileName: job.resumeFileName,
+          resumeS3Key: job.resumeS3Key,
+          hasS3Key: !!job.resumeS3Key
+        });
+      }
+
+      return {
+        id: job._id,
+        _id: job._id, // Preserve MongoDB _id for compatibility
+        company: job.company,
+        title: job.title,
+        description: job.description,
+        descriptionHtml: job.descriptionHtml,
+        location: job.location,
+        salary: job.salary,
+        workType: job.workType,
+        linkedinUrl: job.linkedinUrl || job.jobUrl,
+        dateApplied: job.dateApplied,
+        status: job.status,
+        resumeFile: job.resumeUsed,
+        // S3-based resume fields (NEW - no more base64!)
+        resumeFileName: job.resumeFileName,
+        resumeFileType: job.resumeFileType,
+        resumeFileSize: job.resumeFileSize,
+        resumeS3Key: job.resumeS3Key,
+        resumeUploadedAt: job.resumeUploadedAt,
+        // Remove old base64 field - no longer stored locally
+        coverLetter: job.coverLetter,
+        notes: job.notes,
+        timeline: job.timeline,
+        tags: job.tags,
+        priority: job.priority,
+        deadline: job.deadline,
+        contactPerson: job.contactPerson,
+        contactEmail: job.contactEmail,
+        interviewDates: job.interviews?.map(i => i.date) || [],
+        followUpDate: job.followUpDate,
+        archived: job.isArchived,
+        // Preserve additional fields from MongoDB
+        linkedinJobId: job.linkedinJobId,
+        jobPostedHoursAgo: job.jobPostedHoursAgo,
+        applicantsAtApplyTime: job.applicantsAtApplyTime,
+        applicantsText: job.applicantsText,
+        timeToApplyBucket: job.timeToApplyBucket,
+        competitionBucket: job.competitionBucket,
+        source: job.source
+      };
+    });
+
+    // Save to storage
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         const data = {};
@@ -432,11 +504,9 @@ class SyncManager {
       throw new Error('Not authenticated');
     }
 
-    // Pull jobs
-    const jobsResponse = await window.apiClient.getJobs({ limit: 1000 });
-    if (jobsResponse.success) {
-      await this.saveLocalJobs(jobsResponse.data.jobs);
-    }
+    // Pull jobs (using pagination to fetch all)
+    const allJobs = await this.fetchAllJobsFromServer();
+    await this.saveLocalJobs(allJobs);
 
     // Pull profile
     const profileResponse = await window.apiClient.getProfile();
@@ -445,7 +515,7 @@ class SyncManager {
     }
 
     await this.saveLastSyncTime();
-    return { jobs: jobsResponse.data?.jobs?.length || 0 };
+    return { jobs: allJobs.length };
   }
 
   async pushToCloud() {

@@ -2,6 +2,34 @@
 
 console.log('🚀🚀🚀 BACKGROUND.JS LOADED - VERSION 2.0 - FIXED STATUS BUG 🚀🚀🚀');
 
+// Get storage key namespaced by userId (consistent with JobTracker)
+function getStorageKey(userId) {
+  return userId ? `trackedJobs_${userId}` : 'trackedJobs_anonymous';
+}
+
+// Get current user ID from chrome.storage (where auth data is stored)
+function getCurrentUserId(callback) {
+  // Try to get from chrome.storage (where authToken and user data are stored)
+  chrome.storage.local.get(['currentUser'], (result) => {
+    if (result.currentUser) {
+      try {
+        const user = typeof result.currentUser === 'string'
+          ? JSON.parse(result.currentUser)
+          : result.currentUser;
+        if (user?._id) {
+          callback(user._id);
+          return; // Exit here to avoid calling callback(null)
+        }
+      } catch (e) {
+        console.log('[Background] Error parsing currentUser:', e);
+      }
+    }
+
+    // Fallback: return null (will use anonymous key)
+    callback(null);
+  });
+}
+
 chrome.action.onClicked.addListener((tab) => {
   // Only work on LinkedIn jobs pages
   if (tab.url && tab.url.includes('linkedin.com/jobs')) {
@@ -19,9 +47,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Background] 🔍 Received trackJob message:', message);
     console.log('[Background] 🔍 Status received:', message.jobData?.status);
 
-    // Save job to storage
-    chrome.storage.local.get(['trackedJobs'], (result) => {
-      const jobs = result.trackedJobs || [];
+    // Use userId from message (passed by content script)
+    const userId = message.userId;
+    const storageKey = getStorageKey(userId);
+    console.log('[Background] 💾 Saving to storage key:', storageKey);
+
+    chrome.storage.local.get([storageKey], (result) => {
+      const jobs = result[storageKey] || [];
 
       // Check for duplicates based on LinkedIn URL or company + title
       const isDuplicate = jobs.some(existingJob => {
@@ -101,11 +133,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       jobs.unshift(job);
 
-      chrome.storage.local.set({ trackedJobs: jobs }, () => {
+      // Save to user-specific storage key
+      const data = {};
+      data[storageKey] = jobs;
+      chrome.storage.local.set(data, () => {
         console.log('[Background] ✅ Job tracked:', job.company, '-', job.title);
         console.log('[Background] ✅ Final job status:', job.status);
         console.log('[Background] ✅ Full job object:', job);
         sendResponse({ success: true, job: job });
+
+        // Sync to server immediately so new job doesn't get overwritten by sync manager
+        chrome.storage.local.get(['authToken'], (result) => {
+          if (result.authToken) {
+            console.log('[Background] 🔄 Syncing new job to server...');
+            // Send to API to create job on server
+            fetch('https://job-tracker-api-j7ef.onrender.com/api/jobs', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${result.authToken}`
+              },
+              body: JSON.stringify(job)
+            })
+              .then(res => {
+                console.log('[Background] 📡 Sync response status:', res.status);
+                return res.json().then(data => ({ status: res.status, data }));
+              })
+              .then(({ status, data }) => {
+                if (status === 200 || status === 201) {
+                  const mongoId = data.data?._id;
+                  console.log('[Background] ✅ Job synced to server with ID:', mongoId);
+
+                  // UPDATE LOCAL JOB WITH SERVER ID to prevent duplicates on next sync
+                  if (mongoId) {
+                    job._id = mongoId;
+                    const updatedData = {};
+                    updatedData[storageKey] = jobs;
+                    chrome.storage.local.set(updatedData, () => {
+                      console.log('[Background] ✅ Local job updated with server _id to prevent duplicates');
+                    });
+                  }
+                } else {
+                  console.error('[Background] ❌ Sync failed with status', status, ':', data);
+                }
+              })
+              .catch(err => {
+                console.error('[Background] ❌ Sync error:', err.message || err);
+              });
+          } else {
+            console.warn('[Background] ⚠️ No authToken available - job NOT synced to server');
+          }
+        });
       });
     });
 
@@ -114,9 +192,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'openJobDetail') {
     // Open job detail page
+    console.log('[Background] Opening job detail for jobId:', message.jobId);
     chrome.tabs.create({
       url: chrome.runtime.getURL(`tracking-dashboard/job-detail.html?id=${message.jobId}`)
+    }, (tab) => {
+      console.log('[Background] Job detail tab created:', tab.id);
     });
+    return true; // Acknowledge message
   }
 
   if (message.action === 'openDashboard') {

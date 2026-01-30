@@ -43,9 +43,30 @@ class DashboardUI {
     this.setupEventListeners();
     this.setupSocketListeners();
     this.setupGlobalNotifications();
+    this.setupJobTrackerListener();
     this.render();
 
     console.log('[Dashboard] 🎨 Dashboard initialized');
+  }
+
+  // Listen for job tracker storage changes and auto-refresh the display
+  setupJobTrackerListener() {
+    if (window.jobTracker && window.jobTracker.onStorageChange) {
+      window.jobTracker.onStorageChange((jobs) => {
+        console.log('[Dashboard] 📥 Detected job changes in storage, refreshing display with', jobs.length, 'jobs');
+        // Refresh the display without the spinning icon
+        this.render();
+
+        // Update stats
+        const filteredJobs = this.getFilteredJobs();
+        this.updateStats(filteredJobs);
+
+        // Show a subtle notification
+        if (window.globalNotifications) {
+          window.globalNotifications.showNotionToast('Jobs updated', 'success', 2000);
+        }
+      });
+    }
   }
 
   setupGlobalNotifications() {
@@ -1037,9 +1058,29 @@ class DashboardUI {
 
   showJobDetail(job) {
     // Open job detail page
+    // Use _id if available (MongoDB ID), otherwise use id (local ID)
+    const jobId = job._id || job.id;
+    console.log('[Dashboard] Opening job detail for:', { jobId, title: job.title, company: job.company });
+
+    // Check if chrome.runtime is available
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      console.error('[Dashboard] chrome.runtime not available, opening directly');
+      // Fallback: open directly in new tab
+      window.open(`job-detail.html?id=${jobId}`, '_blank');
+      return;
+    }
+
     chrome.runtime.sendMessage({
       action: 'openJobDetail',
-      jobId: job.id
+      jobId: jobId
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('[Dashboard] Error sending message:', chrome.runtime.lastError);
+        // Fallback: open directly
+        window.open(`job-detail.html?id=${jobId}`, '_blank');
+      } else {
+        console.log('[Dashboard] Message sent successfully');
+      }
     });
   }
 

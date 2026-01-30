@@ -18,6 +18,11 @@ const {
   syncJobs,
   findDuplicates
 } = require('../controllers/jobController');
+const {
+  uploadResume,
+  getResumeDownloadUrl,
+  deleteResume
+} = require('../controllers/resumeController');
 
 // All routes require authentication
 router.use(auth);
@@ -51,5 +56,10 @@ router.post('/:id/notes', objectIdRule('id'), validate, addNote);
 // Interviews
 router.post('/:id/interviews', objectIdRule('id'), validate, addInterview);
 router.put('/:id/interviews/:interviewId', updateInterview);
+
+// Resume operations (S3-backed)
+router.post('/:id/resume', objectIdRule('id'), validate, uploadResume);
+router.get('/:id/resume', objectIdRule('id'), validate, getResumeDownloadUrl);
+router.delete('/:id/resume', objectIdRule('id'), validate, deleteResume);
 
 module.exports = router;

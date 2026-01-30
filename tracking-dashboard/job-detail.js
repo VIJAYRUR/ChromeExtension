@@ -8,9 +8,13 @@ class JobDetailPage {
   }
 
   async init() {
+    console.log('[Job Detail] 🚀 Initializing job detail page...');
+
     // Get job ID from URL
     const params = new URLSearchParams(window.location.search);
     this.jobId = params.get('id');
+
+    console.log('[Job Detail] Job ID from URL:', this.jobId);
 
     if (!this.jobId) {
       alert('Job not found');
@@ -21,7 +25,7 @@ class JobDetailPage {
     // Wait for tracker to load
     await this.waitForTracker();
 
-    // Load job data
+    // Load job data (don't trigger sync here to preserve recent uploads)
     await this.loadJob();
 
     // Setup event listeners
@@ -32,6 +36,8 @@ class JobDetailPage {
 
     // Render job data
     this.render();
+
+    console.log('[Job Detail] ✅ Job detail page initialized');
   }
 
   setupGlobalNotifications() {
@@ -45,17 +51,57 @@ class JobDetailPage {
   }
 
   async waitForTracker() {
-    while (!window.jobTracker) {
+    console.log('[Job Detail] Waiting for JobTracker...');
+    let attempts = 0;
+    while (!window.jobTracker && attempts < 50) { // 5 seconds max
       await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
+
+    if (!window.jobTracker) {
+      throw new Error('JobTracker not available after 5 seconds');
+    }
+
+    // Wait for jobs to be loaded
+    console.log('[Job Detail] JobTracker found, waiting for jobs to load...');
+    attempts = 0;
+    while (!window.jobTracker.isLoaded && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    // Wait for auth if needed
+    if (window.authManager && !window.authManager.initialized) {
+      console.log('[Job Detail] Waiting for auth manager...');
+      await window.authManager.init();
+    }
+
+    // CRITICAL: Reload jobs for the authenticated user if user ID changed
+    // JobTracker might have loaded with user: null before auth initialized
+    const currentUserId = window.jobTracker.getCurrentUserId();
+    console.log('[Job Detail] Current user ID:', currentUserId);
+
+    if (currentUserId && window.jobTracker.jobs.length === 0) {
+      console.log('[Job Detail] 🔄 Reloading jobs for authenticated user...');
+      await window.jobTracker.reloadForUser();
+      console.log('[Job Detail] ✅ Reloaded:', window.jobTracker.jobs.length, 'jobs');
+    }
+
+    console.log('[Job Detail] JobTracker ready with', window.jobTracker.jobs.length, 'jobs');
   }
 
   async loadJob() {
     await window.jobTracker.loadJobs();
-    this.job = window.jobTracker.jobs.find(j => j.id === this.jobId);
+
+    // Try to find job by id or _id (MongoDB compatibility)
+    this.job = window.jobTracker.jobs.find(j =>
+      j.id === this.jobId || j._id === this.jobId
+    );
 
     if (!this.job) {
-      alert('Job not found');
+      console.error('[Job Detail] Job not found with ID:', this.jobId);
+      console.error('[Job Detail] Available jobs:', window.jobTracker.jobs.map(j => ({ id: j.id, _id: j._id, title: j.title })));
+      alert('Job not found. The job may have been deleted or not synced yet.');
       window.close();
     }
   }
@@ -271,6 +317,14 @@ class JobDetailPage {
     const uploadedState = document.getElementById('resume-uploaded-state');
     const fileName = document.getElementById('file-name');
 
+    console.log('[Job Detail] 📄 Resume state (S3):', {
+      hasFileName: !!this.job.resumeFileName,
+      fileName: this.job.resumeFileName,
+      fileSize: this.job.resumeFileSize,
+      resumeS3Key: this.job.resumeS3Key,
+      uploadedAt: this.job.resumeUploadedAt
+    });
+
     if (this.job.resumeFileName) {
       emptyState.style.display = 'none';
       uploadedState.style.display = 'block';
@@ -284,130 +338,238 @@ class JobDetailPage {
         fileInfo += ` (${sizeStr})`;
       }
 
-      fileName.textContent = fileInfo;
+      fileName.textContent = fileInfo + ' ☁️'; // Cloud icon to indicate S3 storage
+      console.log('[Job Detail] ✅ Showing S3 resume:', fileInfo);
     } else {
       emptyState.style.display = 'flex';
       uploadedState.style.display = 'none';
+      console.log('[Job Detail] ℹ️ No resume uploaded');
     }
   }
 
   async handleResumeUpload(file) {
+    // Get button and save original text (outside try block for scope)
+    const uploadBtn = document.getElementById('upload-btn');
+    const originalText = uploadBtn.innerHTML;
+
     try {
-      // Convert file to base64 for storage
-      const reader = new FileReader();
+      console.log('[Job Detail] 📄 Uploading resume to S3:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
 
-      reader.onload = async (e) => {
-        const base64Data = e.target.result;
+      // Show loading state
+      uploadBtn.innerHTML = 'Uploading to Cloud...';
+      uploadBtn.disabled = true;
 
-        // Store file data in job object
-        this.job.resumeFileName = file.name;
-        this.job.resumeFileData = base64Data;
-        this.job.resumeFileType = file.type;
-        this.job.resumeFileSize = file.size;
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('File size exceeds 5MB limit');
+      }
 
-        // Save to job tracker
-        await window.jobTracker.updateJob(this.jobId, {
-          resumeFileName: file.name,
-          resumeFileData: base64Data,
-          resumeFileType: file.type,
-          resumeFileSize: file.size
-        });
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('resume', file);
 
-        this.updateResumeState();
-        console.log('[Job Detail] ✅ Resume uploaded:', file.name);
-      };
+      // Get auth token
+      const authToken = await window.apiClient.getToken();
+      if (!authToken) {
+        throw new Error('Not authenticated. Please log in.');
+      }
 
-      reader.onerror = (error) => {
-        console.error('[Job Detail] Failed to read file:', error);
-        alert('❌ Failed to upload resume. Please try again.');
-      };
+      console.log('[Job Detail] 📤 Uploading to backend API...');
 
-      reader.readAsDataURL(file);
+      // Upload to backend API (which will upload to S3)
+      const response = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${this.jobId}/resume`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Upload failed');
+      }
+
+      console.log('[Job Detail] ✅ Resume uploaded to S3:', result.data);
+
+      // Update local job object with resume info (no base64 data!)
+      this.job.resumeFileName = result.data.fileName;
+      this.job.resumeFileType = result.data.fileType;
+      this.job.resumeFileSize = result.data.fileSize;
+      this.job.resumeUploadedAt = result.data.uploadedAt;
+      delete this.job.resumeFileData; // Remove old base64 data if present
+
+      // Reload jobs from storage to get updated data
+      await window.jobTracker.loadJobs();
+      this.job = window.jobTracker.jobs.find(j => j.id === this.jobId || j._id === this.jobId);
+
+      // Update UI
+      this.updateResumeState();
+      console.log('[Job Detail] ✅ Resume saved successfully');
+
+      // Show success feedback
+      if (window.globalNotifications) {
+        window.globalNotifications.showNotionToast('Resume uploaded to cloud successfully', 'success', 2000);
+      }
+
+      // Restore button
+      uploadBtn.innerHTML = originalText;
+      uploadBtn.disabled = false;
+
     } catch (error) {
       console.error('[Job Detail] Resume upload error:', error);
-      alert('❌ Failed to upload resume. Please try again.');
+      alert(`❌ Failed to upload resume: ${error.message}`);
+
+      // Restore button
+      uploadBtn.innerHTML = originalText;
+      uploadBtn.disabled = false;
     }
   }
 
-  viewResume() {
-    if (!this.job.resumeFileData) {
+  async viewResume() {
+    if (!this.job.resumeFileName) {
       alert('⚠️ Resume file not found.');
       return;
     }
 
     try {
-      // Open resume in new tab
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`
-          <html>
-            <head>
-              <title>${this.job.resumeFileName}</title>
-              <style>
-                body { margin: 0; padding: 0; }
-                iframe { width: 100%; height: 100vh; border: none; }
-              </style>
-            </head>
-            <body>
-              <iframe src="${this.job.resumeFileData}"></iframe>
-            </body>
-          </html>
-        `);
-        newWindow.document.close();
-      } else {
+      console.log('[Job Detail] 📥 Fetching resume view URL from S3...');
+
+      // Get auth token
+      const authToken = await window.apiClient.getToken();
+      if (!authToken) {
+        throw new Error('Not authenticated. Please log in.');
+      }
+
+      // Get pre-signed download URL from backend
+      const response = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${this.jobId}/resume`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to get view URL');
+      }
+
+      console.log('[Job Detail] ✅ Got view URL, opening resume...');
+
+      // Open resume in new tab using pre-signed URL
+      const newWindow = window.open(result.data.downloadUrl, '_blank');
+      if (!newWindow) {
         alert('⚠️ Please allow popups to view the resume.');
       }
     } catch (error) {
       console.error('[Job Detail] Failed to view resume:', error);
-      alert('❌ Failed to view resume. Please try downloading instead.');
+      alert(`❌ Failed to view resume: ${error.message}`);
     }
   }
 
-  downloadResume() {
-    if (!this.job.resumeFileData) {
+  async downloadResume() {
+    if (!this.job.resumeFileName) {
       alert('⚠️ Resume file not found.');
       return;
     }
 
     try {
-      // Create download link
+      console.log('[Job Detail] 📥 Fetching resume download URL from S3...');
+
+      // Get auth token
+      const authToken = await window.apiClient.getToken();
+      if (!authToken) {
+        throw new Error('Not authenticated. Please log in.');
+      }
+
+      // Get pre-signed download URL from backend
+      const response = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${this.jobId}/resume`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to get download URL');
+      }
+
+      console.log('[Job Detail] ✅ Got download URL, initiating download...');
+
+      // Create download link with pre-signed URL
       const link = document.createElement('a');
-      link.href = this.job.resumeFileData;
-      link.download = this.job.resumeFileName || 'resume.pdf';
+      link.href = result.data.downloadUrl;
+      link.download = result.data.fileName || 'resume.pdf';
+      link.target = '_blank';
       link.click();
 
-      console.log('[Job Detail] ✅ Resume downloaded:', this.job.resumeFileName);
+      console.log('[Job Detail] ✅ Resume download started:', result.data.fileName);
     } catch (error) {
       console.error('[Job Detail] Failed to download resume:', error);
-      alert('❌ Failed to download resume. Please try again.');
+      alert(`❌ Failed to download resume: ${error.message}`);
     }
   }
 
   async removeResume() {
-    const confirmed = confirm('Are you sure you want to remove this resume?');
+    const confirmed = confirm('Are you sure you want to remove this resume from cloud storage?');
     if (!confirmed) return;
 
     try {
-      this.job.resumeFileName = null;
-      this.job.resumeFileData = null;
-      this.job.resumeFileType = null;
-      this.job.resumeFileSize = null;
+      console.log('[Job Detail] 🗑️ Deleting resume from S3...');
 
-      // Update job tracker
-      await window.jobTracker.updateJob(this.jobId, {
-        resumeFileName: null,
-        resumeFileData: null,
-        resumeFileType: null,
-        resumeFileSize: null
+      // Get auth token
+      const authToken = await window.apiClient.getToken();
+      if (!authToken) {
+        throw new Error('Not authenticated. Please log in.');
+      }
+
+      // Delete from S3 via backend API
+      const response = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${this.jobId}/resume`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
       });
 
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to delete resume');
+      }
+
+      console.log('[Job Detail] ✅ Resume deleted from S3');
+
+      // Update local job object
+      this.job.resumeFileName = null;
+      this.job.resumeFileType = null;
+      this.job.resumeFileSize = null;
+      this.job.resumeUploadedAt = null;
+      delete this.job.resumeFileData; // Remove old base64 data if present
+
+      // Reload jobs from storage
+      await window.jobTracker.loadJobs();
+      this.job = window.jobTracker.jobs.find(j => j.id === this.jobId || j._id === this.jobId);
+
+      // Update UI
       this.updateResumeState();
       document.getElementById('resume-upload').value = '';
 
-      console.log('[Job Detail] ✅ Resume removed');
+      // Show success feedback
+      if (window.globalNotifications) {
+        window.globalNotifications.showNotionToast('Resume deleted successfully', 'success', 2000);
+      }
+
+      console.log('[Job Detail] ✅ Resume removed from job');
     } catch (error) {
       console.error('[Job Detail] Failed to remove resume:', error);
-      alert('❌ Failed to remove resume. Please try again.');
+      alert(`❌ Failed to remove resume: ${error.message}`);
     }
   }
 
@@ -487,6 +649,8 @@ class JobDetailPage {
   }
 
   async saveChanges() {
+    console.log('[Job Detail] Saving changes for job:', this.jobId);
+
     // Get updated values
     const updates = {
       title: document.getElementById('job-title').value,
@@ -499,15 +663,23 @@ class JobDetailPage {
       notes: document.getElementById('notes').value
     };
 
+    console.log('[Job Detail] Updates to save:', updates);
+
     // Update job
-    await window.jobTracker.updateJob(this.jobId, updates);
+    const success = await window.jobTracker.updateJob(this.jobId, updates);
 
-    // Show success message
-    alert('Changes saved successfully!');
+    if (success) {
+      console.log('[Job Detail] ✅ Save successful');
+      // Show success message
+      alert('Changes saved successfully!');
 
-    // Reload job data
-    await this.loadJob();
-    this.render();
+      // Reload job data
+      await this.loadJob();
+      this.render();
+    } else {
+      console.error('[Job Detail] ❌ Save failed');
+      alert('Failed to save changes. Please try again.');
+    }
   }
 
   async deleteJob() {

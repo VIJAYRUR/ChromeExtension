@@ -142,7 +142,14 @@ const jobSchema = new mongoose.Schema({
   notes: { type: String },
   coverLetter: { type: String }, // Custom cover letter for this job
   attachments: [attachmentSchema],
-  resumeUsed: attachmentSchema, // Which resume was used for this application
+  resumeUsed: attachmentSchema, // DEPRECATED: Old base64 storage (kept for backward compatibility)
+
+  // S3 Resume Storage (NEW)
+  resumeFileName: { type: String },
+  resumeFileType: { type: String },
+  resumeFileSize: { type: Number },
+  resumeS3Key: { type: String }, // S3 object key for the resume
+  resumeUploadedAt: { type: Date }
 
   // Company Information (for enrichment)
   companyInfo: {

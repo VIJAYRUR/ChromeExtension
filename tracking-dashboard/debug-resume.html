@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume Debug Tool</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin: 0 0 20px 0;
+      color: #333;
+    }
+    .job-card {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .job-card h3 {
+      margin: 0 0 10px 0;
+      color: #0066cc;
+    }
+    .resume-info {
+      background: #e8f5e9;
+      padding: 10px;
+      border-left: 4px solid #4caf50;
+      margin-top: 10px;
+    }
+    .no-resume {
+      background: #fff3e0;
+      padding: 10px;
+      border-left: 4px solid #ff9800;
+      margin-top: 10px;
+    }
+    .meta {
+      color: #666;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📄 Resume Debug Tool</h1>
+    <p>This tool shows which jobs have resume data stored locally.</p>
+
+    <button onclick="loadJobs()">🔍 Scan Local Storage</button>
+
+    <div id="results" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    async function loadJobs() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<p>Loading...</p>';
+
+      try {
+        // Get current user ID
+        let currentUserId = null;
+
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          const result = await chrome.storage.local.get(['currentUser']);
+          if (result.currentUser) {
+            const user = typeof result.currentUser === 'string'
+              ? JSON.parse(result.currentUser)
+              : result.currentUser;
+            currentUserId = user?._id || null;
+          }
+        }
+
+        const storageKey = currentUserId
+          ? `trackedJobs_${currentUserId}`
+          : 'trackedJobs_anonymous';
+
+        console.log('Storage key:', storageKey);
+
+        // Get jobs from storage
+        let jobs = [];
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          const result = await chrome.storage.local.get([storageKey]);
+          jobs = result[storageKey] || [];
+        } else {
+          const stored = localStorage.getItem(storageKey);
+          jobs = stored ? JSON.parse(stored) : [];
+        }
+
+        console.log('Loaded jobs:', jobs);
+
+        // Display results
+        let html = `<h2>Found ${jobs.length} jobs for user: ${currentUserId || 'anonymous'}</h2>`;
+        html += `<p style="color: #666; font-size: 14px;">Storage key: <code>${storageKey}</code></p>`;
+
+        if (jobs.length === 0) {
+          html += '<p>No jobs found in storage.</p>';
+        } else {
+          jobs.forEach((job, index) => {
+            const hasResume = !!(job.resumeFileName || job.resumeFileData);
+            const resumeClass = hasResume ? 'resume-info' : 'no-resume';
+
+            html += `
+              <div class="job-card">
+                <h3>${index + 1}. ${job.company} - ${job.title}</h3>
+                <div class="meta">
+                  <strong>ID:</strong> ${job._id || job.id}<br>
+                  <strong>Status:</strong> ${job.status || 'N/A'}<br>
+                  <strong>Date Applied:</strong> ${job.dateApplied ? new Date(job.dateApplied).toLocaleDateString() : 'N/A'}
+                </div>
+                <div class="${resumeClass}">
+                  ${hasResume ? `
+                    ✅ <strong>Has Resume:</strong><br>
+                    • File: ${job.resumeFileName || 'N/A'}<br>
+                    • Size: ${job.resumeFileSize ? (job.resumeFileSize / 1024).toFixed(1) + ' KB' : 'N/A'}<br>
+                    • Type: ${job.resumeFileType || 'N/A'}<br>
+                    • Data Length: ${job.resumeFileData ? job.resumeFileData.length + ' chars' : 'N/A'}
+                  ` : `
+                    ⚠️ <strong>No Resume Data</strong>
+                  `}
+                </div>
+              </div>
+            `;
+          });
+
+          // Show summary
+          const jobsWithResume = jobs.filter(j => j.resumeFileName || j.resumeFileData);
+          html += `
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin-top: 20px;">
+              <h3 style="margin: 0 0 10px 0;">📊 Summary</h3>
+              <p><strong>${jobsWithResume.length} out of ${jobs.length} jobs</strong> have resume data attached.</p>
+              ${jobsWithResume.length > 0 ? `
+                <p><strong>Jobs with resumes:</strong></p>
+                <ul>
+                  ${jobsWithResume.map(j => `<li>${j.company} - ${j.title}</li>`).join('')}
+                </ul>
+              ` : ''}
+            </div>
+          `;
+
+          // Show raw data for first job with resume (for debugging)
+          if (jobsWithResume.length > 0) {
+            const firstJobWithResume = jobsWithResume[0];
+            html += `
+              <div style="margin-top: 20px;">
+                <h3>🔍 First Job with Resume (Raw Data)</h3>
+                <pre>${JSON.stringify({
+                  id: firstJobWithResume._id || firstJobWithResume.id,
+                  company: firstJobWithResume.company,
+                  title: firstJobWithResume.title,
+                  resumeFileName: firstJobWithResume.resumeFileName,
+                  resumeFileType: firstJobWithResume.resumeFileType,
+                  resumeFileSize: firstJobWithResume.resumeFileSize,
+                  hasResumeFileData: !!firstJobWithResume.resumeFileData,
+                  resumeDataPreview: firstJobWithResume.resumeFileData ?
+                    firstJobWithResume.resumeFileData.substring(0, 100) + '...' : null
+                }, null, 2)}</pre>
+              </div>
+            `;
+          }
+        }
+
+        resultsDiv.innerHTML = html;
+
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+        resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    }
+
+    // Auto-load on page open
+    window.addEventListener('DOMContentLoaded', loadJobs);
+  </script>
+</body>
+</html>
