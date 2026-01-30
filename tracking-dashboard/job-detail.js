@@ -557,16 +557,23 @@ class JobDetailPage {
 
       console.log('[Job Detail] ✅ Resume deleted from S3');
 
-      // Update local job object
+      // Update local job object - clear all resume fields
       this.job.resumeFileName = null;
       this.job.resumeFileType = null;
       this.job.resumeFileSize = null;
+      this.job.resumeS3Key = null;
       this.job.resumeUploadedAt = null;
       delete this.job.resumeFileData; // Remove old base64 data if present
 
-      // Reload jobs from storage
-      await window.jobTracker.loadJobs();
-      this.job = window.jobTracker.jobs.find(j => j.id === this.jobId || j._id === this.jobId);
+      console.log('[Job Detail] 💾 Cleared resume data from job object');
+
+      // Save to local storage via jobTracker
+      const jobIndex = window.jobTracker.jobs.findIndex(j => (j.id === this.jobId || j._id === this.jobId));
+      if (jobIndex !== -1) {
+        window.jobTracker.jobs[jobIndex] = this.job;
+        await window.jobTracker.saveJobs();
+        console.log('[Job Detail] 💾 Saved to local storage');
+      }
 
       // Update UI
       this.updateResumeState();
