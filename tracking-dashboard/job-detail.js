@@ -393,16 +393,27 @@ class JobDetailPage {
 
       console.log('[Job Detail] ✅ Resume uploaded to S3:', result.data);
 
-      // Update local job object with resume info (no base64 data!)
-      this.job.resumeFileName = result.data.fileName;
-      this.job.resumeFileType = result.data.fileType;
-      this.job.resumeFileSize = result.data.fileSize;
-      this.job.resumeUploadedAt = result.data.uploadedAt;
+      // Update local job object with resume info from server response
+      this.job.resumeFileName = result.data.resumeFileName || result.data.fileName;
+      this.job.resumeFileType = result.data.resumeFileType || result.data.fileType;
+      this.job.resumeFileSize = result.data.resumeFileSize || result.data.fileSize;
+      this.job.resumeS3Key = result.data.resumeS3Key || result.data.s3Key;
+      this.job.resumeUploadedAt = result.data.resumeUploadedAt || result.data.uploadedAt;
       delete this.job.resumeFileData; // Remove old base64 data if present
 
-      // Reload jobs from storage to get updated data
-      await window.jobTracker.loadJobs();
-      this.job = window.jobTracker.jobs.find(j => j.id === this.jobId || j._id === this.jobId);
+      console.log('[Job Detail] 💾 Updated job object with resume data:', {
+        fileName: this.job.resumeFileName,
+        fileSize: this.job.resumeFileSize,
+        s3Key: this.job.resumeS3Key
+      });
+
+      // Save to local storage via jobTracker
+      const jobIndex = window.jobTracker.jobs.findIndex(j => (j.id === this.jobId || j._id === this.jobId));
+      if (jobIndex !== -1) {
+        window.jobTracker.jobs[jobIndex] = this.job;
+        await window.jobTracker.saveJobs();
+        console.log('[Job Detail] 💾 Saved to local storage');
+      }
 
       // Update UI
       this.updateResumeState();

@@ -103,9 +103,16 @@ const uploadResume = asyncHandler(async (req, res) => {
         success: true,
         message: 'Resume uploaded successfully',
         data: {
+          resumeFileName: job.resumeFileName,
+          resumeFileSize: job.resumeFileSize,
+          resumeFileType: job.resumeFileType,
+          resumeS3Key: job.resumeS3Key,
+          resumeUploadedAt: job.resumeUploadedAt,
+          // Also include old field names for backward compatibility
           fileName: job.resumeFileName,
           fileSize: job.resumeFileSize,
           fileType: job.resumeFileType,
+          s3Key: job.resumeS3Key,
           uploadedAt: job.resumeUploadedAt
         }
       });
