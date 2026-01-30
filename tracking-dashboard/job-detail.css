@@ -57,25 +57,30 @@ body {
 
 .back-btn {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: background 20ms ease-in 0s;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   white-space: nowrap;
   height: 28px;
-  border-radius: 6px;
+  border-radius: 3px;
   font-size: 14px;
   line-height: 1.2;
-  padding: 0 8px;
+  padding: 0 6px;
+  margin-left: -6px;
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: rgba(55, 53, 47, 0.65);
   font-weight: 500;
 }
 
 .back-btn:hover {
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
+}
+
+.back-btn:active {
+  background: rgba(55, 53, 47, 0.16);
 }
 
 .header-actions {

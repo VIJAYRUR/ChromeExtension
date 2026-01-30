@@ -107,9 +107,9 @@ class JobDetailPage {
   }
 
   setupEventListeners() {
-    // Back button
+    // Back button - navigate to dashboard
     document.getElementById('back-btn').addEventListener('click', () => {
-      window.close();
+      window.location.href = 'dashboard.html';
     });
 
     // Save button

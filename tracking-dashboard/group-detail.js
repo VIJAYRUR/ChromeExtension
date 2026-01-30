@@ -283,18 +283,18 @@ function registerSocketEventHandlers() {
           }
         });
       } else {
-        // Show browser notification if page is hidden and not our message
-        if (document.hidden) {
+        // Use smart notifications - shows desktop if away, in-app toast if active
+        if (window.smartNotifications) {
           const senderName = data.message.sender?.name || 'Someone';
           const preview = data.message.content.substring(0, 100);
+          const groupName = document.getElementById('group-name')?.textContent || 'Group';
 
-          chrome.runtime.sendMessage({
-            action: 'showNotification',
-            notificationId: `message-${data.message._id}`,
-            title: `New message from ${senderName}`,
+          window.smartNotifications.showChatNotification({
+            senderName: senderName,
             message: preview,
-            priority: 1,
-            data: { type: 'new-message', groupId: data.groupId, messageId: data.message._id }
+            groupName: groupName,
+            groupId: data.groupId,
+            messageId: data.message._id
           });
         }
       }
@@ -448,19 +448,17 @@ function registerSocketEventHandlers() {
     }
 
     if (data.groupId === currentGroupId) {
-      const message = `${data.mentionedBy.userName} mentioned you in a message`;
-      showNotification(message, 'warning');
+      // Use smart notifications for mentions
+      if (window.smartNotifications) {
+        const groupName = document.getElementById('group-name')?.textContent || 'Group';
+        const messagePreview = data.message?.substring(0, 100) || 'mentioned you in a message';
 
-      // Show browser notification
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          action: 'showNotification',
-          notificationId: `mention-${Date.now()}`,
-          title: 'You were mentioned',
-          message: message,
-          priority: 2,
-          requireInteraction: true,
-          data: { type: 'mention', groupId: data.groupId }
+        window.smartNotifications.showMentionNotification({
+          mentionedBy: data.mentionedBy.userName,
+          message: messagePreview,
+          groupName: groupName,
+          groupId: data.groupId,
+          messageId: data.messageId
         });
       }
     }
