@@ -110,8 +110,18 @@ class GlobalNotifications {
   /**
    * Wait for socket to be connected before setting up listeners
    */
-  waitForSocketAndSetupListeners() {
-    console.log('[Global Notifications] 🔍 Checking for socket connection...');
+  waitForSocketAndSetupListeners(retryCount = 0) {
+    const MAX_RETRIES = 5; // Maximum 5 retries (5 seconds total)
+
+    // Stop retrying after max attempts
+    if (retryCount >= MAX_RETRIES) {
+      console.log('[Global Notifications] ⚠️ Socket not available after', MAX_RETRIES, 'retries. Running without real-time notifications.');
+      return;
+    }
+
+    if (retryCount === 0) {
+      console.log('[Global Notifications] 🔍 Checking for socket connection...');
+    }
 
     // Check if socket exists and is connected
     if (window.socketClient && window.socketClient.isConnected) {
@@ -140,9 +150,10 @@ class GlobalNotifications {
         }
       }, 2000);
     } else {
-      // Socket doesn't exist yet, retry
-      console.log('[Global Notifications] ⏳ Socket not available yet, will retry...');
-      setTimeout(() => this.waitForSocketAndSetupListeners(), 1000);
+      // Socket doesn't exist yet, retry with backoff
+      if (retryCount < MAX_RETRIES) {
+        setTimeout(() => this.waitForSocketAndSetupListeners(retryCount + 1), 1000);
+      }
     }
   }
 
