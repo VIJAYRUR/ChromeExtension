@@ -11,6 +11,12 @@ let isModerator = false;
 let typingTimeout = null;
 let isTyping = false;
 
+// Lazy loading state
+let allMessages = []; // Store all loaded messages
+let oldestTimestamp = null; // Track oldest message for lazy loading
+let hasMore = true; // Whether there are more messages to load
+let isLoadingMore = false; // Prevent multiple simultaneous loads
+
 // DOM Elements
 const backBtn = document.getElementById('back-btn');
 const groupNameEl = document.getElementById('group-name');
@@ -734,11 +740,16 @@ async function loadSharedJobs() {
 }
 
 /**
- * Load messages
+ * Load messages (initial load)
  */
 async function loadMessages() {
   try {
     console.log('[Group Detail] Loading messages...');
+
+    // Reset state for initial load
+    allMessages = [];
+    oldestTimestamp = null;
+    hasMore = true;
 
     // Fetch messages from API
     const response = await fetch(
@@ -756,14 +767,25 @@ async function loadMessages() {
 
     const data = await response.json();
     const messages = data.data || [];
+    const pagination = data.pagination || {};
 
     console.log('[Group Detail] Loaded', messages.length, 'messages');
+    console.log('[Group Detail] Has more:', pagination.hasMore);
+    console.log('[Group Detail] Oldest timestamp:', pagination.oldestTimestamp);
+
+    // Update state
+    allMessages = messages;
+    hasMore = pagination.hasMore || false;
+    oldestTimestamp = pagination.oldestTimestamp;
 
     // Render messages
-    renderMessages(messages);
+    renderMessages(allMessages);
 
     // Scroll to bottom
     scrollMessagesToBottom();
+
+    // Setup lazy loading scroll listener
+    setupLazyLoading();
 
   } catch (error) {
     console.error('[Group Detail] Error loading messages:', error);
@@ -778,6 +800,110 @@ async function loadMessages() {
         <p class="empty-state-text">Start collaborating with your group by adding a comment below</p>
       </div>
     `;
+  }
+}
+
+/**
+ * Load older messages (lazy loading)
+ */
+async function loadOlderMessages() {
+  if (!hasMore || isLoadingMore || !oldestTimestamp) {
+    console.log('[Group Detail] Skipping load - hasMore:', hasMore, 'isLoadingMore:', isLoadingMore, 'oldestTimestamp:', oldestTimestamp);
+    return;
+  }
+
+  try {
+    isLoadingMore = true;
+    console.log('[Group Detail] 📜 Loading older messages before', oldestTimestamp);
+
+    // Show loading indicator at top
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'loading-more';
+    loadingIndicator.style.cssText = 'text-align: center; padding: 10px; color: #888; font-size: 12px;';
+    loadingIndicator.textContent = 'Loading older messages...';
+    messagesContainer.insertBefore(loadingIndicator, messagesContainer.firstChild);
+
+    // Remember scroll position
+    const scrollBefore = messagesContainer.scrollHeight - messagesContainer.scrollTop;
+
+    // Fetch older messages using cursor-based pagination
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${currentGroupId}/messages?limit=50&before=${oldestTimestamp}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${window.authManager.token}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch older messages');
+    }
+
+    const data = await response.json();
+    const olderMessages = data.data || [];
+    const pagination = data.pagination || {};
+
+    console.log('[Group Detail] Loaded', olderMessages.length, 'older messages');
+    console.log('[Group Detail] Has more:', pagination.hasMore);
+
+    if (olderMessages.length > 0) {
+      // Prepend older messages to the beginning
+      allMessages = [...olderMessages, ...allMessages];
+
+      // Update state
+      hasMore = pagination.hasMore || false;
+      oldestTimestamp = pagination.oldestTimestamp;
+
+      // Re-render all messages
+      renderMessages(allMessages);
+
+      // Restore scroll position (stay at same visual position)
+      messagesContainer.scrollTop = messagesContainer.scrollHeight - scrollBefore;
+    } else {
+      hasMore = false;
+    }
+
+    // Remove loading indicator
+    const indicator = document.getElementById('loading-more');
+    if (indicator) {
+      indicator.remove();
+    }
+
+  } catch (error) {
+    console.error('[Group Detail] Error loading older messages:', error);
+
+    // Remove loading indicator on error
+    const indicator = document.getElementById('loading-more');
+    if (indicator) {
+      indicator.remove();
+    }
+  } finally {
+    isLoadingMore = false;
+  }
+}
+
+/**
+ * Setup lazy loading scroll listener
+ */
+function setupLazyLoading() {
+  // Remove existing listener if any
+  messagesContainer.removeEventListener('scroll', handleScroll);
+
+  // Add scroll listener
+  messagesContainer.addEventListener('scroll', handleScroll);
+
+  console.log('[Group Detail] 📜 Lazy loading enabled - scroll to top to load older messages');
+}
+
+/**
+ * Handle scroll event for lazy loading
+ */
+function handleScroll() {
+  // Check if scrolled to top (with 100px threshold)
+  if (messagesContainer.scrollTop < 100 && hasMore && !isLoadingMore) {
+    console.log('[Group Detail] 📜 User scrolled to top - loading older messages');
+    loadOlderMessages();
   }
 }
 
@@ -1862,6 +1988,9 @@ function appendMessageToUI(message) {
   }
 
   messagesContainer.appendChild(messageEl);
+
+  // Add to allMessages array for lazy loading
+  allMessages.push(message);
 }
 
 /**
