@@ -53,20 +53,23 @@ class JobCacheService {
     } = filters;
 
     // Create deterministic filter string
-    const filterStr = JSON.stringify({
-      status,
-      workType,
-      search,
-      tags,
-      priority,
-      dateFrom,
-      dateTo,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      sortBy,
-      sortOrder,
-      archived
-    });
+    // Sort keys alphabetically and normalize values to ensure consistent hashing
+    const normalizedFilters = {
+      archived: archived || 'false',
+      dateFrom: dateFrom || null,
+      dateTo: dateTo || null,
+      limit: parseInt(limit) || 50,
+      page: parseInt(page) || 1,
+      priority: priority || null,
+      search: search || null,
+      sortBy: sortBy || 'dateApplied',
+      sortOrder: sortOrder || 'desc',
+      status: status || null,
+      tags: tags || null,
+      workType: workType || null
+    };
+
+    const filterStr = JSON.stringify(normalizedFilters);
 
     // Create hash of filter string for shorter keys
     const crypto = require('crypto');

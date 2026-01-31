@@ -1169,6 +1169,15 @@ class DashboardUI {
     console.log(`[Dashboard] 🔄 Updating job ${jobId} to status: ${newStatus}`);
 
     try {
+      // Update in allJobs array if lazy loading is enabled
+      if (this.lazyLoadEnabled && this.allJobs.length > 0) {
+        const job = this.allJobs.find(j => j._id === jobId);
+        if (job) {
+          job.status = newStatus;
+          console.log(`[Dashboard] ✅ Updated job ${jobId} in allJobs array`);
+        }
+      }
+
       // Use updateJobStatus instead of updateJob to avoid duplicate timeline entries
       await window.jobTracker.updateJobStatus(jobId, newStatus, 'Moved via Kanban board');
 
