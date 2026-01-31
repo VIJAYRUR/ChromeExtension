@@ -13,12 +13,137 @@ class GlobalNotifications {
     this.dropdownElement = null;
     this.socketListenersSetup = false;
     this.currentUserId = null;
+    this.notificationSound = null;
+    this.originalTitle = document.title; // Store original page title
 
     // Load notifications from localStorage
     this.loadNotifications();
 
+    // Request notification permission
+    this.requestNotificationPermission();
+
+    // Initialize notification sound
+    this.initializeNotificationSound();
+
+    // Update title with initial count
+    this.updatePageTitle();
+
     // Wait for socket to be connected before setting up listeners
     this.waitForSocketAndSetupListeners();
+  }
+
+  /**
+   * Request browser notification permission
+   */
+  requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('[Global Notifications] Notification permission:', permission);
+      });
+    }
+  }
+
+  /**
+   * Initialize notification sound using Web Audio API
+   */
+  initializeNotificationSound() {
+    try {
+      // Create a simple notification sound using Web Audio API
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.audioContext = new AudioContext();
+    } catch (e) {
+      console.warn('[Global Notifications] Web Audio API not supported:', e);
+    }
+  }
+
+  /**
+   * Play notification sound
+   */
+  playNotificationSound() {
+    if (!this.audioContext) return;
+
+    try {
+      // Resume audio context if it's suspended (required by some browsers)
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+
+      // Create a pleasant notification sound (two-tone beep)
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+
+      // First tone: 800Hz
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+
+      // Volume envelope
+      gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + 0.15);
+
+      // Second tone: 1000Hz (slightly higher pitch)
+      setTimeout(() => {
+        const oscillator2 = this.audioContext.createOscillator();
+        const gainNode2 = this.audioContext.createGain();
+
+        oscillator2.connect(gainNode2);
+        gainNode2.connect(this.audioContext.destination);
+
+        oscillator2.frequency.value = 1000;
+        oscillator2.type = 'sine';
+
+        gainNode2.gain.setValueAtTime(0, this.audioContext.currentTime);
+        gainNode2.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.01);
+        gainNode2.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+
+        oscillator2.start(this.audioContext.currentTime);
+        oscillator2.stop(this.audioContext.currentTime + 0.15);
+      }, 100);
+    } catch (e) {
+      console.warn('[Global Notifications] Error playing notification sound:', e);
+    }
+  }
+
+  /**
+   * Show browser notification
+   */
+  showBrowserNotification(title, message, options = {}) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notification = new Notification(title, {
+          body: message,
+          icon: options.icon || '/tracking-dashboard/icon.png',
+          badge: options.badge || '/tracking-dashboard/icon.png',
+          tag: options.tag || 'job-tracker-notification',
+          requireInteraction: false,
+          silent: true, // We'll play our own sound
+          ...options
+        });
+
+        // Handle notification click
+        if (options.onClick) {
+          notification.onclick = () => {
+            window.focus();
+            options.onClick();
+            notification.close();
+          };
+        }
+
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+
+        return notification;
+      } catch (e) {
+        console.warn('[Global Notifications] Error showing browser notification:', e);
+      }
+    }
+    return null;
   }
 
   /**
@@ -187,6 +312,15 @@ class GlobalNotifications {
         return;
       }
 
+      // Skip notifications for own messages
+      const currentUserId = this.getCurrentUserId();
+      const senderId = data.message?.userId?._id || data.message?.userId;
+
+      if (currentUserId && senderId && senderId === currentUserId) {
+        console.log('[Global Notifications] Skipping notification for own message');
+        return;
+      }
+
       // Extract sender name from userId object (backend sends firstName and lastName)
       const senderName = data.message?.userId
         ? `${data.message.userId.firstName || ''} ${data.message.userId.lastName || ''}`.trim()
@@ -202,6 +336,24 @@ class GlobalNotifications {
         timestamp: new Date().toISOString()
       });
 
+      // Play notification sound
+      this.playNotificationSound();
+
+      // Show browser notification
+      this.showBrowserNotification(
+        'New Message',
+        `${senderName}: ${messagePreview}`,
+        {
+          tag: `message-${data.groupId}`,
+          onClick: () => {
+            // Navigate to the group's chat tab
+            const isInTrackingDashboard = window.location.pathname.includes('tracking-dashboard');
+            const basePath = isInTrackingDashboard ? '' : 'tracking-dashboard/';
+            window.location.href = `${basePath}groups.html?groupId=${data.groupId}&tab=chat`;
+          }
+        }
+      );
+
       // Show Notion-style toast notification
       this.showNotionToast(`${senderName}: ${messagePreview}`, 'info', 4000, { groupId: data.groupId });
     });
@@ -215,6 +367,25 @@ class GlobalNotifications {
         data: data,
         timestamp: new Date().toISOString()
       });
+
+      // Play notification sound
+      this.playNotificationSound();
+
+      // Show browser notification
+      this.showBrowserNotification(
+        'New Member',
+        message,
+        {
+          tag: `member-${data.groupId}`,
+          onClick: () => {
+            // Navigate to the group's members tab
+            const isInTrackingDashboard = window.location.pathname.includes('tracking-dashboard');
+            const basePath = isInTrackingDashboard ? '' : 'tracking-dashboard/';
+            window.location.href = `${basePath}groups.html?groupId=${data.groupId}&tab=members`;
+          }
+        }
+      );
+
       this.showNotionToast(message, 'success', 3000);
     });
 
@@ -227,17 +398,56 @@ class GlobalNotifications {
         data: data,
         timestamp: new Date().toISOString()
       });
+
+      // Play notification sound
+      this.playNotificationSound();
+
+      // Show browser notification
+      this.showBrowserNotification(
+        'You were mentioned',
+        message,
+        {
+          tag: `mention-${data.groupId}`,
+          onClick: () => {
+            // Navigate to the group's chat tab
+            const isInTrackingDashboard = window.location.pathname.includes('tracking-dashboard');
+            const basePath = isInTrackingDashboard ? '' : 'tracking-dashboard/';
+            window.location.href = `${basePath}groups.html?groupId=${data.groupId}&tab=chat`;
+          }
+        }
+      );
+
       this.showNotionToast(message, 'info', 4000, { groupId: data.groupId });
     });
 
     window.socketClient.on('job-application', (data) => {
+      const message = `${data.appliedBy?.name || 'Someone'} applied to ${data.job?.company || 'a job'}`;
+
       this.addNotification({
         type: 'job-application',
         title: 'Job Application',
-        message: `${data.appliedBy?.name || 'Someone'} applied to ${data.job?.company || 'a job'}`,
+        message: message,
         data: data,
         timestamp: new Date().toISOString()
       });
+
+      // Play notification sound
+      this.playNotificationSound();
+
+      // Show browser notification
+      this.showBrowserNotification(
+        'Job Application',
+        message,
+        {
+          tag: `job-app-${data.groupId}`,
+          onClick: () => {
+            // Navigate to the group's jobs tab
+            const isInTrackingDashboard = window.location.pathname.includes('tracking-dashboard');
+            const basePath = isInTrackingDashboard ? '' : 'tracking-dashboard/';
+            window.location.href = `${basePath}groups.html?groupId=${data.groupId}&tab=jobs`;
+          }
+        }
+      );
     });
 
     console.log('[Global Notifications] ✅ Socket listeners registered');
@@ -249,17 +459,17 @@ class GlobalNotifications {
   addNotification(notification) {
     notification.id = Date.now() + Math.random();
     notification.read = false;
-    
+
     this.notifications.unshift(notification);
-    
+
     // Keep only last 50 notifications
     if (this.notifications.length > 50) {
       this.notifications = this.notifications.slice(0, 50);
     }
-    
+
     this.unreadCount++;
     this.saveNotifications();
-    this.updateBadge();
+    this.updateBadge(true); // Animate badge on new notification
     this.renderNotifications();
   }
 
@@ -300,16 +510,40 @@ class GlobalNotifications {
   }
 
   /**
+   * Update page title with notification count
+   */
+  updatePageTitle() {
+    if (this.unreadCount > 0) {
+      document.title = `(${this.unreadCount}) ${this.originalTitle}`;
+    } else {
+      document.title = this.originalTitle;
+    }
+  }
+
+  /**
    * Update badge count
    */
-  updateBadge() {
+  updateBadge(animate = false) {
     if (!this.bellElement) return;
 
     const badge = this.bellElement.querySelector('.notification-badge');
     if (badge) {
+      const previousCount = parseInt(badge.textContent) || 0;
       badge.textContent = this.unreadCount;
       badge.style.display = this.unreadCount > 0 ? 'flex' : 'none';
+
+      // Add bounce animation when count increases
+      if (animate && this.unreadCount > previousCount && this.unreadCount > 0) {
+        badge.classList.remove('new-notification');
+        // Trigger reflow to restart animation
+        void badge.offsetWidth;
+        badge.classList.add('new-notification');
+        setTimeout(() => badge.classList.remove('new-notification'), 600);
+      }
     }
+
+    // Update page title with notification count
+    this.updatePageTitle();
   }
 
   /**
@@ -445,16 +679,8 @@ class GlobalNotifications {
         <div class="notification-dropdown-header">
           <h3>Notifications</h3>
           <div class="notification-dropdown-actions">
-            <button class="notification-action-btn" id="mark-all-read-btn" title="Mark all as read">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </button>
-            <button class="notification-action-btn" id="clear-all-btn" title="Clear all">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+            <button class="notification-action-btn notification-clear-btn" id="clear-all-btn">
+              Clear All
             </button>
           </div>
         </div>
@@ -472,11 +698,9 @@ class GlobalNotifications {
       this.toggleDropdown();
     });
 
-    const markAllReadBtn = bell.querySelector('#mark-all-read-btn');
-    markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
-
     const clearAllBtn = bell.querySelector('#clear-all-btn');
-    clearAllBtn.addEventListener('click', () => {
+    clearAllBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (confirm('Clear all notifications?')) {
         this.clearAll();
       }
@@ -498,6 +722,31 @@ class GlobalNotifications {
   toggleDropdown() {
     this.isOpen = !this.isOpen;
     if (this.dropdownElement) {
+      // Position dropdown relative to bell button
+      if (this.isOpen && this.bellElement) {
+        const bellBtn = this.bellElement.querySelector('.notification-bell-btn');
+        if (bellBtn) {
+          const rect = bellBtn.getBoundingClientRect();
+          const dropdownWidth = 380; // Match CSS width
+
+          // Calculate left position to align dropdown's right edge with button's right edge
+          let leftPos = rect.right - dropdownWidth;
+
+          // Ensure dropdown doesn't go off-screen on the left
+          if (leftPos < 16) {
+            leftPos = 16;
+          }
+
+          // Ensure dropdown doesn't go off-screen on the right
+          if (leftPos + dropdownWidth > window.innerWidth - 16) {
+            leftPos = window.innerWidth - dropdownWidth - 16;
+          }
+
+          this.dropdownElement.style.top = `${rect.bottom + 8}px`;
+          this.dropdownElement.style.left = `${leftPos}px`;
+          this.dropdownElement.style.right = 'auto';
+        }
+      }
       this.dropdownElement.classList.toggle('show', this.isOpen);
     }
     if (this.isOpen) {
@@ -681,27 +930,56 @@ globalNotificationStyles.textContent = `
     position: absolute;
     top: -5px;
     right: -5px;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     background: #eb5757;
     color: white;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 600;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #2f3437;
+    box-shadow: 0 2px 8px rgba(235, 87, 87, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 2px 8px rgba(235, 87, 87, 0.4);
+    }
+    50% {
+      transform: scale(1.1);
+      box-shadow: 0 2px 12px rgba(235, 87, 87, 0.6);
+    }
+  }
+
+  .notification-badge.new-notification {
+    animation: bounceIn 0.6s ease-out;
+  }
+
+  @keyframes bounceIn {
+    0% {
+      transform: scale(0);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 
   /* Notification Dropdown - Dark Theme */
   .notification-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
+    position: fixed;
     width: 380px;
-    max-height: 500px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 80px);
     background: #2f3437;
     border-radius: 8px;
     box-shadow:
@@ -744,26 +1022,38 @@ globalNotificationStyles.textContent = `
 
   .notification-dropdown-actions {
     display: flex;
-    gap: 4px;
+    gap: 8px;
   }
 
   .notification-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    padding: 6px 12px;
     border: none;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
   }
 
   .notification-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .notification-clear-btn {
+    background: rgba(235, 87, 87, 0.15);
+    color: #eb5757;
+  }
+
+  .notification-clear-btn:hover {
+    background: rgba(235, 87, 87, 0.25);
+    color: #ff6b6b;
   }
 
   /* Notifications List */

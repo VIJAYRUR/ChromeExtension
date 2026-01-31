@@ -499,10 +499,46 @@ body {
 /* Tabs - Notion style */
 .group-tabs {
   display: flex;
-  gap: 2px;
+  justify-content: space-between;
+  align-items: center;
   padding: 0 32px;
   background: var(--bg-main);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.tabs-left {
+  display: flex;
+  gap: 2px;
+}
+
+.btn-toggle-chat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  background: rgba(242, 241, 238, 0.6);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-toggle-chat:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-toggle-chat.chat-hidden {
+  background: #000;
+  color: white;
+}
+
+.btn-toggle-chat.chat-hidden svg {
+  opacity: 0.5;
 }
 
 .tab-btn {
@@ -614,6 +650,11 @@ body {
 .messages-container::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
   background-clip: padding-box;
+}
+
+/* Hide text messages mode - keep job postings visible */
+.messages-container.hide-text-messages .message-item {
+  display: none;
 }
 
 /* Message Item - Chat style with left/right alignment */
@@ -1040,6 +1081,34 @@ body {
   cursor: not-allowed;
 }
 
+/* Attach and Emoji buttons */
+.btn-attach,
+.btn-emoji {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.btn-attach:hover,
+.btn-emoji:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-attach:active,
+.btn-emoji:active {
+  background: var(--bg-active);
+}
+
 /* ============================================
    JOBS TAB - Notion style
    ============================================ */
@@ -1064,6 +1133,79 @@ body {
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
+}
+
+/* Jobs Search and Filter */
+.jobs-search-filter {
+  display: flex;
+  gap: 12px;
+  padding: 12px 32px 16px;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.jobs-search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(242, 241, 238, 0.6);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.jobs-search-box:focus-within {
+  background: var(--bg-main);
+  border-color: var(--border-subtle);
+  box-shadow: 0 0 0 1px rgba(35, 131, 226, 0.1);
+}
+
+.jobs-search-box svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.jobs-search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.jobs-search-box input::placeholder {
+  color: var(--text-muted);
+}
+
+.jobs-sort-select {
+  padding: 8px 12px;
+  background: rgba(242, 241, 238, 0.6);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  min-width: 140px;
+}
+
+.jobs-sort-select:hover {
+  background: var(--bg-hover);
+}
+
+.jobs-sort-select:focus {
+  background: var(--bg-main);
+  border-color: var(--border-subtle);
+  box-shadow: 0 0 0 1px rgba(35, 131, 226, 0.1);
 }
 
 .btn-share-job:hover {
@@ -1278,6 +1420,37 @@ body {
   background: #1a6ec9;
 }
 
+/* Job Actions */
+.job-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.job-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.job-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.job-action-btn svg {
+  flex-shrink: 0;
+}
+
 /* Old job-meta for backwards compatibility */
 .job-meta {
   display: flex;
@@ -1376,6 +1549,32 @@ body {
   background: var(--bg-hover);
   border-radius: 10px;
   font-weight: 600;
+}
+
+/* Remove member button */
+.btn-remove-member {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.btn-remove-member:hover {
+  background: rgba(235, 87, 87, 0.1);
+  color: var(--danger-color);
+}
+
+.btn-remove-member:active {
+  background: rgba(235, 87, 87, 0.2);
 }
 
 /* ============================================
