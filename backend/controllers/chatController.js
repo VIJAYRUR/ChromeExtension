@@ -3,31 +3,62 @@ const ChatMessage = require('../models/ChatMessage');
 const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const { chatCache } = require('../utils/cache');
 
 // @desc    Get chat messages for group
 // @route   GET /api/groups/:groupId/messages
 // @access  Private (Members only)
 const getMessages = asyncHandler(async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
-  
-  const group = await Group.findById(req.params.groupId);
-  
+  const groupId = req.params.groupId;
+
+  const group = await Group.findById(groupId);
+
   if (!group) {
     throw new AppError('Group not found', 404);
   }
-  
+
   // Check if user is member
   if (!group.isMember(req.userId)) {
     throw new AppError('You must be a member to view messages', 403);
   }
-  
+
   // Check if chat is enabled
   if (!group.settings.allowChat) {
     throw new AppError('Chat is disabled for this group', 403);
   }
-  
+
+  // HOT PATH: First page from cache
+  if (parseInt(page) === 1) {
+    console.log(`[Controller] 🔍 Attempting to fetch page 1 from cache for group ${groupId}`);
+    try {
+      const cachedMessages = await chatCache.getHotMessages(groupId, parseInt(limit));
+
+      if (cachedMessages && cachedMessages.length > 0) {
+        const total = await chatCache.getMessageCount(groupId);
+
+        console.log(`[Controller] ✅ Returning ${cachedMessages.length} cached messages to client`);
+        return res.json({
+          success: true,
+          data: cachedMessages.reverse(), // Reverse to show oldest first
+          pagination: {
+            currentPage: 1,
+            totalPages: Math.ceil(total / parseInt(limit)),
+            totalMessages: total
+          },
+          cached: true
+        });
+      }
+    } catch (cacheError) {
+      console.warn('[Controller] ⚠️  Cache error, falling back to DB:', cacheError.message);
+    }
+  } else {
+    console.log(`[Controller] ⏭️  Page ${page} requested - skipping cache, querying DB directly`);
+  }
+
+  // COLD PATH: Page 2+ or cache miss - Query MongoDB
   const messages = await ChatMessage.find({
-    groupId: req.params.groupId,
+    groupId: groupId,
     deleted: false
   })
     .sort({ createdAt: -1 })
@@ -64,9 +95,20 @@ const getMessages = asyncHandler(async (req, res) => {
   });
 
   const total = await ChatMessage.countDocuments({
-    groupId: req.params.groupId,
+    groupId: groupId,
     deleted: false
   });
+
+  // Cache first page results for next time
+  if (parseInt(page) === 1 && messagesWithUsers.length > 0) {
+    console.log(`[Controller] 💾 Warming cache with ${messagesWithUsers.length} messages from DB`);
+    chatCache.cacheMessages(messagesWithUsers, groupId).catch(err => {
+      console.warn('[Controller] ❌ Failed to cache messages:', err.message);
+    });
+  }
+
+  console.log(`[Controller] 📤 Returning ${messagesWithUsers.length} messages from DB (page ${page})`);
+
 
   res.json({
     success: true,
@@ -75,7 +117,8 @@ const getMessages = asyncHandler(async (req, res) => {
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / parseInt(limit)),
       totalMessages: total
-    }
+    },
+    cached: false
   });
 });
 

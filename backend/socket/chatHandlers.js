@@ -1,6 +1,7 @@
 const ChatMessage = require('../models/ChatMessage');
 const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
+const { chatCache } = require('../utils/cache');
 
 /**
  * Register chat event handlers for Socket.io
@@ -76,6 +77,12 @@ function registerChatHandlers(io) {
           messageObj.jobData = jobData;
         }
 
+        // Cache the new message
+        console.log(`[Socket] 💾 Caching new message ${messageObj._id} in group ${groupId}`);
+        chatCache.cacheMessage(messageObj, groupId).catch(err => {
+          console.warn('[Socket] ❌ Failed to cache new message:', err.message);
+        });
+
         // Broadcast message to all members in the group room
         io.to(`group:${groupId}`).emit('new-message', {
           message: messageObj,
@@ -140,6 +147,14 @@ function registerChatHandlers(io) {
         // Add reaction
         await message.addReaction(reactionType, userId);
 
+        // Update cache with new reactions
+        console.log(`[Socket] 🔄 Updating cached reactions for message ${messageId}`);
+        chatCache.updateMessage(messageId, {
+          reactions: message.reactions
+        }).catch(err => {
+          console.warn('[Socket] ❌ Failed to update reactions in cache:', err.message);
+        });
+
         // Broadcast to group
         io.to(`group:${groupId}`).emit('message-reaction-added', {
           messageId,
@@ -171,6 +186,14 @@ function registerChatHandlers(io) {
 
         // Remove reaction
         await message.removeReaction(reactionType, userId);
+
+        // Update cache with updated reactions
+        console.log(`[Socket] 🔄 Updating cached reactions for message ${messageId} (remove)`);
+        chatCache.updateMessage(messageId, {
+          reactions: message.reactions
+        }).catch(err => {
+          console.warn('[Socket] ❌ Failed to update reactions in cache:', err.message);
+        });
 
         // Broadcast to group
         io.to(`group:${groupId}`).emit('message-reaction-removed', {
@@ -210,6 +233,16 @@ function registerChatHandlers(io) {
         message.content = content;
         await message.markAsEdited();
 
+        // Update cache (partial update)
+        console.log(`[Socket] ✏️  Updating cached message ${messageId} with new content`);
+        chatCache.updateMessage(messageId, {
+          content,
+          edited: true,
+          editedAt: message.editedAt
+        }).catch(err => {
+          console.warn('[Socket] ❌ Failed to update cached message:', err.message);
+        });
+
         // Broadcast to group
         io.to(`group:${groupId}`).emit('message-edited', {
           messageId,
@@ -247,6 +280,12 @@ function registerChatHandlers(io) {
         }
 
         await message.softDelete();
+
+        // Invalidate cache
+        console.log(`[Socket] 🗑️  Invalidating cached message ${messageId} from group ${groupId}`);
+        chatCache.invalidateMessage(messageId, groupId).catch(err => {
+          console.warn('[Socket] ❌ Failed to invalidate message in cache:', err.message);
+        });
 
         // Broadcast to group
         io.to(`group:${groupId}`).emit('message-deleted', {

@@ -7,6 +7,8 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const { connectDB } = require('./config/database');
+const { connectRedis, disconnectRedis } = require('./config/redis');
+const { chatCache } = require('./utils/cache');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
@@ -15,6 +17,18 @@ const app = express();
 
 // Connect to MongoDB (Production + Local Chat)
 connectDB();
+
+// Initialize Redis cache (non-blocking)
+connectRedis()
+  .then(() => {
+    // Initialize chat cache service
+    chatCache.initialize();
+    console.log('✅ Redis cache initialized for chat feature');
+  })
+  .catch(err => {
+    console.warn('⚠️  Redis cache disabled:', err.message);
+    console.log('   Application will continue without caching');
+  });
 
 // Security middleware
 app.use(helmet());
@@ -129,11 +143,41 @@ app.set('io', io);
 console.log('✅ Socket.io initialized for real-time chat');
 console.log(`   WebSocket: ws://localhost:${PORT}`);
 
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+  try {
+    // Close server
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
+    console.log('✅ HTTP server closed');
+
+    // Close database connections
+    const mongoose = require('mongoose');
+    await mongoose.connection.close();
+    console.log('✅ Database connections closed');
+
+    // Close Redis connection
+    await disconnectRedis();
+
+    console.log('✅ Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+// Handle graceful shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
+  gracefulShutdown('UnhandledRejection');
 });
 
 // Handle uncaught exceptions
