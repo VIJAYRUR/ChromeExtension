@@ -102,7 +102,9 @@
         "shared/config.js",
         "shared/group-api.js",
         "shared/shared-jobs-api.js",
-        "shared/notification-manager.js"
+        "shared/notification-manager.js",
+        "shared/smart-notifications.js",
+        "test-notification.html"
       ],
       "matches": ["<all_urls>"]
     }

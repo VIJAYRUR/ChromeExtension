@@ -224,6 +224,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'showNotification') {
     // Show browser notification
+    console.log('[Background] 🔔 Creating notification:', {
+      title: message.title,
+      message: message.message,
+      notificationId: message.notificationId
+    });
+
     chrome.notifications.create(message.notificationId || `notif_${Date.now()}`, {
       type: 'basic',
       iconUrl: chrome.runtime.getURL('icons/icon128.png'),
@@ -232,7 +238,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       priority: message.priority || 1,
       requireInteraction: message.requireInteraction || false
     }, (notificationId) => {
-      console.log('[Background] Notification created:', notificationId);
+      if (chrome.runtime.lastError) {
+        console.error('[Background] ❌ Notification error:', chrome.runtime.lastError);
+        return;
+      }
+
+      console.log('[Background] ✅ Notification created:', notificationId);
 
       // Store notification data for click handling
       if (message.data) {

@@ -26,18 +26,28 @@ class SmartNotificationManager {
   setupActivityTracking() {
     // Track mouse movement, clicks, keyboard input
     const updateActivity = () => {
+      const wasInactive = !this.isUserActive;
       this.lastActivityTime = Date.now();
       this.isUserActive = true;
+
+      if (wasInactive) {
+        console.log('[Smart Notifications] 👆 User became ACTIVE');
+      }
     };
 
     ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
       document.addEventListener(event, updateActivity, { passive: true });
     });
 
+    console.log('[Smart Notifications] ✅ Activity tracking enabled');
+
     // Check inactivity every 10 seconds
     setInterval(() => {
       const timeSinceLastActivity = Date.now() - this.lastActivityTime;
       if (timeSinceLastActivity > this.INACTIVITY_THRESHOLD) {
+        if (this.isUserActive) {
+          console.log('[Smart Notifications] 😴 User became INACTIVE (no activity for 1 minute)');
+        }
         this.isUserActive = false;
       }
     }, 10000);
@@ -46,10 +56,15 @@ class SmartNotificationManager {
   setupVisibilityTracking() {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+        console.log('[Smart Notifications] 👁️ Tab became VISIBLE');
         this.isUserActive = true;
         this.lastActivityTime = Date.now();
+      } else {
+        console.log('[Smart Notifications] 🙈 Tab became HIDDEN');
       }
     });
+
+    console.log('[Smart Notifications] ✅ Visibility tracking enabled');
   }
 
   async requestNotificationPermission() {
@@ -70,6 +85,15 @@ class SmartNotificationManager {
     const isTabHidden = document.hidden;
     const isWindowUnfocused = !document.hasFocus();
     const isInactive = !this.isUserActive;
+    const timeSinceActivity = Date.now() - this.lastActivityTime;
+
+    console.log('[Smart Notifications] 🔍 User Status Check:', {
+      isTabHidden,
+      isWindowUnfocused,
+      isInactive,
+      timeSinceActivity: `${Math.floor(timeSinceActivity / 1000)}s`,
+      threshold: `${this.INACTIVITY_THRESHOLD / 1000}s`
+    });
 
     return isTabHidden || isWindowUnfocused || isInactive;
   }
@@ -78,6 +102,8 @@ class SmartNotificationManager {
    * Show smart notification - automatically chooses desktop vs in-app
    */
   async showNotification({ title, body, icon, data = {}, type = 'info' }) {
+    console.log('[Smart Notifications] 📬 Incoming notification:', { title, body });
+
     const userAway = this.isUserAway();
 
     console.log('[Smart Notifications] User away:', userAway, {
@@ -88,9 +114,11 @@ class SmartNotificationManager {
 
     if (userAway) {
       // User is away - show desktop notification
+      console.log('[Smart Notifications] 🔔 User is AWAY → Showing DESKTOP notification');
       await this.showDesktopNotification({ title, body, icon, data });
     } else {
       // User is active - show in-app toast
+      console.log('[Smart Notifications] 💬 User is ACTIVE → Showing IN-APP toast');
       this.showInAppToast({ title, body, type });
     }
   }
@@ -144,15 +172,16 @@ class SmartNotificationManager {
    * Show in-app toast notification (Notion-style)
    */
   showInAppToast({ title, body, type = 'info' }) {
-    console.log('[Smart Notifications] 💬 Showing in-app toast:', title);
+    console.log('[Smart Notifications] 💬 Attempting in-app toast...');
 
     // Use global notifications if available
     if (window.globalNotifications) {
       const message = body ? `${title}: ${body}` : title;
       window.globalNotifications.showNotionToast(message, type, 4000);
+      console.log('[Smart Notifications] ✅ In-app toast shown');
     } else {
       // Fallback to simple alert (should rarely happen)
-      console.warn('[Smart Notifications] Global notifications not available');
+      console.warn('[Smart Notifications] ❌ Global notifications not available');
     }
   }
 
@@ -160,6 +189,12 @@ class SmartNotificationManager {
    * Show chat message notification
    */
   showChatNotification({ senderName, message, groupName, groupId, messageId }) {
+    console.log('[Smart Notifications] 💬 Chat notification:', {
+      senderName,
+      groupName,
+      messagePreview: message.substring(0, 50) + '...'
+    });
+
     this.showNotification({
       title: `${senderName} in ${groupName}`,
       body: message,
@@ -176,6 +211,12 @@ class SmartNotificationManager {
    * Show mention notification
    */
   showMentionNotification({ mentionedBy, message, groupName, groupId, messageId }) {
+    console.log('[Smart Notifications] 🏷️ Mention notification:', {
+      mentionedBy,
+      groupName,
+      messagePreview: message.substring(0, 50) + '...'
+    });
+
     this.showNotification({
       title: `${mentionedBy} mentioned you`,
       body: `In ${groupName}: ${message}`,
@@ -191,15 +232,32 @@ class SmartNotificationManager {
   /**
    * Show job shared notification
    */
-  showJobSharedNotification({ sharedBy, jobTitle, company, groupName, jobId }) {
+  showJobSharedNotification({ sharedBy, jobTitle, company, salary, location, groupName, groupId, jobId }) {
+    console.log('[Smart Notifications] 💼 Job shared notification:', {
+      sharedBy,
+      jobTitle,
+      company,
+      groupName
+    });
+
+    // Build notification body with bullet points
+    let bodyParts = [];
+    if (jobTitle) bodyParts.push(jobTitle);
+    if (company) bodyParts.push(company);
+    if (salary) bodyParts.push(salary);
+    if (location) bodyParts.push(location);
+
+    const body = bodyParts.join(' • ');
+
     this.showNotification({
-      title: `${sharedBy} shared a job`,
-      body: `${jobTitle} at ${company} in ${groupName}`,
+      title: `${sharedBy} shared a job in ${groupName}`,
+      body: body,
       data: {
         type: 'job-shared',
+        groupId: groupId,
         jobId: jobId
       },
-      type: 'success'
+      type: 'info'
     });
   }
 }

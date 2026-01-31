@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Notifications</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .status {
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔔 Notification Test</h1>
+  
+  <div class="status" id="status">
+    Checking notification permission...
+  </div>
+
+  <button onclick="testChromeNotification()">Test Chrome Extension Notification</button>
+  <button onclick="testWebNotification()">Test Web Notification</button>
+  <button onclick="requestPermission()">Request Permission</button>
+
+  <script src="shared/config.js"></script>
+  <script>
+    // Check permission on load
+    window.addEventListener('load', () => {
+      updateStatus();
+    });
+
+    function updateStatus() {
+      const status = document.getElementById('status');
+      
+      if ('Notification' in window) {
+        status.innerHTML = `
+          <strong>Web Notifications:</strong> ${Notification.permission}<br>
+          <strong>Chrome Extension:</strong> ${typeof chrome !== 'undefined' && chrome.notifications ? 'Available' : 'Not available'}
+        `;
+      } else {
+        status.innerHTML = '<strong>Notifications not supported</strong>';
+      }
+    }
+
+    async function requestPermission() {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        console.log('Permission:', permission);
+        updateStatus();
+      }
+    }
+
+    function testWebNotification() {
+      console.log('Testing Web Notification...');
+      
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification('Test Web Notification', {
+          body: 'This is a test notification from the web',
+          icon: 'icons/icon128.png',
+          tag: 'test-web'
+        });
+        
+        notification.onclick = () => {
+          console.log('Web notification clicked');
+          notification.close();
+        };
+        
+        console.log('✅ Web notification created');
+      } else {
+        console.error('❌ Web notifications not available or permission denied');
+        alert('Web notifications not available. Permission: ' + Notification.permission);
+      }
+    }
+
+    function testChromeNotification() {
+      console.log('Testing Chrome Extension Notification...');
+      
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+          action: 'showNotification',
+          notificationId: `test_${Date.now()}`,
+          title: 'Test Chrome Notification',
+          message: 'This is a test notification from Chrome Extension',
+          priority: 2,
+          requireInteraction: false
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('❌ Error:', chrome.runtime.lastError);
+          } else {
+            console.log('✅ Message sent to background');
+          }
+        });
+      } else {
+        console.error('❌ Chrome extension API not available');
+        alert('Chrome extension API not available');
+      }
+    }
+  </script>
+</body>
+</html>
+

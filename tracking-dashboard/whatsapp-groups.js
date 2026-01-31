@@ -160,6 +160,9 @@ async function init() {
       console.log('[WhatsApp Groups] Global notifications injected');
     }
 
+    // Initialize smart notifications
+    initializeSmartNotifications();
+
     console.log('[WhatsApp Groups] ✅ Initialized successfully');
   } catch (error) {
     console.error('[WhatsApp Groups] ❌ Initialization error:', error);
@@ -196,6 +199,18 @@ async function waitForAuth() {
   }
 
   console.log('[WhatsApp Groups] Auth ready, token exists');
+}
+
+/**
+ * Initialize smart notifications
+ */
+function initializeSmartNotifications() {
+  if (typeof SmartNotificationManager !== 'undefined') {
+    window.smartNotifications = new SmartNotificationManager();
+    console.log('[WhatsApp Groups] ✅ Smart notifications initialized');
+  } else {
+    console.warn('[WhatsApp Groups] SmartNotificationManager not available');
+  }
 }
 
 // ============================================
@@ -1662,6 +1677,66 @@ function setupSocketListeners() {
       // Message from another user, just add it
       state.messagesByGroupId[groupId].push(newMessage);
       console.log('[WhatsApp Groups] Added message from another user');
+
+      // Show smart notification for messages from others
+      // Skip notifications for job_share messages (they have their own job-shared notification)
+      if (newMessage.messageType === 'job_share') {
+        console.log('[WhatsApp Groups] ⏭️ Skipping chat notification for job_share message (handled by job-shared event)');
+        return;
+      }
+
+      if (window.smartNotifications) {
+        const group = state.groupsList.find(g => g._id === groupId);
+
+        // Try multiple ways to get sender name
+        let senderName = 'Someone';
+
+        // Check sender object first
+        if (newMessage.sender?.name) {
+          senderName = newMessage.sender.name;
+        } else if (newMessage.sender?.userName) {
+          senderName = newMessage.sender.userName;
+        } else if (newMessage.sender?.firstName || newMessage.sender?.lastName) {
+          senderName = `${newMessage.sender.firstName || ''} ${newMessage.sender.lastName || ''}`.trim();
+        }
+        // Check userId object
+        else if (newMessage.userId?.name) {
+          senderName = newMessage.userId.name;
+        } else if (newMessage.userId?.userName) {
+          senderName = newMessage.userId.userName;
+        } else if (newMessage.userId?.firstName || newMessage.userId?.lastName) {
+          senderName = `${newMessage.userId.firstName || ''} ${newMessage.userId.lastName || ''}`.trim();
+        }
+        // If userId is just an ID string, try to find the user in members
+        else if (typeof newMessage.userId === 'string') {
+          const member = state.membersByGroupId[groupId]?.find(m => m._id === newMessage.userId || m.userId?._id === newMessage.userId);
+          if (member) {
+            senderName = member.name || member.userName ||
+                        `${member.firstName || ''} ${member.lastName || ''}`.trim() ||
+                        member.userId?.name || member.userId?.userName ||
+                        `${member.userId?.firstName || ''} ${member.userId?.lastName || ''}`.trim() ||
+                        'Someone';
+          }
+        }
+
+        console.log('[WhatsApp Groups] 🔍 Notification sender debug:', {
+          senderName,
+          'newMessage.sender': newMessage.sender,
+          'newMessage.userId': newMessage.userId,
+          'newMessage full': newMessage
+        });
+
+        const preview = newMessage.content.substring(0, 100);
+        const groupName = group?.name || 'Group';
+
+        window.smartNotifications.showChatNotification({
+          senderName: senderName,
+          message: preview,
+          groupName: groupName,
+          groupId: groupId,
+          messageId: newMessage._id
+        });
+      }
     }
 
     // Re-render if this is the selected group
@@ -1675,9 +1750,54 @@ function setupSocketListeners() {
 
   // Job shared
   window.socketClient.on('job-shared', (data) => {
-    console.log('[WhatsApp Groups] Job shared:', data);
+    console.log('[WhatsApp Groups] 🔔🔔🔔 JOB-SHARED EVENT RECEIVED 🔔🔔🔔');
+    console.log('[WhatsApp Groups] Job shared data:', data);
+    console.log('[WhatsApp Groups] Stack trace:', new Error().stack);
 
     const groupId = data.groupId;
+
+    // Show smart notification for job shares
+    if (window.smartNotifications && data.sharedBy) {
+      const group = state.groupsList.find(g => g._id === groupId);
+
+      // Get sharer name
+      let sharerName = 'Someone';
+      if (data.sharedBy.name) {
+        sharerName = data.sharedBy.name;
+      } else if (data.sharedBy.userName) {
+        sharerName = data.sharedBy.userName;
+      } else if (data.sharedBy.firstName || data.sharedBy.lastName) {
+        sharerName = `${data.sharedBy.firstName || ''} ${data.sharedBy.lastName || ''}`.trim();
+      }
+
+      // Check if this is our own share
+      const isOwnShare = data.sharedBy._id === state.currentUser?._id ||
+                         data.sharedBy.userId === state.currentUser?._id;
+
+      console.log('[WhatsApp Groups] 🔍 Notification check:', {
+        sharerName,
+        isOwnShare,
+        'currentUser._id': state.currentUser?._id,
+        'sharedBy._id': data.sharedBy._id,
+        'sharedBy.userId': data.sharedBy.userId
+      });
+
+      if (!isOwnShare) {
+        console.log('[WhatsApp Groups] ✅ CALLING showJobSharedNotification');
+        window.smartNotifications.showJobSharedNotification({
+          sharedBy: sharerName,
+          jobTitle: data.job?.title || 'Job',
+          company: data.job?.company || '',
+          salary: data.job?.salary || '',
+          location: data.job?.location || '',
+          groupName: group?.name || 'Group',
+          groupId: groupId,
+          jobId: data.job?._id || data.jobId
+        });
+      } else {
+        console.log('[WhatsApp Groups] ⏭️ SKIPPING notification (own share)');
+      }
+    }
 
     // Reload jobs for this group
     if (groupId === state.selectedGroupId) {

@@ -104,6 +104,9 @@ async function initializePage() {
   // Initialize global notifications
   initializeGlobalNotifications();
 
+  // Initialize smart notifications
+  initializeSmartNotifications();
+
   // Handle tab URL parameter (for navigation from notifications)
   const tab = urlParams.get('tab');
   if (tab && ['jobs', 'chat', 'members'].includes(tab)) {
@@ -123,6 +126,18 @@ function initializeGlobalNotifications() {
     console.log('[Group Detail] ✅ Global notifications initialized');
   } else {
     console.warn('[Group Detail] Global notifications not available');
+  }
+}
+
+/**
+ * Initialize smart notifications
+ */
+function initializeSmartNotifications() {
+  if (typeof SmartNotificationManager !== 'undefined') {
+    window.smartNotifications = new SmartNotificationManager();
+    console.log('[Group Detail] ✅ Smart notifications initialized');
+  } else {
+    console.warn('[Group Detail] SmartNotificationManager not available');
   }
 }
 
@@ -285,7 +300,32 @@ function registerSocketEventHandlers() {
       } else {
         // Use smart notifications - shows desktop if away, in-app toast if active
         if (window.smartNotifications) {
-          const senderName = data.message.sender?.name || 'Someone';
+          // Try multiple ways to get sender name
+          let senderName = 'Someone';
+
+          // Check sender object first
+          if (data.message.sender?.name) {
+            senderName = data.message.sender.name;
+          } else if (data.message.sender?.userName) {
+            senderName = data.message.sender.userName;
+          } else if (data.message.sender?.firstName || data.message.sender?.lastName) {
+            senderName = `${data.message.sender.firstName || ''} ${data.message.sender.lastName || ''}`.trim();
+          }
+          // Check userId object
+          else if (data.message.userId?.name) {
+            senderName = data.message.userId.name;
+          } else if (data.message.userId?.userName) {
+            senderName = data.message.userId.userName;
+          } else if (data.message.userId?.firstName || data.message.userId?.lastName) {
+            senderName = `${data.message.userId.firstName || ''} ${data.message.userId.lastName || ''}`.trim();
+          }
+
+          console.log('[Group Detail] 🔍 Notification sender debug:', {
+            senderName,
+            'data.message.sender': data.message.sender,
+            'data.message.userId': data.message.userId
+          });
+
           const preview = data.message.content.substring(0, 100);
           const groupName = document.getElementById('group-name')?.textContent || 'Group';
 
@@ -358,21 +398,9 @@ function registerSocketEventHandlers() {
     }
 
     if (data.groupId === currentGroupId) {
-      const message = `${data.sharedBy.name} shared: ${data.job.title} at ${data.job.company}`;
-      showNotification(message, 'success');
+      // NOTE: Notifications are now handled by SmartNotificationManager
+      // in whatsapp-groups.js to prevent duplicates
       loadSharedJobs(); // Reload jobs list
-
-      // Show browser notification if not on this page
-      if (document.hidden && typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          action: 'showNotification',
-          notificationId: `job-shared-${data.job._id}`,
-          title: 'New Job Shared',
-          message: message,
-          priority: 1,
-          data: { type: 'job-shared', groupId: data.groupId, jobId: data.job._id }
-        });
-      }
     }
   });
 

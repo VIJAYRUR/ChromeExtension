@@ -174,43 +174,11 @@ class GlobalNotifications {
     this.socketListenersSetup = true;
 
     // Listen for various notification events
-    window.socketClient.on('job-shared', (data) => {
-      console.log('[Global Notifications] 📨 Received job-shared event:', data);
-      console.log('[Global Notifications] 🔍 sharedBy data:', data.sharedBy);
-      console.log('[Global Notifications] 🔍 sharedBy.name:', data.sharedBy?.name);
-      console.log('[Global Notifications] 🔍 sharedBy.userId:', data.sharedBy?.userId);
-
-      // Don't show notification if user is the one who shared
-      const currentUser = window.authManager?.currentUser;
-      console.log('[Global Notifications] 🔍 Current user:', currentUser);
-
-      if (currentUser && data.sharedBy?.userId === currentUser._id) {
-        console.log('[Global Notifications] ⏭️ Skipping notification (you shared this job)');
-        return;
-      }
-
-      console.log('[Global Notifications] ➕ Adding job-shared notification');
-
-      // Get sender name with fallback
-      const senderName = data.sharedBy?.name || 'Unknown';
-      const jobTitle = data.job?.title || 'a job';
-      const company = data.job?.company || 'a company';
-      const message = `${senderName} shared ${jobTitle} at ${company}`;
-
-      console.log('[Global Notifications] 📝 Notification message:', message);
-
-      // Add to notification panel
-      this.addNotification({
-        type: 'job-shared',
-        title: 'New Job Shared',
-        message: message,
-        data: data,
-        timestamp: new Date().toISOString()
-      });
-
-      // Show Notion-style toast
-      this.showNotionToast(message, 'info');
-    });
+    // NOTE: job-shared notifications are now handled by SmartNotificationManager
+    // in smart-notifications.js for better user presence detection
+    // window.socketClient.on('job-shared', (data) => {
+    //   ... disabled to prevent duplicate notifications
+    // });
 
     window.socketClient.on('new-message', (data) => {
       // Skip job_share messages - they already have their own "New Job Shared" notification
