@@ -17,7 +17,12 @@ const state = {
   searchQuery: '',
   jobsSearchQuery: '',
   jobsSortOrder: 'newest', // 'newest' or 'oldest'
-  chatHidden: false // Track if chat is hidden
+  chatHidden: false, // Track if chat is hidden
+
+  // Lazy loading state (per group)
+  oldestTimestampByGroupId: {}, // Track oldest message timestamp for each group
+  hasMoreByGroupId: {}, // Whether there are more messages to load
+  isLoadingMoreByGroupId: {} // Prevent multiple simultaneous loads
 };
 
 // ============================================
@@ -549,6 +554,11 @@ async function loadMessages(groupId) {
   try {
     console.log('[WhatsApp Groups] Loading messages for group:', groupId);
 
+    // Reset lazy loading state for this group
+    state.oldestTimestampByGroupId[groupId] = null;
+    state.hasMoreByGroupId[groupId] = true;
+    state.isLoadingMoreByGroupId[groupId] = false;
+
     const response = await fetch(
       `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${groupId}/messages?limit=50`,
       {
@@ -562,15 +572,143 @@ async function loadMessages(groupId) {
 
     const data = await response.json();
     const messages = data.data || [];
+    const pagination = data.pagination || {};
 
+    console.log('[WhatsApp Groups] Loaded', messages.length, 'messages');
+    console.log('[WhatsApp Groups] Has more:', pagination.hasMore);
+    console.log('[WhatsApp Groups] Oldest timestamp:', pagination.oldestTimestamp);
+
+    // Update state
     state.messagesByGroupId[groupId] = messages;
+    state.hasMoreByGroupId[groupId] = pagination.hasMore || false;
+    state.oldestTimestampByGroupId[groupId] = pagination.oldestTimestamp;
 
     renderMessages();
+
+    // Setup lazy loading scroll listener
+    setupLazyLoading();
 
   } catch (error) {
     console.error('[WhatsApp Groups] Error loading messages:', error);
     state.messagesByGroupId[groupId] = [];
     renderMessages();
+  }
+}
+
+/**
+ * Load older messages (lazy loading)
+ */
+async function loadOlderMessages() {
+  const groupId = state.selectedGroupId;
+  if (!groupId) return;
+
+  const hasMore = state.hasMoreByGroupId[groupId];
+  const isLoadingMore = state.isLoadingMoreByGroupId[groupId];
+  const oldestTimestamp = state.oldestTimestampByGroupId[groupId];
+
+  if (!hasMore || isLoadingMore || !oldestTimestamp) {
+    console.log('[WhatsApp Groups] Skipping load - hasMore:', hasMore, 'isLoadingMore:', isLoadingMore, 'oldestTimestamp:', oldestTimestamp);
+    return;
+  }
+
+  try {
+    state.isLoadingMoreByGroupId[groupId] = true;
+    console.log('[WhatsApp Groups] 📜 Loading older messages before', oldestTimestamp);
+
+    // Show loading indicator at top
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'loading-more';
+    loadingIndicator.style.cssText = 'text-align: center; padding: 10px; color: #888; font-size: 12px;';
+    loadingIndicator.textContent = 'Loading older messages...';
+    elements.messagesContainer.insertBefore(loadingIndicator, elements.messagesContainer.firstChild);
+
+    // Remember scroll position
+    const scrollBefore = elements.messagesContainer.scrollHeight - elements.messagesContainer.scrollTop;
+
+    // Fetch older messages using cursor-based pagination
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${groupId}/messages?limit=50&before=${oldestTimestamp}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${window.authManager.token}`
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch older messages');
+
+    const data = await response.json();
+    const olderMessages = data.data || [];
+    const pagination = data.pagination || {};
+
+    console.log('[WhatsApp Groups] Loaded', olderMessages.length, 'older messages');
+    console.log('[WhatsApp Groups] Has more:', pagination.hasMore);
+
+    if (olderMessages.length > 0) {
+      // Prepend older messages to the beginning
+      state.messagesByGroupId[groupId] = [...olderMessages, ...state.messagesByGroupId[groupId]];
+
+      // Update state
+      state.hasMoreByGroupId[groupId] = pagination.hasMore || false;
+      state.oldestTimestampByGroupId[groupId] = pagination.oldestTimestamp;
+
+      // Re-render all messages
+      renderMessages();
+
+      // Restore scroll position (stay at same visual position)
+      elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight - scrollBefore;
+    } else {
+      state.hasMoreByGroupId[groupId] = false;
+    }
+
+    // Remove loading indicator
+    const indicator = document.getElementById('loading-more');
+    if (indicator) {
+      indicator.remove();
+    }
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error loading older messages:', error);
+
+    // Remove loading indicator on error
+    const indicator = document.getElementById('loading-more');
+    if (indicator) {
+      indicator.remove();
+    }
+  } finally {
+    state.isLoadingMoreByGroupId[groupId] = false;
+  }
+}
+
+/**
+ * Setup lazy loading scroll listener
+ */
+function setupLazyLoading() {
+  if (!elements.messagesContainer) return;
+
+  // Remove existing listener if any
+  elements.messagesContainer.removeEventListener('scroll', handleMessagesScroll);
+
+  // Add scroll listener
+  elements.messagesContainer.addEventListener('scroll', handleMessagesScroll);
+
+  console.log('[WhatsApp Groups] 📜 Lazy loading enabled - scroll to top to load older messages');
+}
+
+/**
+ * Handle scroll event for lazy loading
+ */
+function handleMessagesScroll() {
+  // Check if scrolled to top (with 100px threshold)
+  if (elements.messagesContainer.scrollTop < 100) {
+    const groupId = state.selectedGroupId;
+    const hasMore = state.hasMoreByGroupId[groupId];
+    const isLoadingMore = state.isLoadingMoreByGroupId[groupId];
+
+    if (hasMore && !isLoadingMore) {
+      console.log('[WhatsApp Groups] 📜 User scrolled to top - loading older messages');
+      loadOlderMessages();
+    }
   }
 }
 
