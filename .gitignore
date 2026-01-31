@@ -2,9 +2,10 @@
 # FILES TO EXCLUDE FROM GIT
 # ========================================
 
-# Markdown files (EXCEPT README.md)
+# Markdown files (EXCEPT README.md and important docs)
 *.md
 !README.md
+!PRODUCTION_ROADMAP.md
 
 # Text files
 *.txt
