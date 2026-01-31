@@ -270,7 +270,7 @@ class StatsManager {
         const dateB = b.lastUpdated ? new Date(b.lastUpdated) : new Date(b.dateApplied);
         return dateB - dateA;
       })
-      .slice(0, 6);
+      .slice(0, 5);
 
     if (recentJobs.length === 0) {
       container.innerHTML = '<div class="empty-state-small">No recent activity in the last 7 days</div>';

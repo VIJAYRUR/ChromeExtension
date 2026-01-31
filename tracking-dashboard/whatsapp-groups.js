@@ -14,7 +14,10 @@ const state = {
   jobsByGroupId: {},
   membersByGroupId: {},
   currentUser: null,
-  searchQuery: ''
+  searchQuery: '',
+  jobsSearchQuery: '',
+  jobsSortOrder: 'newest', // 'newest' or 'oldest'
+  chatHidden: false // Track if chat is hidden
 };
 
 // ============================================
@@ -52,8 +55,10 @@ const elements = {
   // Chat
   messagesContainer: document.getElementById('messages-container'),
   messageInput: document.getElementById('message-input'),
+  attachBtn: document.getElementById('attach-btn'),
+  emojiBtn: document.getElementById('emoji-btn'),
   sendBtn: document.getElementById('send-message-btn'),
-  
+
   // Jobs
   jobsList: document.getElementById('jobs-list'),
   shareJobBtn: document.getElementById('share-job-btn'),
@@ -256,7 +261,13 @@ function setupEventListeners() {
       sendMessage();
     }
   });
-  
+
+  // Attach button
+  elements.attachBtn?.addEventListener('click', handleAttachClick);
+
+  // Emoji button
+  elements.emojiBtn?.addEventListener('click', handleEmojiClick);
+
   // Header actions
   elements.inviteMembersBtn?.addEventListener('click', showInviteLink);
 
@@ -280,6 +291,27 @@ function setupEventListeners() {
 
   // Share Job Button
   elements.shareJobBtn?.addEventListener('click', showShareJobModal);
+
+  // Jobs Search
+  const jobsSearchInput = document.getElementById('jobs-search-input');
+  jobsSearchInput?.addEventListener('input', (e) => {
+    state.jobsSearchQuery = e.target.value.trim();
+    renderJobs();
+  });
+
+  // Jobs Sort
+  const jobsSortSelect = document.getElementById('jobs-sort-select');
+  jobsSortSelect?.addEventListener('change', (e) => {
+    state.jobsSortOrder = e.target.value;
+    renderJobs();
+  });
+
+  // Toggle Chat
+  const toggleChatBtn = document.getElementById('toggle-chat-btn');
+  toggleChatBtn?.addEventListener('click', () => {
+    state.chatHidden = !state.chatHidden;
+    toggleChatVisibility();
+  });
 
   // Discover search
   let discoverTimeout;
@@ -1108,6 +1140,110 @@ function scrollMessagesToBottom() {
   }
 }
 
+/**
+ * Handle attach button click - opens file picker
+ */
+function handleAttachClick() {
+  // Create a hidden file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*,application/pdf,.doc,.docx,.txt';
+  fileInput.style.display = 'none';
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      console.log('[WhatsApp Groups] File selected:', file.name);
+      // TODO: Implement file upload functionality
+      showError('File upload feature coming soon!');
+    }
+  });
+
+  // Trigger file picker
+  fileInput.click();
+}
+
+/**
+ * Handle emoji button click - shows emoji picker
+ */
+function handleEmojiClick() {
+  // Common emojis for quick access
+  const emojis = ['😀', '😊', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✅', '👏', '🚀', '💼', '📝', '📧'];
+
+  // Create emoji picker popup
+  const existingPicker = document.getElementById('emoji-picker-popup');
+  if (existingPicker) {
+    existingPicker.remove();
+    return;
+  }
+
+  const picker = document.createElement('div');
+  picker.id = 'emoji-picker-popup';
+  picker.style.cssText = `
+    position: fixed;
+    background: white;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+  `;
+
+  // Position near emoji button
+  const emojiBtn = elements.emojiBtn;
+  if (emojiBtn) {
+    const rect = emojiBtn.getBoundingClientRect();
+    picker.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+    picker.style.left = `${rect.left}px`;
+  }
+
+  emojis.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.style.cssText = `
+      border: none;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+    `;
+    btn.addEventListener('mouseenter', () => btn.style.background = 'var(--bg-hover)');
+    btn.addEventListener('mouseleave', () => btn.style.background = 'transparent');
+    btn.addEventListener('click', () => {
+      if (elements.messageInput) {
+        const cursorPos = elements.messageInput.selectionStart || 0;
+        const text = elements.messageInput.value;
+        elements.messageInput.value = text.slice(0, cursorPos) + emoji + text.slice(cursorPos);
+        elements.messageInput.focus();
+
+        // Move cursor after emoji
+        const newPos = cursorPos + emoji.length;
+        elements.messageInput.setSelectionRange(newPos, newPos);
+      }
+      picker.remove();
+    });
+    picker.appendChild(btn);
+  });
+
+  document.body.appendChild(picker);
+
+  // Close picker when clicking outside
+  setTimeout(() => {
+    const closeOnClick = (e) => {
+      if (!picker.contains(e.target) && e.target !== emojiBtn) {
+        picker.remove();
+        document.removeEventListener('click', closeOnClick);
+      }
+    };
+    document.addEventListener('click', closeOnClick);
+  }, 100);
+}
+
 async function sendMessage() {
   if (!elements.messageInput) return;
 
@@ -1198,13 +1334,38 @@ function renderJobs() {
     return;
   }
 
-  const jobs = state.jobsByGroupId[state.selectedGroupId] || [];
+  let jobs = state.jobsByGroupId[state.selectedGroupId] || [];
   console.log('[WhatsApp Groups] Jobs to render:', jobs.length, jobs);
 
+  // Apply search filter
+  if (state.jobsSearchQuery) {
+    const query = state.jobsSearchQuery.toLowerCase();
+    jobs = jobs.filter(job => {
+      const company = (job.company || '').toLowerCase();
+      const title = (job.title || '').toLowerCase();
+      const location = (job.location || '').toLowerCase();
+
+      return company.includes(query) ||
+             title.includes(query) ||
+             location.includes(query);
+    });
+  }
+
+  // Apply sorting
+  jobs = [...jobs]; // Create a copy to avoid mutating original
+  if (state.jobsSortOrder === 'newest') {
+    jobs.sort((a, b) => new Date(b.sharedAt || 0) - new Date(a.sharedAt || 0));
+  } else {
+    jobs.sort((a, b) => new Date(a.sharedAt || 0) - new Date(b.sharedAt || 0));
+  }
+
   if (jobs.length === 0) {
+    const message = state.jobsSearchQuery
+      ? `No jobs found matching "${state.jobsSearchQuery}"`
+      : 'No jobs shared yet';
     elements.jobsList.innerHTML = `
       <div class="empty-state-small">
-        <p>No jobs shared yet</p>
+        <p>${message}</p>
       </div>
     `;
     return;
@@ -1222,18 +1383,77 @@ function renderJobs() {
 function attachJobCardClickHandlers() {
   const jobCards = elements.jobsList.querySelectorAll('.job-card');
   jobCards.forEach(card => {
+    // Handle job action buttons
+    const actionButtons = card.querySelectorAll('.job-action-btn');
+    actionButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent card click
+        const action = btn.dataset.action;
+        const jobId = card.dataset.jobId;
+
+        if (action === 'share') {
+          handleShareJob(jobId);
+        } else if (action === 'save') {
+          handleSaveJob(jobId, card);
+        } else if (action === 'view') {
+          handleViewJob(jobId);
+        }
+        // Open link is handled by anchor tag directly
+      });
+    });
+
+    // Handle card click (only when not clicking action buttons)
     card.addEventListener('click', (e) => {
-      // Don't open page if clicking on the "View Job" link
-      if (e.target.closest('.btn-view-job')) {
+      // Don't open page if clicking on action buttons or links
+      if (e.target.closest('.job-action-btn')) {
         return;
       }
 
       const jobId = card.dataset.jobId;
-
       // Navigate to shared job detail page
-      window.location.href = `shared-job-detail.html?jobId=${jobId}&groupId=${state.selectedGroupId}`;
+      handleViewJob(jobId);
     });
   });
+}
+
+function handleShareJob(jobId) {
+  showShareJobModal();
+}
+
+function handleSaveJob(jobId, cardElement) {
+  // Toggle save state
+  const saveBtn = cardElement.querySelector('[data-action="save"]');
+  if (saveBtn) {
+    const isSaved = saveBtn.classList.toggle('saved');
+
+    if (isSaved) {
+      // Fill the bookmark icon
+      saveBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+      `;
+      saveBtn.style.color = '#2383e2';
+      if (window.globalNotifications) {
+        window.globalNotifications.showNotionToast('Job saved!', 'success', 2000);
+      }
+    } else {
+      // Outline the bookmark icon
+      saveBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+      `;
+      saveBtn.style.color = '';
+      if (window.globalNotifications) {
+        window.globalNotifications.showNotionToast('Job unsaved', 'info', 2000);
+      }
+    }
+  }
+}
+
+function handleViewJob(jobId) {
+  window.location.href = `shared-job-detail.html?jobId=${jobId}&groupId=${state.selectedGroupId}`;
 }
 
 function createJobCard(sharedJob) {
@@ -1296,7 +1516,37 @@ function createJobCard(sharedJob) {
           <span class="job-shared-by">Shared by ${escapeHtml(sharedBy)}</span>
           ${sharedAt ? `<span class="job-shared-time"> • ${sharedAt}</span>` : ''}
         </div>
-        ${job.link ? `<a href="${escapeHtml(job.link)}" target="_blank" class="btn-view-job">View Job →</a>` : ''}
+        <div class="job-actions">
+          <button class="job-action-btn" data-action="share" title="Share Job">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+          <button class="job-action-btn" data-action="save" title="Save Job">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
+          <button class="job-action-btn" data-action="view" title="View Details">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+          ${job.link ? `
+          <a href="${escapeHtml(job.link)}" target="_blank" class="job-action-btn" title="Open Job Posting">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          ` : ''}
+        </div>
       </div>
     </div>
   `;
@@ -1359,25 +1609,96 @@ function renderMembers() {
     return;
   }
 
-  elements.membersList.innerHTML = members.map(member => createMemberItem(member)).join('');
+  // Check if current user is admin
+  const currentUserEmail = state.currentUser?.email;
+  const currentUserMember = members.find(m => m.email === currentUserEmail);
+  const isCurrentUserAdmin = currentUserMember?.role === 'admin';
+
+  elements.membersList.innerHTML = members.map(member => createMemberItem(member, isCurrentUserAdmin, currentUserEmail)).join('');
+
+  // Add event delegation for remove buttons
+  attachMemberRemoveHandlers();
 }
 
-function createMemberItem(member) {
+function createMemberItem(member, isCurrentUserAdmin, currentUserEmail) {
   // Backend returns: { userId, name, email, role, stats, joinedAt }
   const name = member.name || member.email || 'Unknown';
   const initial = name.charAt(0).toUpperCase();
   const role = member.role || 'member';
+  const isCurrentUser = member.email === currentUserEmail;
+
+  // Show remove button only if:
+  // 1. Current user is admin
+  // 2. This is not the current user themselves
+  const showRemoveBtn = isCurrentUserAdmin && !isCurrentUser;
 
   return `
-    <div class="member-item">
+    <div class="member-item" data-member-id="${member.userId || ''}" data-member-email="${escapeHtml(member.email || '')}">
       <div class="member-avatar">${initial}</div>
       <div class="member-info">
         <p class="member-name">${escapeHtml(name)}</p>
         <p class="member-email">${escapeHtml(member.email || '')}</p>
       </div>
       <span class="member-role">${escapeHtml(role)}</span>
+      ${showRemoveBtn ? `
+        <button class="btn-remove-member" title="Remove member">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </button>
+      ` : ''}
     </div>
   `;
+}
+
+/**
+ * Attach event handlers for member remove buttons
+ */
+function attachMemberRemoveHandlers() {
+  if (!elements.membersList) return;
+
+  const removeButtons = elements.membersList.querySelectorAll('.btn-remove-member');
+  removeButtons.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const memberItem = btn.closest('.member-item');
+      const memberId = memberItem.dataset.memberId;
+      const memberEmail = memberItem.dataset.memberEmail;
+
+      if (memberId && state.selectedGroupId) {
+        await handleRemoveMember(memberId, memberEmail);
+      }
+    });
+  });
+}
+
+/**
+ * Handle removing a member from the group
+ */
+async function handleRemoveMember(userId, userEmail) {
+  try {
+    const confirmMessage = `Are you sure you want to remove ${userEmail} from this group?`;
+    if (!confirm(confirmMessage)) return;
+
+    console.log('[WhatsApp Groups] Removing member:', userId, 'from group:', state.selectedGroupId);
+
+    // Call API to remove member
+    await window.groupAPI.removeMember(state.selectedGroupId, userId);
+
+    showSuccess('Member removed successfully');
+
+    // Reload members list
+    await loadMembers(state.selectedGroupId);
+
+    // Reload groups list to update member count
+    await loadMyGroups();
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error removing member:', error);
+    showError('Failed to remove member: ' + error.message);
+  }
 }
 
 // ============================================
@@ -1408,6 +1729,46 @@ function switchTab(tabName) {
   // Scroll messages to bottom when switching to chat
   if (tabName === 'chat') {
     setTimeout(scrollMessagesToBottom, 100);
+  }
+}
+
+function toggleChatVisibility() {
+  const messagesContainer = document.getElementById('messages-container');
+  const messageInputContainer = document.querySelector('.message-input-container');
+  const toggleBtn = document.getElementById('toggle-chat-btn');
+
+  if (state.chatHidden) {
+    // Hide only text messages, keep job postings visible
+    if (messagesContainer) messagesContainer.classList.add('hide-text-messages');
+    if (messageInputContainer) messageInputContainer.style.display = 'none';
+
+    // Update button
+    if (toggleBtn) {
+      toggleBtn.classList.add('chat-hidden');
+      toggleBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+        Show Messages
+      `;
+    }
+  } else {
+    // Show all messages
+    if (messagesContainer) messagesContainer.classList.remove('hide-text-messages');
+    if (messageInputContainer) messageInputContainer.style.display = '';
+
+    // Update button
+    if (toggleBtn) {
+      toggleBtn.classList.remove('chat-hidden');
+      toggleBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        Hide Messages
+      `;
+    }
   }
 }
 

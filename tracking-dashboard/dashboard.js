@@ -29,7 +29,12 @@ class DashboardUI {
   async init() {
     console.log('[Dashboard] 🚀 Initializing dashboard...');
 
+    // Show loading state immediately
     this.showLoadingState();
+
+    // Track loading start time to ensure minimum loading time for better UX
+    const loadingStartTime = Date.now();
+    const MIN_LOADING_TIME = 400; // Minimum 400ms to show loading state
 
     // Initialize sync manager and API client
     await this.initializeSync();
@@ -39,6 +44,12 @@ class DashboardUI {
     await this.setupUserMenu();
 
     console.log('[Dashboard] ✅ JobTracker loaded with', window.jobTracker.jobs.length, 'jobs');
+
+    // Ensure loading state is visible for at least MIN_LOADING_TIME
+    const loadingElapsed = Date.now() - loadingStartTime;
+    if (loadingElapsed < MIN_LOADING_TIME) {
+      await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - loadingElapsed));
+    }
 
     this.setupEventListeners();
     this.setupSocketListeners();
@@ -282,6 +293,12 @@ class DashboardUI {
 
   async initializeSync() {
     try {
+      // CRITICAL: Initialize auth manager first before syncing
+      if (window.authManager && !window.authManager.initialized) {
+        console.log('[Dashboard] Initializing AuthManager before sync...');
+        await window.authManager.init();
+      }
+
       // Initialize API client
       if (typeof window.apiClient === 'undefined' && typeof APIClient !== 'undefined') {
         window.apiClient = new APIClient();
@@ -296,8 +313,6 @@ class DashboardUI {
       if (window.apiClient?.isAuthenticated() && window.syncManager) {
         console.log('[Dashboard] Triggering initial sync...');
         await window.syncManager.syncAll();
-
-        // Reload jobs after sync
         await window.jobTracker.loadJobs();
         console.log('[Dashboard] Sync complete, jobs reloaded');
       }
@@ -363,7 +378,7 @@ class DashboardUI {
         column.innerHTML = `
           <div class="loading-state">
             <div class="loading-spinner"></div>
-            <p>Loading jobs...</p>
+            <p>Fetching your jobs...</p>
           </div>
         `;
       }
@@ -376,7 +391,7 @@ class DashboardUI {
         <tr>
           <td colspan="8" class="loading-state">
             <div class="loading-spinner"></div>
-            <p>Loading jobs...</p>
+            <p>Fetching your jobs...</p>
           </td>
         </tr>
       `;
