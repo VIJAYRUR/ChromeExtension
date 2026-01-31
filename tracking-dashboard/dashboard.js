@@ -1291,7 +1291,8 @@ class DashboardUI {
     e.target.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.target.innerHTML);
-    e.dataTransfer.setData('jobId', job.id);
+    // Use _id for MongoDB jobs, fallback to id for local jobs
+    e.dataTransfer.setData('jobId', job._id || job.id);
 
     // Add a subtle opacity to the dragged card
     setTimeout(() => {

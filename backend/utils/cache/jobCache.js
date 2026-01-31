@@ -75,7 +75,16 @@ class JobCacheService {
     const crypto = require('crypto');
     const filterHash = crypto.createHash('md5').update(filterStr).digest('hex').substring(0, 16);
 
-    return `${this.cachePrefix}:user:${userId}:query:${filterHash}`;
+    const cacheKey = `${this.cachePrefix}:user:${userId}:query:${filterHash}`;
+
+    // Debug logging to track cache key generation
+    this.logger.debug(`🔑 [CACHE KEY] Generated key: ${cacheKey}`, {
+      filterStr,
+      filterHash,
+      normalizedFilters
+    });
+
+    return cacheKey;
   }
 
   /**
