@@ -12,9 +12,18 @@ class DashboardUI {
     this.isUpdating = false;
     this.compactMode = false;
 
-    // Pagination
+    // Pagination for table view (local pagination)
     this.currentPage = 1;
     this.itemsPerPage = 10;
+
+    // Lazy loading state (database-first approach)
+    this.lazyLoadEnabled = true; // Toggle between lazy loading and offline-first
+    this.apiPage = 1; // Current page from API
+    this.apiPageSize = 50; // Jobs per API request
+    this.hasMoreJobs = true; // Whether more jobs exist on server
+    this.isLoadingJobs = false; // Prevent concurrent loads
+    this.allJobs = []; // Jobs loaded so far (replaces window.jobTracker.jobs for lazy loading)
+    this.totalJobsCount = 0; // Total jobs on server
 
     // Job-related icons in Notion style (all same gray color like Notion)
     this.jobIcons = [
@@ -43,7 +52,17 @@ class DashboardUI {
     await this.loadCompactMode();
     await this.setupUserMenu();
 
-    console.log('[Dashboard] ✅ JobTracker loaded with', window.jobTracker.jobs.length, 'jobs');
+    // Load jobs using lazy loading (database-first) if authenticated
+    if (this.lazyLoadEnabled && window.apiClient?.isAuthenticated()) {
+      console.log('[Dashboard] 📥 Loading jobs with lazy loading (database-first)...');
+      await this.loadJobsFromAPI(1, false);
+    } else {
+      // Fallback to offline-first mode
+      console.log('[Dashboard] 📦 Loading jobs from cache (offline-first)...');
+      console.log('[Dashboard] ✅ JobTracker loaded with', window.jobTracker.jobs.length, 'jobs');
+      this.allJobs = window.jobTracker.jobs;
+      this.lazyLoadEnabled = false; // Disable lazy loading
+    }
 
     // Ensure loading state is visible for at least MIN_LOADING_TIME
     const loadingElapsed = Date.now() - loadingStartTime;
@@ -55,7 +74,11 @@ class DashboardUI {
     this.setupSocketListeners();
     this.setupGlobalNotifications();
     this.setupJobTrackerListener();
-    this.render();
+
+    // Render is called by loadJobsFromAPI, so only call if offline mode
+    if (!this.lazyLoadEnabled) {
+      this.render();
+    }
 
     console.log('[Dashboard] 🎨 Dashboard initialized');
   }
@@ -398,6 +421,235 @@ class DashboardUI {
     }
   }
 
+  // ==================== Lazy Loading Methods ====================
+
+  /**
+   * Load jobs from API with pagination (database-first approach)
+   * @param {number} page - Page number to load (default: 1)
+   * @param {boolean} append - Whether to append to existing jobs or replace (default: false)
+   */
+  async loadJobsFromAPI(page = 1, append = false) {
+    if (this.isLoadingJobs) {
+      console.log('[Dashboard] Already loading jobs, skipping...');
+      return;
+    }
+
+    this.isLoadingJobs = true;
+    console.log(`[Dashboard] 📥 Loading jobs from API (page ${page}, append: ${append})...`);
+
+    // Show loading indicator
+    if (append) {
+      this.showLoadingMoreIndicator();
+    } else {
+      this.showLoadingState();
+    }
+
+    try {
+      // Build API params from current filters
+      const params = {
+        page,
+        limit: this.apiPageSize,
+        sortBy: this.getSortField(),
+        sortOrder: this.getSortOrder()
+      };
+
+      // Add filters
+      if (this.currentFilters.status && this.currentFilters.status !== 'all') {
+        params.status = this.currentFilters.status;
+      }
+      if (this.currentFilters.workType && this.currentFilters.workType !== 'all') {
+        params.workType = this.currentFilters.workType;
+      }
+      if (this.currentFilters.query) {
+        params.search = this.currentFilters.query;
+      }
+
+      // Fetch from backend API
+      const response = await window.apiClient.getJobs(params);
+
+      if (response.success) {
+        const { jobs, pagination } = response.data;
+
+        console.log(`[Dashboard] ✅ Loaded ${jobs.length} jobs (page ${pagination.page}/${pagination.pages}, total: ${pagination.total})`);
+
+        // Update state
+        if (append) {
+          this.allJobs = [...this.allJobs, ...jobs];
+        } else {
+          this.allJobs = jobs;
+        }
+
+        this.apiPage = pagination.page;
+        this.hasMoreJobs = page < pagination.pages;
+        this.totalJobsCount = pagination.total;
+
+        // Cache for offline access
+        await this.cacheJobsLocally(this.allJobs);
+
+        // Render
+        this.render();
+      } else {
+        console.error('[Dashboard] Failed to load jobs from API');
+        // Fallback to cache
+        await this.loadJobsFromCache();
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error loading jobs from API:', error);
+
+      // Fallback to local cache (offline mode)
+      if (!append) {
+        console.log('[Dashboard] Falling back to cached jobs (offline mode)');
+        await this.loadJobsFromCache();
+      }
+    } finally {
+      this.isLoadingJobs = false;
+      this.hideLoadingMoreIndicator();
+    }
+  }
+
+  /**
+   * Load jobs from local cache (offline fallback)
+   */
+  async loadJobsFromCache() {
+    console.log('[Dashboard] 📦 Loading jobs from cache...');
+
+    const storageKey = window.jobTracker.getStorageKey();
+
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.local.get([storageKey]);
+        this.allJobs = result[storageKey] || [];
+      } else {
+        const stored = localStorage.getItem(storageKey);
+        this.allJobs = stored ? JSON.parse(stored) : [];
+      }
+
+      console.log(`[Dashboard] ✅ Loaded ${this.allJobs.length} jobs from cache`);
+      this.totalJobsCount = this.allJobs.length;
+      this.hasMoreJobs = false; // No pagination in offline mode
+
+      this.render();
+    } catch (error) {
+      console.error('[Dashboard] Error loading from cache:', error);
+      this.allJobs = [];
+      this.render();
+    }
+  }
+
+  /**
+   * Cache jobs locally for offline access
+   */
+  async cacheJobsLocally(jobs) {
+    const storageKey = window.jobTracker.getStorageKey();
+
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const data = {};
+        data[storageKey] = jobs;
+        await chrome.storage.local.set(data);
+      } else {
+        localStorage.setItem(storageKey, JSON.stringify(jobs));
+      }
+
+      console.log(`[Dashboard] 💾 Cached ${jobs.length} jobs locally`);
+    } catch (error) {
+      console.error('[Dashboard] Error caching jobs:', error);
+    }
+  }
+
+  /**
+   * Show "Loading more..." indicator at bottom of kanban/table
+   */
+  showLoadingMoreIndicator() {
+    // For kanban view - add to each column
+    if (this.currentView === 'kanban') {
+      const columns = ['saved', 'applied', 'interview', 'offer', 'rejected'];
+      columns.forEach(status => {
+        const column = document.getElementById(`column-${status}`);
+        if (column) {
+          // Remove existing indicator if any
+          const existing = column.querySelector('.loading-more-indicator');
+          if (existing) existing.remove();
+
+          // Add new indicator
+          const indicator = document.createElement('div');
+          indicator.className = 'loading-more-indicator';
+          indicator.innerHTML = `
+            <div class="loading-spinner-small"></div>
+            <span>Loading more...</span>
+          `;
+          column.appendChild(indicator);
+        }
+      });
+    }
+
+    // For table view - add row at bottom
+    if (this.currentView === 'table') {
+      const tbody = document.getElementById('table-body');
+      if (tbody) {
+        const existing = tbody.querySelector('.loading-more-row');
+        if (existing) existing.remove();
+
+        const row = document.createElement('tr');
+        row.className = 'loading-more-row';
+        row.innerHTML = `
+          <td colspan="7" style="text-align: center; padding: 20px;">
+            <div class="loading-spinner-small" style="display: inline-block; margin-right: 8px;"></div>
+            <span>Loading more jobs...</span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+  }
+
+  /**
+   * Hide "Loading more..." indicator
+   */
+  hideLoadingMoreIndicator() {
+    // Remove from kanban columns
+    document.querySelectorAll('.loading-more-indicator').forEach(el => el.remove());
+
+    // Remove from table
+    const loadingRow = document.querySelector('.loading-more-row');
+    if (loadingRow) loadingRow.remove();
+  }
+
+  /**
+   * Get sort field from current filter
+   */
+  getSortField() {
+    const sortMap = {
+      'date-desc': 'dateApplied',
+      'date-asc': 'dateApplied',
+      'company-asc': 'company',
+      'company-desc': 'company'
+    };
+    return sortMap[this.currentFilters.sort] || 'dateApplied';
+  }
+
+  /**
+   * Get sort order from current filter
+   */
+  getSortOrder() {
+    return this.currentFilters.sort.includes('asc') ? 'asc' : 'desc';
+  }
+
+  /**
+   * Reload jobs when filters change (for lazy loading mode)
+   */
+  async reloadJobsWithFilters() {
+    if (this.lazyLoadEnabled && window.apiClient?.isAuthenticated()) {
+      // Reset pagination and reload from API
+      this.apiPage = 1;
+      this.allJobs = [];
+      await this.loadJobsFromAPI(1, false);
+    } else {
+      // Offline mode - just re-render with local filtering
+      this.render();
+    }
+  }
+
   setupEventListeners() {
     // Inline search toggle
     const searchBtn = document.getElementById('search-btn');
@@ -424,11 +676,21 @@ class DashboardUI {
       }
     });
 
-    // Inline search input
+    // Inline search input (debounced for API calls)
+    let searchTimeout;
     inlineSearchInput.addEventListener('input', (e) => {
       this.currentFilters.query = e.target.value;
       this.currentPage = 1; // Reset to first page
-      this.render();
+
+      // Debounce search for lazy loading (wait 300ms after user stops typing)
+      if (this.lazyLoadEnabled) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          this.reloadJobsWithFilters();
+        }, 300);
+      } else {
+        this.render();
+      }
     });
 
     // Close search on Escape key
@@ -438,7 +700,7 @@ class DashboardUI {
         searchBtn.style.display = 'flex';
         inlineSearchInput.value = '';
         this.currentFilters.query = '';
-        this.render();
+        this.reloadJobsWithFilters();
       }
     });
 
@@ -446,19 +708,19 @@ class DashboardUI {
     document.getElementById('filter-status').addEventListener('change', (e) => {
       this.currentFilters.status = e.target.value;
       this.currentPage = 1; // Reset to first page
-      this.render();
+      this.reloadJobsWithFilters();
     });
 
     document.getElementById('filter-worktype').addEventListener('change', (e) => {
       this.currentFilters.workType = e.target.value;
       this.currentPage = 1; // Reset to first page
-      this.render();
+      this.reloadJobsWithFilters();
     });
 
     document.getElementById('filter-sort').addEventListener('change', (e) => {
       this.currentFilters.sort = e.target.value;
       this.currentPage = 1; // Reset to first page
-      this.render();
+      this.reloadJobsWithFilters();
     });
 
     // View toggle
@@ -555,11 +817,31 @@ class DashboardUI {
     }
 
     if (nextPageBtn) {
-      nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(this.currentJobs.length / this.itemsPerPage);
-        if (this.currentPage < totalPages) {
-          this.currentPage++;
-          this.renderTable(this.currentJobs);
+      nextPageBtn.addEventListener('click', async () => {
+        if (this.lazyLoadEnabled) {
+          // Lazy loading mode - check if we need to load more from API
+          const currentlyLoadedPages = Math.ceil(this.allJobs.length / this.itemsPerPage);
+          const nextPage = this.currentPage + 1;
+
+          // If next page exceeds currently loaded data, fetch more from API
+          if (nextPage > currentlyLoadedPages && this.hasMoreJobs) {
+            console.log(`[Dashboard] 📄 Loading more jobs for page ${nextPage}...`);
+            await this.loadJobsFromAPI(this.apiPage + 1, true);
+          }
+
+          // Now increment page if we have data
+          const totalPages = Math.ceil(this.allJobs.length / this.itemsPerPage);
+          if (this.currentPage < totalPages) {
+            this.currentPage++;
+            this.renderTable(this.currentJobs);
+          }
+        } else {
+          // Offline mode - just paginate through local data
+          const totalPages = Math.ceil(this.currentJobs.length / this.itemsPerPage);
+          if (this.currentPage < totalPages) {
+            this.currentPage++;
+            this.renderTable(this.currentJobs);
+          }
         }
       });
     }
@@ -651,6 +933,13 @@ class DashboardUI {
   }
 
   getFilteredJobs() {
+    // When lazy loading is enabled, filtering/sorting happens on server
+    // So we just return the jobs we've loaded so far
+    if (this.lazyLoadEnabled && this.allJobs.length > 0) {
+      return this.allJobs;
+    }
+
+    // Fallback to offline-first mode (use JobTracker's local search)
     let jobs = window.jobTracker.searchJobs(this.currentFilters.query, {
       status: this.currentFilters.status,
       workType: this.currentFilters.workType
@@ -680,7 +969,11 @@ class DashboardUI {
   }
 
   updateStats(jobs) {
-    const total = jobs.length;
+    // When lazy loading, use server total count if available
+    // Note: active/interviews counts are based on loaded jobs only
+    const total = this.lazyLoadEnabled && this.totalJobsCount > 0
+      ? this.totalJobsCount
+      : jobs.length;
     const active = jobs.filter(j => j.status === 'applied' || j.status === 'interview').length;
     const interviews = jobs.filter(j => j.status === 'interview').length;
 
@@ -689,7 +982,11 @@ class DashboardUI {
     const statActive = document.getElementById('stat-active');
     const statInterviews = document.getElementById('stat-interviews');
 
-    if (statTotal) statTotal.textContent = total;
+    if (statTotal) {
+      statTotal.textContent = this.lazyLoadEnabled && this.hasMoreJobs
+        ? `${total}+`
+        : total;
+    }
     if (statActive) statActive.textContent = active;
     if (statInterviews) statInterviews.textContent = interviews;
   }
@@ -756,6 +1053,46 @@ class DashboardUI {
       column.appendChild(addButton);
 
       this.setupDropZone(column, status);
+    });
+
+    // Setup infinite scroll for lazy loading
+    if (this.lazyLoadEnabled) {
+      this.setupKanbanInfiniteScroll();
+    }
+  }
+
+  /**
+   * Setup infinite scroll for Kanban columns
+   */
+  setupKanbanInfiniteScroll() {
+    const statuses = ['saved', 'applied', 'interview', 'offer', 'rejected'];
+
+    statuses.forEach(status => {
+      const column = document.getElementById(`column-${status}`);
+      if (!column) return;
+
+      // Remove existing listener if any
+      if (column.scrollHandler) {
+        column.removeEventListener('scroll', column.scrollHandler);
+      }
+
+      // Create scroll handler
+      column.scrollHandler = () => {
+        const scrollTop = column.scrollTop;
+        const scrollHeight = column.scrollHeight;
+        const clientHeight = column.clientHeight;
+
+        // Load more when 200px from bottom
+        if (scrollTop + clientHeight >= scrollHeight - 200) {
+          if (this.hasMoreJobs && !this.isLoadingJobs) {
+            console.log(`[Dashboard] 📜 Scroll detected in ${status} column, loading more jobs...`);
+            this.loadJobsFromAPI(this.apiPage + 1, true);
+          }
+        }
+      };
+
+      // Add scroll listener
+      column.addEventListener('scroll', column.scrollHandler);
     });
   }
 
@@ -1047,8 +1384,13 @@ class DashboardUI {
 
     if (!paginationContainer) return;
 
+    // When lazy loading, use server total count if available
+    const displayTotal = this.lazyLoadEnabled && this.totalJobsCount > 0
+      ? this.totalJobsCount
+      : total;
+
     // Show/hide pagination based on total items
-    if (total <= this.itemsPerPage) {
+    if (displayTotal <= this.itemsPerPage && !this.hasMoreJobs) {
       paginationContainer.style.display = 'none';
       return;
     } else {
@@ -1057,7 +1399,12 @@ class DashboardUI {
 
     // Update info text
     if (paginationInfo) {
-      paginationInfo.textContent = `${start}-${end} of ${total}`;
+      if (this.lazyLoadEnabled && this.hasMoreJobs) {
+        // Show "X-Y of Z+" when more jobs available on server
+        paginationInfo.textContent = `${start}-${end} of ${displayTotal}${this.hasMoreJobs ? '+' : ''}`;
+      } else {
+        paginationInfo.textContent = `${start}-${end} of ${displayTotal}`;
+      }
     }
 
     // Update button states
@@ -1066,8 +1413,16 @@ class DashboardUI {
     }
 
     if (nextBtn) {
-      const totalPages = Math.ceil(total / this.itemsPerPage);
-      nextBtn.disabled = this.currentPage >= totalPages;
+      if (this.lazyLoadEnabled) {
+        // In lazy loading mode, enable next button if we have more jobs on server
+        // or if we have more pages in currently loaded data
+        const currentlyLoadedPages = Math.ceil(this.allJobs.length / this.itemsPerPage);
+        nextBtn.disabled = this.currentPage >= currentlyLoadedPages && !this.hasMoreJobs;
+      } else {
+        // Offline mode - disable when we reach end of local data
+        const totalPages = Math.ceil(total / this.itemsPerPage);
+        nextBtn.disabled = this.currentPage >= totalPages;
+      }
     }
   }
 

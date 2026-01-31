@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 
 const { connectDB } = require('./config/database');
 const { connectRedis, disconnectRedis } = require('./config/redis');
-const { chatCache } = require('./utils/cache');
+const { chatCache, jobCache } = require('./utils/cache');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
@@ -21,9 +21,10 @@ connectDB();
 // Initialize Redis cache (non-blocking)
 connectRedis()
   .then(() => {
-    // Initialize chat cache service
+    // Initialize cache services
     chatCache.initialize();
-    console.log('✅ Redis cache initialized for chat feature');
+    jobCache.initialize();
+    console.log('✅ Redis cache initialized for chat and jobs');
   })
   .catch(err => {
     console.warn('⚠️  Redis cache disabled:', err.message);

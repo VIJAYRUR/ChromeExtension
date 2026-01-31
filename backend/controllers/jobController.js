@@ -1,6 +1,7 @@
 const Job = require('../models/Job');
 const Analytics = require('../models/Analytics');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const { jobCache } = require('../utils/cache');
 
 // @desc    Get all jobs for user
 // @route   GET /api/jobs
@@ -76,27 +77,35 @@ const getJobs = asyncHandler(async (req, res) => {
   // Pagination
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // Execute query
-  const [jobs, total] = await Promise.all([
-    Job.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean(),
-    Job.countDocuments(query)
-  ]);
+  // Prepare filter object for cache key generation
+  const filters = {
+    status,
+    workType,
+    search,
+    tags,
+    priority,
+    dateFrom,
+    dateTo,
+    page,
+    limit,
+    sortBy,
+    sortOrder,
+    archived
+  };
+
+  // Use cache service (with automatic fallback to DB)
+  const result = await jobCache.getCachedJobs(
+    req.userId,
+    filters,
+    query,
+    sort,
+    skip,
+    parseInt(limit)
+  );
 
   res.json({
     success: true,
-    data: {
-      jobs,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
-    }
+    data: result
   });
 });
 
@@ -166,6 +175,9 @@ const createJob = asyncHandler(async (req, res) => {
 
   const job = await Job.create(jobData);
 
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
+
   // Update analytics
   const analytics = await Analytics.getOrCreateToday(req.userId);
   analytics.applications.total += 1;
@@ -213,6 +225,9 @@ const updateJob = asyncHandler(async (req, res) => {
   });
 
   await job.save();
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   // Update analytics if status changed
   if (oldStatus !== newStatus) {
@@ -262,6 +277,9 @@ const updateJobStatus = asyncHandler(async (req, res) => {
 
   await job.save();
 
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
+
   // Update analytics
   if (oldStatus !== status) {
     const analytics = await Analytics.getOrCreateToday(req.userId);
@@ -297,6 +315,9 @@ const deleteJob = asyncHandler(async (req, res) => {
     throw new AppError('Job not found', 404);
   }
 
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
+
   res.json({
     success: true,
     message: 'Job deleted successfully'
@@ -317,6 +338,9 @@ const bulkDeleteJobs = asyncHandler(async (req, res) => {
     _id: { $in: jobIds },
     userId: req.userId
   });
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   res.json({
     success: true,
@@ -348,6 +372,9 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
       }
     }
   );
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   res.json({
     success: true,
@@ -383,6 +410,9 @@ const addNote = asyncHandler(async (req, res) => {
   });
 
   await job.save();
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   // Update analytics
   const analytics = await Analytics.getOrCreateToday(req.userId);
@@ -425,6 +455,9 @@ const addInterview = asyncHandler(async (req, res) => {
 
   await job.save();
 
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
+
   // Update analytics
   const analytics = await Analytics.getOrCreateToday(req.userId);
   analytics.interviews.scheduled += 1;
@@ -459,6 +492,9 @@ const updateInterview = asyncHandler(async (req, res) => {
   const oldStatus = interview.status;
   Object.assign(interview, req.body);
   await job.save();
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   // Update analytics if status changed
   if (oldStatus !== req.body.status) {
@@ -613,6 +649,11 @@ const syncJobs = asyncHandler(async (req, res) => {
         error: error.message
       });
     }
+  }
+
+  // Invalidate job cache for this user if any jobs were created or updated
+  if (results.created > 0 || results.updated > 0) {
+    await jobCache.invalidateUserCache(req.userId);
   }
 
   res.json({
