@@ -481,6 +481,12 @@ function createGroupListItem(group) {
 async function selectGroup(groupId) {
   console.log('[WhatsApp Groups] Selecting group:', groupId);
 
+  // Don't switch if already selected
+  if (state.selectedGroupId === groupId && elements.groupView?.style.display === 'flex') {
+    console.log('[WhatsApp Groups] Group already selected, skipping');
+    return;
+  }
+
   state.selectedGroupId = groupId;
 
   // Update UI
@@ -495,6 +501,9 @@ async function selectGroup(groupId) {
     elements.sidebar?.classList.add('hidden');
   }
 
+  // Show loading overlay to prevent flash of empty content
+  showGroupLoadingOverlay();
+
   // Join socket room for this group
   if (window.socketClient && window.socketClient.isConnected) {
     console.log('[WhatsApp Groups] Joining socket room for group:', groupId);
@@ -504,16 +513,24 @@ async function selectGroup(groupId) {
   // Load group data
   await loadGroupData(groupId);
 
+  // Hide loading overlay after data loads
+  hideGroupLoadingOverlay();
+
   // Switch to chat tab by default
   switchTab('chat');
 }
 
 async function loadGroupData(groupId) {
   try {
-    // Load group details ONCE
-    const group = await window.groupAPI.getGroupDetails(groupId);
+    // Load all data in parallel for faster switching
+    const [group, jobs, messages, members] = await Promise.all([
+      window.groupAPI.getGroupDetails(groupId),
+      loadJobsData(groupId),
+      loadMessagesData(groupId),
+      loadMembersData(groupId)
+    ]);
 
-    // Update header
+    // Update header only after all data is loaded
     if (elements.groupAvatar) {
       const groupAvatarUrl = getGroupAvatar(group.name);
       elements.groupAvatar.innerHTML = `<img src="${groupAvatarUrl}" alt="${escapeHtml(group.name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
@@ -522,7 +539,7 @@ async function loadGroupData(groupId) {
       elements.groupName.textContent = group.name;
     }
     if (elements.groupMeta) {
-      const memberCount = group.stats?.memberCount || 0;
+      const memberCount = members?.length || group.stats?.memberCount || 0;
       const typeIcon = group.type === 'public' ? '🌍' : '🔒';
       const typeText = group.type === 'public' ? 'Public' : 'Private';
       elements.groupMeta.textContent = `${memberCount} members • ${typeIcon} ${typeText}`;
@@ -530,19 +547,93 @@ async function loadGroupData(groupId) {
 
     // Update counts
     if (elements.membersCount) {
-      elements.membersCount.textContent = group.stats?.memberCount || 0;
+      elements.membersCount.textContent = members?.length || group.stats?.memberCount || 0;
     }
 
-    // Load jobs FIRST (needed for job share message linking), then messages, then members
-    await loadJobs(groupId);
-    await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
-    await loadMessages(groupId);
-    await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
-    await loadMembers(groupId);
+    // Render all UI at once
+    renderJobs();
+    renderMessages();
+    renderMembers();
 
   } catch (error) {
     console.error('[WhatsApp Groups] Error loading group data:', error);
     showError('Failed to load group data: ' + error.message);
+  }
+}
+
+// Helper functions to load data without rendering
+async function loadJobsData(groupId) {
+  try {
+    const response = await window.sharedJobsAPI.getSharedJobs(groupId);
+    const jobs = response.jobs || [];
+    state.jobsByGroupId[groupId] = jobs;
+    return jobs;
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error loading jobs:', error);
+    state.jobsByGroupId[groupId] = [];
+    return [];
+  }
+}
+
+async function loadMessagesData(groupId) {
+  try {
+    // Reset lazy loading state for this group
+    state.oldestTimestampByGroupId[groupId] = null;
+    state.hasMoreByGroupId[groupId] = true;
+    state.isLoadingMoreByGroupId[groupId] = false;
+
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${groupId}/messages?limit=50`,
+      {
+        headers: {
+          'Authorization': `Bearer ${window.authManager.token}`
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch messages');
+
+    const data = await response.json();
+    const messages = data.data || [];
+    const pagination = data.pagination || {};
+
+    // Update state
+    state.messagesByGroupId[groupId] = messages;
+    state.hasMoreByGroupId[groupId] = pagination.hasMore || false;
+    state.oldestTimestampByGroupId[groupId] = pagination.oldestTimestamp;
+
+    // Setup lazy loading scroll listener
+    setupLazyLoading();
+
+    return messages;
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error loading messages:', error);
+    state.messagesByGroupId[groupId] = [];
+    return [];
+  }
+}
+
+async function loadMembersData(groupId) {
+  try {
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${groupId}/members`,
+      {
+        headers: {
+          'Authorization': `Bearer ${window.authManager.token}`
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch members');
+
+    const data = await response.json();
+    const members = data.data || [];
+    state.membersByGroupId[groupId] = members;
+    return members;
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error loading members:', error);
+    state.membersByGroupId[groupId] = [];
+    return [];
   }
 }
 
@@ -2446,6 +2537,72 @@ function showError(message) {
     window.globalNotifications.showNotionToast(message, 'error');
   } else {
     alert('Error: ' + message);
+  }
+}
+
+// ============================================
+// LOADING OVERLAY FOR GROUP SWITCHING
+// ============================================
+
+function showGroupLoadingOverlay() {
+  // Check if overlay already exists
+  let overlay = document.getElementById('group-loading-overlay');
+
+  if (!overlay) {
+    // Create overlay
+    overlay = document.createElement('div');
+    overlay.id = 'group-loading-overlay';
+    overlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    `;
+
+    overlay.innerHTML = `
+      <div style="text-align: center;">
+        <div style="
+          width: 40px;
+          height: 40px;
+          border: 3px solid #e5e7eb;
+          border-top-color: #3b82f6;
+          border-radius: 50%;
+          animation: spin 0.6s linear infinite;
+          margin: 0 auto 12px;
+        "></div>
+        <p style="color: #6b7280; font-size: 14px; margin: 0;">Loading group...</p>
+      </div>
+    `;
+
+    // Add to group view
+    if (elements.groupView) {
+      elements.groupView.style.position = 'relative';
+      elements.groupView.appendChild(overlay);
+    }
+  }
+
+  // Show overlay
+  overlay.style.display = 'flex';
+}
+
+function hideGroupLoadingOverlay() {
+  const overlay = document.getElementById('group-loading-overlay');
+  if (overlay) {
+    // Fade out smoothly
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.15s ease-out';
+
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.style.opacity = '1';
+    }, 150);
   }
 }
 
