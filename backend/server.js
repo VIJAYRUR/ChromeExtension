@@ -15,6 +15,12 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 // Initialize express app
 const app = express();
 
+// Trust proxy - Required for Render.com, Railway, Heroku, etc.
+// This allows express-rate-limit to correctly identify users behind proxies
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy
+}
+
 // Connect to MongoDB (Production + Local Chat)
 connectDB();
 
