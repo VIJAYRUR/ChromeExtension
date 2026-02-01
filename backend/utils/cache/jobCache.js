@@ -85,10 +85,11 @@ class JobCacheService {
 
     const cacheKey = `${this.cachePrefix}:user:${userId}:query:${filterHash}`;
 
-    // Debug logging to track cache key generation
-    this.logger.debug(`🔑 [CACHE KEY] Generated key: ${cacheKey}`, {
-      filterStr,
+    // INFO level logging to track cache key generation (visible in production)
+    this.logger.info(`🔑 [CACHE KEY GENERATED]`, {
+      cacheKey,
       filterHash,
+      filterStr: filterStr.substring(0, 200), // Truncate for readability
       normalizedFilters
     });
 

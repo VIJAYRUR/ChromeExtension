@@ -2,6 +2,7 @@ const multer = require('multer');
 const Job = require('../models/Job');
 const { uploadFile, getDownloadUrl, deleteFile } = require('../config/s3');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const jobCache = require('../utils/cache/jobCache');
 
 // Configure multer for memory storage (we'll upload directly to S3)
 const upload = multer({
@@ -96,6 +97,9 @@ const uploadResume = asyncHandler(async (req, res) => {
       });
 
       await job.save();
+
+      // Invalidate job cache for this user
+      await jobCache.invalidateUserCache(req.userId);
 
       console.log(`[Resume] Uploaded successfully for job ${id}: ${s3Key}`);
 
@@ -193,6 +197,9 @@ const deleteResume = asyncHandler(async (req, res) => {
   });
 
   await job.save();
+
+  // Invalidate job cache for this user
+  await jobCache.invalidateUserCache(req.userId);
 
   console.log(`[Resume] Deleted successfully for job ${id}`);
 

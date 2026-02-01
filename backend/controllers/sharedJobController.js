@@ -6,6 +6,7 @@ const Comment = require('../models/Comment');
 const User = require('../models/User');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { getSocketIO } = require('../socket/socketHelper');
+const jobCache = require('../utils/cache/jobCache');
 
 // @desc    Share job to group
 // @route   POST /api/groups/:groupId/jobs
@@ -329,6 +330,9 @@ const saveToMyJobs = asyncHandler(async (req, res) => {
   if (member) {
     await member.updateStats('jobsSaved');
   }
+
+  // Invalidate job cache for this user (new job was created)
+  await jobCache.invalidateUserCache(req.userId);
 
   // Get user info for notification
   const user = await User.findById(req.userId);
