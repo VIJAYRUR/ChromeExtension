@@ -54,19 +54,27 @@ class JobCacheService {
 
     // Create deterministic filter string
     // Sort keys alphabetically and normalize values to ensure consistent hashing
+    // Convert empty strings, 'all', undefined to consistent values
+    const normalize = (val, defaultVal = '') => {
+      if (val === undefined || val === null || val === '' || val === 'all') {
+        return defaultVal;
+      }
+      return val;
+    };
+
     const normalizedFilters = {
-      archived: archived || 'false',
-      dateFrom: dateFrom || null,
-      dateTo: dateTo || null,
+      archived: String(archived || 'false'),
+      dateFrom: normalize(dateFrom),
+      dateTo: normalize(dateTo),
       limit: parseInt(limit) || 50,
       page: parseInt(page) || 1,
-      priority: priority || null,
-      search: search || null,
+      priority: normalize(priority),
+      search: normalize(search),
       sortBy: sortBy || 'dateApplied',
       sortOrder: sortOrder || 'desc',
-      status: status || null,
-      tags: tags || null,
-      workType: workType || null
+      status: normalize(status),
+      tags: normalize(tags),
+      workType: normalize(workType)
     };
 
     const filterStr = JSON.stringify(normalizedFilters);
