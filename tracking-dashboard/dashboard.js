@@ -1179,11 +1179,15 @@ class DashboardUI {
       }
 
       // Use updateJobStatus instead of updateJob to avoid duplicate timeline entries
-      await window.jobTracker.updateJobStatus(jobId, newStatus, 'Moved via Kanban board');
+      console.log(`[Dashboard] 📞 Calling jobTracker.updateJobStatus for job ${jobId}`);
+      const result = await window.jobTracker.updateJobStatus(jobId, newStatus, 'Moved via Kanban board');
+      console.log(`[Dashboard] ✅ jobTracker.updateJobStatus returned:`, result);
 
       this.render();
 
       this.showStatusUpdateFeedback(newStatus);
+    } catch (error) {
+      console.error(`[Dashboard] ❌ Error updating job status:`, error);
     } finally {
       // Reset flag after a short delay to allow the update to complete
       setTimeout(() => {

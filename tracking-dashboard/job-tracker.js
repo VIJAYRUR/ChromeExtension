@@ -284,8 +284,19 @@ class JobTracker {
 
   // Update job status
   async updateJobStatus(jobId, newStatus, note = '') {
-    const job = this.jobs.find(j => j.id === jobId);
-    if (!job) return false;
+    console.log(`[Job Tracker] 🔍 Looking for job with ID: ${jobId}`);
+    console.log(`[Job Tracker] 📊 Total jobs in tracker: ${this.jobs.length}`);
+
+    // Try to find by both id and _id (MongoDB uses _id)
+    const job = this.jobs.find(j => j.id === jobId || j._id === jobId);
+
+    if (!job) {
+      console.error(`[Job Tracker] ❌ Job not found with ID: ${jobId}`);
+      console.log(`[Job Tracker] Available job IDs:`, this.jobs.map(j => ({ id: j.id, _id: j._id })).slice(0, 5));
+      return false;
+    }
+
+    console.log(`[Job Tracker] ✅ Found job: ${job.company} - ${job.title}`);
 
     job.status = newStatus;
     job.timeline.push({

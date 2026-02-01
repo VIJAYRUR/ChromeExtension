@@ -55,26 +55,61 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.get([storageKey], (result) => {
       const jobs = result[storageKey] || [];
 
-      // Check for duplicates based on LinkedIn URL or company + title
-      const isDuplicate = jobs.some(existingJob => {
-        // Primary check: LinkedIn URL (most reliable)
-        if (message.jobData.linkedinUrl && existingJob.linkedinUrl) {
-          // Extract job ID from LinkedIn URL for comparison
-          const newJobId = message.jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
-          const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+      console.log('[Background] 🔎 Checking against', jobs.length, 'existing jobs');
+      console.log('[Background] 🔎 New job data:', {
+        company: message.jobData.company,
+        title: message.jobData.title,
+        location: message.jobData.location,
+        linkedinJobId: message.jobData.linkedinJobId,
+        linkedinUrl: message.jobData.linkedinUrl
+      });
 
-          if (newJobId && existingJobId && newJobId === existingJobId) {
+      // Check for duplicates using multiple strategies
+      const isDuplicate = jobs.some(existingJob => {
+        // Primary check: LinkedIn Job ID (most reliable - unique identifier)
+        if (message.jobData.linkedinJobId && existingJob.linkedinJobId) {
+          if (message.jobData.linkedinJobId === existingJob.linkedinJobId) {
+            console.log('[Background] 🔍 Duplicate found by linkedinJobId:', message.jobData.linkedinJobId);
             return true;
           }
         }
 
-        // Fallback check: Company + Title (case-insensitive)
-        const sameCompany = existingJob.company.toLowerCase().trim() ===
-                           (message.jobData.company || '').toLowerCase().trim();
-        const sameTitle = existingJob.title.toLowerCase().trim() ===
-                         (message.jobData.title || '').toLowerCase().trim();
+        // Secondary check: Extract job ID from LinkedIn URL
+        if (message.jobData.linkedinUrl && existingJob.linkedinUrl) {
+          const newJobId = message.jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+          const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
 
-        return sameCompany && sameTitle;
+          if (newJobId && existingJobId && newJobId === existingJobId) {
+            console.log('[Background] 🔍 Duplicate found by URL job ID:', newJobId);
+            return true;
+          }
+        }
+
+        // Fallback check: Company + Title + Location (case-insensitive, trimmed)
+        const sameCompany = (existingJob.company || '').toLowerCase().trim() ===
+                           (message.jobData.company || '').toLowerCase().trim();
+        const sameTitle = (existingJob.title || '').toLowerCase().trim() ===
+                         (message.jobData.title || '').toLowerCase().trim();
+        const sameLocation = (existingJob.location || '').toLowerCase().trim() ===
+                            (message.jobData.location || '').toLowerCase().trim();
+
+        // Debug logging for comparison
+        console.log('[Background] 🔎 Comparing with existing job:', {
+          existingCompany: existingJob.company,
+          existingTitle: existingJob.title,
+          existingLocation: existingJob.location,
+          sameCompany,
+          sameTitle,
+          sameLocation
+        });
+
+        // Match if company + title + location are the same
+        if (sameCompany && sameTitle && sameLocation) {
+          console.log('[Background] 🔍 Duplicate found by company+title+location:', message.jobData.company, message.jobData.title);
+          return true;
+        }
+
+        return false;
       });
 
       if (isDuplicate) {

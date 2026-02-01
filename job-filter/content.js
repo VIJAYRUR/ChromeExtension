@@ -1789,6 +1789,9 @@ class LinkedInJobsFilter {
     const linkEl = card.querySelector('a[href*="/jobs/view/"]');
     const linkedinUrl = linkEl ? linkEl.href : window.location.href;
 
+    // Extract LinkedIn Job ID from URL for reliable duplicate detection
+    const linkedinJobId = linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1] || '';
+
     // Get job description from the detail panel (if visible)
     let description = '';
     const descPanel = document.querySelector('.jobs-description');
@@ -1803,6 +1806,7 @@ class LinkedInJobsFilter {
       salary,
       workType,
       linkedinUrl,
+      linkedinJobId, // Add unique LinkedIn job ID for duplicate detection
       description
     };
   }

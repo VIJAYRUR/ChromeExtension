@@ -267,6 +267,16 @@ function setupEventListeners() {
     }
   });
 
+  // Toggle send button style based on input content
+  elements.messageInput?.addEventListener('input', (e) => {
+    const hasText = e.target.value.trim().length > 0;
+    if (hasText) {
+      elements.sendBtn?.classList.add('has-text');
+    } else {
+      elements.sendBtn?.classList.remove('has-text');
+    }
+  });
+
   // Attach button
   elements.attachBtn?.addEventListener('click', handleAttachClick);
 
@@ -817,7 +827,12 @@ function renderMessages() {
     return;
   }
 
-  elements.messagesContainer.innerHTML = messages.map(msg => createMessageItem(msg)).join('');
+  elements.messagesContainer.innerHTML = messages.map((msg, index) => {
+    // Check if this message should be grouped with previous message
+    const prevMsg = index > 0 ? messages[index - 1] : null;
+    const isGrouped = prevMsg && isSameSender(prevMsg, msg) && isSameMessageType(prevMsg, msg);
+    return createMessageItem(msg, isGrouped);
+  }).join('');
 
   // Attach event listeners to "Save to Jobs" buttons
   attachSaveJobListeners();
@@ -834,9 +849,11 @@ function renderMessages() {
 
 function attachSaveJobListeners() {
   const saveButtons = elements.messagesContainer.querySelectorAll('.btn-save-job');
+  console.log('[WhatsApp Groups] Attaching listeners to', saveButtons.length, 'save buttons');
 
   saveButtons.forEach(btn => {
     btn.addEventListener('click', async (e) => {
+      console.log('[WhatsApp Groups] 💾 Save button clicked!');
       e.stopPropagation(); // Prevent card click from triggering
       await handleSaveJobFromMessage(btn);
     });
@@ -856,14 +873,27 @@ function attachJobCardClickListeners() {
 
       // Get shared job ID from card
       const sharedJobId = card.getAttribute('data-shared-job-id');
-      console.log('[WhatsApp Groups] Job card clicked, sharedJobId:', sharedJobId, 'groupId:', state.selectedGroupId);
+      console.log('[WhatsApp Groups] 🎯 Job card clicked, sharedJobId:', sharedJobId, 'groupId:', state.selectedGroupId);
 
-      // Open popup modal if we have a valid sharedJobId
-      if (sharedJobId && sharedJobId.length > 0 && state.selectedGroupId) {
+      // Try to open with sharedJobId first
+      if (sharedJobId && sharedJobId.length > 0 && sharedJobId !== 'null' && state.selectedGroupId) {
         await openJobDetailPopup(sharedJobId, state.selectedGroupId);
       } else {
-        console.warn('[WhatsApp Groups] Missing sharedJobId or groupId. sharedJobId:', sharedJobId, 'groupId:', state.selectedGroupId);
-        showError('This job cannot be viewed. Please ask the sender to re-share it.');
+        // Fallback: show job details from card data directly
+        const jobDataStr = card.getAttribute('data-job-data');
+        if (jobDataStr) {
+          try {
+            const jobData = JSON.parse(jobDataStr);
+            console.log('[WhatsApp Groups] Showing job details from card data:', jobData);
+            showJobDetailsPopup(jobData, card);
+          } catch (error) {
+            console.error('[WhatsApp Groups] Error parsing job data:', error);
+            showError('Unable to display job details');
+          }
+        } else {
+          console.warn('[WhatsApp Groups] No job data available');
+          showError('Job details not available');
+        }
       }
     });
   });
@@ -960,6 +990,46 @@ async function openJobDetailPopup(sharedJobId, groupId) {
   }
 }
 
+/**
+ * Show job details popup with data directly (no API fetch)
+ */
+function showJobDetailsPopup(jobData, card) {
+  try {
+    console.log('[WhatsApp Groups] Showing job details popup with data:', jobData);
+
+    // Create or get the popup modal
+    let popup = document.getElementById('job-detail-popup');
+    if (!popup) {
+      popup = createJobDetailPopup();
+      document.body.appendChild(popup);
+    }
+
+    // Get sender info from card
+    const senderName = card?.getAttribute('data-sender-name') || 'Unknown';
+    const sharedAt = card?.getAttribute('data-shared-at') || new Date().toISOString();
+
+    // Split name into first and last
+    const nameParts = senderName.split(' ');
+    const firstName = nameParts[0] || 'Unknown';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Create a shared job object from the job data
+    const sharedJob = {
+      jobId: jobData,  // Changed from jobData to jobId to match renderJobDetailPopup expectations
+      sharedBy: { firstName, lastName },
+      sharedAt: sharedAt
+    };
+
+    // Render job details in popup
+    renderJobDetailPopup(popup, sharedJob);
+    popup.style.display = 'flex';
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error showing job detail popup:', error);
+    showError('Failed to display job details');
+  }
+}
+
 function createJobDetailPopup() {
   const popup = document.createElement('div');
   popup.id = 'job-detail-popup';
@@ -1014,13 +1084,13 @@ function renderJobDetailPopup(popup, sharedJob) {
   const sharedAt = sharedJob.sharedAt ? formatTimeAgo(sharedJob.sharedAt) : '';
   const companyInitial = (job.company || 'C').charAt(0).toUpperCase();
 
-  // Build details items
+  // Build details items with Notion-style icons
   const detailItems = [];
-  if (job.location) detailItems.push({ label: 'Location', value: escapeHtml(job.location) });
-  if (job.workType) detailItems.push({ label: 'Work Type', value: escapeHtml(job.workType) });
-  if (job.jobType) detailItems.push({ label: 'Job Type', value: escapeHtml(job.jobType) });
-  if (job.salary) detailItems.push({ label: 'Compensation', value: escapeHtml(job.salary) });
-  if (job.applicationDeadline) detailItems.push({ label: 'Deadline', value: formatDate(job.applicationDeadline) });
+  if (job.location) detailItems.push({ icon: '📍', label: 'Location', value: escapeHtml(job.location) });
+  if (job.workType) detailItems.push({ icon: '💼', label: 'Work Type', value: escapeHtml(job.workType) });
+  if (job.jobType) detailItems.push({ icon: '💼', label: 'Job Type', value: escapeHtml(job.jobType) });
+  if (job.salary) detailItems.push({ icon: '💰', label: 'Compensation', value: escapeHtml(job.salary) });
+  if (job.applicationDeadline) detailItems.push({ icon: '⏰', label: 'Deadline', value: formatDate(job.applicationDeadline) });
 
   // Format description
   let descriptionHtml = '';
@@ -1044,7 +1114,7 @@ function renderJobDetailPopup(popup, sharedJob) {
           <h1 class="popup-job-title">${escapeHtml(job.position || job.title || 'Unknown Position')}</h1>
           <div class="popup-job-company">${escapeHtml(job.company || 'Unknown Company')}</div>
           <div class="popup-job-meta">
-            <span>Shared by ${escapeHtml(sharedBy)}</span>
+            <span>👤 Shared by ${escapeHtml(sharedBy)}</span>
             ${sharedAt ? `<span>• ${sharedAt}</span>` : ''}
           </div>
         </div>
@@ -1055,13 +1125,13 @@ function renderJobDetailPopup(popup, sharedJob) {
         <div class="popup-details-grid">
           ${detailItems.map(item => `
             <div class="popup-detail-item">
-              <div class="popup-detail-label">${item.label}</div>
+              <div class="popup-detail-label">${item.icon} ${item.label}</div>
               <div class="popup-detail-value">${item.value}</div>
             </div>
           `).join('')}
           ${job.link || job.linkedinUrl ? `
             <div class="popup-detail-item">
-              <div class="popup-detail-label">Link</div>
+              <div class="popup-detail-label">🔗 Link</div>
               <div class="popup-detail-value">
                 <a href="${escapeHtml(job.link || job.linkedinUrl)}" target="_blank" class="popup-link">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1177,6 +1247,90 @@ async function handleSaveJobFromMessage(button) {
 
     // Disable button
     button.disabled = true;
+    button.textContent = 'Checking...';
+
+    // STEP 1: Check server for duplicates FIRST
+    try {
+      let userTrackedJobs = [];
+
+      // Try to get jobs from jobTracker
+      if (window.jobTracker && window.jobTracker.getJobs) {
+        userTrackedJobs = await window.jobTracker.getJobs();
+      }
+
+      // Fallback: Try to get from API directly if jobTracker failed
+      if (userTrackedJobs.length === 0 && window.authManager && window.authManager.token) {
+        try {
+          const response = await fetch(`${window.API_CONFIG.API_URL}/jobs`, {
+            headers: {
+              'Authorization': `Bearer ${window.authManager.token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            userTrackedJobs = data.data || [];
+            console.log('[WhatsApp Groups] 📡 Fetched jobs from API:', userTrackedJobs.length);
+          }
+        } catch (err) {
+          console.warn('[WhatsApp Groups] Could not fetch from API:', err);
+        }
+      }
+
+      console.log('[WhatsApp Groups] 🔎 Checking against', userTrackedJobs.length, 'jobs from server');
+      if (userTrackedJobs.length > 0) {
+        console.log('[WhatsApp Groups] 🔎 Sample job from server:', userTrackedJobs[0]);
+      }
+
+      // Check for duplicate using same logic as background.js
+      const isDuplicate = userTrackedJobs.some(existingJob => {
+        // Primary: LinkedIn Job ID
+        if (jobData.linkedinJobId && existingJob.linkedinJobId) {
+          if (jobData.linkedinJobId === existingJob.linkedinJobId) {
+            console.log('[WhatsApp Groups] 🔍 Duplicate found by linkedinJobId:', jobData.linkedinJobId);
+            return true;
+          }
+        }
+
+        // Secondary: Extract job ID from URL
+        if (jobData.linkedinUrl && existingJob.linkedinUrl) {
+          const newJobId = jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+          const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+          if (newJobId && existingJobId && newJobId === existingJobId) {
+            console.log('[WhatsApp Groups] 🔍 Duplicate found by URL job ID:', newJobId);
+            return true;
+          }
+        }
+
+        // Fallback: Company + Title + Location
+        const sameCompany = (existingJob.company || '').toLowerCase().trim() ===
+                           (jobData.company || '').toLowerCase().trim();
+        const sameTitle = (existingJob.title || '').toLowerCase().trim() ===
+                         (jobData.title || jobData.position || '').toLowerCase().trim();
+        const sameLocation = (existingJob.location || '').toLowerCase().trim() ===
+                            (jobData.location || '').toLowerCase().trim();
+
+        if (sameCompany && sameTitle && sameLocation) {
+          console.log('[WhatsApp Groups] 🔍 Duplicate found by company+title+location:', jobData.company, jobData.title);
+          return true;
+        }
+
+        return false;
+      });
+
+      if (isDuplicate) {
+        console.log('[WhatsApp Groups] ⚠️ Job already in tracker - blocking save');
+        button.textContent = 'Already Tracked';
+        button.classList.add('saved');
+        button.disabled = true;
+        showError('This job is already in your tracker');
+        return;
+      }
+    } catch (err) {
+      console.warn('[WhatsApp Groups] Could not check server for duplicates:', err);
+      // Continue anyway - background.js will do local check
+    }
+
+    // STEP 2: No duplicate found - proceed with save
     button.textContent = 'Saving...';
 
     // Use Chrome extension API to save job to tracker
@@ -1185,13 +1339,13 @@ async function handleSaveJobFromMessage(button) {
         action: 'trackJob',
         jobData: {
           company: jobData.company,
-          title: jobData.title,
+          title: jobData.title || jobData.position, // Fixed: handle both title and position fields
           description: jobData.description || '',
           descriptionHtml: jobData.descriptionHtml || '',
           location: jobData.location || '',
           salary: jobData.salary || '',
           workType: jobData.workType || '',
-          linkedinUrl: jobData.linkedinUrl || '',
+          linkedinUrl: jobData.linkedinUrl || jobData.link || '', // Also include link as fallback
           jobUrl: jobData.jobUrl || '',
           linkedinJobId: jobData.linkedinJobId || '',
           jobPostedHoursAgo: jobData.jobPostedHoursAgo || null,
@@ -1379,10 +1533,29 @@ function getGroupAvatar(groupName) {
 }
 
 /**
+ * Helper function to check if two messages are from the same sender
+ */
+function isSameSender(msg1, msg2) {
+  const sender1 = msg1.userId?._id || msg1.userId;
+  const sender2 = msg2.userId?._id || msg2.userId;
+  return sender1 === sender2;
+}
+
+/**
+ * Helper function to check if two messages are the same type
+ */
+function isSameMessageType(msg1, msg2) {
+  // Only group regular text messages together
+  // Don't group job shares or PDF attachments
+  return (!msg1.messageType || msg1.messageType === 'text') &&
+         (!msg2.messageType || msg2.messageType === 'text');
+}
+
+/**
  * Create message item - Chat style with left/right alignment
  * Own messages on right, others on left
  */
-function createMessageItem(message) {
+function createMessageItem(message, isGrouped = false) {
   const senderName = message.userId?.firstName
     ? `${message.userId.firstName} ${message.userId.lastName || ''}`.trim()
     : 'Unknown';
@@ -1403,9 +1576,16 @@ function createMessageItem(message) {
     return createPDFMessage(message, senderName, avatarUrl, time, isOwnMessage);
   }
 
+  // Build class list
+  const messageClasses = [
+    'message-item',
+    isOwnMessage ? 'own-message' : 'other-message',
+    isGrouped ? 'grouped' : ''
+  ].filter(Boolean).join(' ');
+
   // Regular text message - Chat bubble style with alignment
   return `
-    <div class="message-item ${isOwnMessage ? 'own-message' : 'other-message'}" data-message-id="${message._id}">
+    <div class="${messageClasses}" data-message-id="${message._id}">
       <img src="${avatarUrl}" alt="${escapeHtml(senderName)}" class="message-avatar" />
       <div class="message-bubble">
         <div class="message-header">
@@ -1470,11 +1650,12 @@ function createJobShareMessage(message, senderName, avatarUrl, time, isOwnMessag
         </div>
 
         <div class="discussion-content">
-          <div class="job-share-card ${hasSharedJobId ? 'clickable-job-card' : ''}"
+          <div class="job-share-card clickable-job-card"
                data-sender-name="${escapeHtml(senderName)}"
                data-shared-at="${message.createdAt || new Date().toISOString()}"
                data-job-id="${job._id || job.id || ''}"
-               data-shared-job-id="${sharedJobId}">
+               data-shared-job-id="${sharedJobId}"
+               data-job-data='${JSON.stringify(job).replace(/'/g, '&apos;')}'>
             <!-- 1️⃣ Information Zone (flexible - adapts to space) -->
             <div class="job-share-info-zone">
               <div class="job-share-header">
@@ -1841,6 +2022,7 @@ async function sendMessage() {
 
     // Clear input
     elements.messageInput.value = '';
+    elements.sendBtn?.classList.remove('has-text');
 
     // Send via socket with proper data structure
     window.socketClient.sendMessage(state.selectedGroupId, {
