@@ -2383,3 +2383,199 @@ body {
     font-size: 22px;
   }
 }
+
+/* ============================================
+   PDF ATTACHMENT CARD - NOTION STYLE
+   ============================================ */
+
+.pdf-attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  max-width: 400px;
+}
+
+.pdf-attachment-card:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pdf-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eb5757 0%, #d63031 100%);
+  border-radius: 6px;
+  color: white;
+}
+
+.pdf-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.pdf-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pdf-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pdf-type {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.pdf-size::before {
+  content: '•';
+  margin-right: 8px;
+}
+
+.pdf-action {
+  flex-shrink: 0;
+}
+
+.pdf-view-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-view-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-blue);
+}
+
+/* ============================================
+   PDF VIEWER POPUP - NOTION STYLE
+   ============================================ */
+
+.pdf-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 40px;
+}
+
+.pdf-viewer-container {
+  width: 100%;
+  max-width: 1000px;
+  height: 90vh;
+  background: var(--bg-main);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-soft);
+}
+
+.pdf-viewer-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
+}
+
+.pdf-viewer-close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.pdf-viewer-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+  background: var(--bg-soft);
+}
+
+/* Responsive PDF viewer */
+@media (max-width: 768px) {
+  .pdf-viewer-overlay {
+    padding: 16px;
+  }
+
+  .pdf-viewer-container {
+    height: 90vh;
+    max-height: 90vh;
+  }
+
+  .pdf-viewer-content {
+    padding: 12px;
+  }
+
+  .pdf-attachment-card {
+    max-width: 100%;
+  }
+}

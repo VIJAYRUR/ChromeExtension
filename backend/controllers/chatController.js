@@ -4,6 +4,8 @@ const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { chatCache } = require('../utils/cache');
+const multer = require('multer');
+const { uploadFile, getDownloadUrl } = require('../config/s3');
 
 // @desc    Get chat messages for group (supports lazy loading)
 // @route   GET /api/groups/:groupId/messages
@@ -309,10 +311,186 @@ const deleteMessage = asyncHandler(async (req, res) => {
   });
 });
 
+// Configure multer for PDF uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit for PDFs
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only PDF files
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  }
+}).single('pdf'); // Expecting field name 'pdf'
+
+// @desc    Upload PDF to chat
+// @route   POST /api/groups/:groupId/messages/upload-pdf
+// @access  Private (Members only)
+const uploadPDF = asyncHandler(async (req, res) => {
+  const groupId = req.params.groupId;
+
+  // Check if group exists and user is member
+  const group = await Group.findById(groupId);
+  if (!group) {
+    throw new AppError('Group not found', 404);
+  }
+
+  if (!group.isMember(req.userId)) {
+    throw new AppError('You must be a member to upload files', 403);
+  }
+
+  // Check if chat is enabled
+  if (!group.settings.allowChat) {
+    throw new AppError('Chat is disabled for this group', 403);
+  }
+
+  // Handle file upload with multer
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          message: 'File size too large. Maximum size is 10MB.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: `Upload error: ${err.message}`
+      });
+    } else if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    try {
+      // Upload to S3
+      const folder = `chat-pdfs/${groupId}`;
+      const s3Key = await uploadFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        folder
+      );
+
+      console.log(`[Chat] PDF uploaded to S3: ${s3Key}`);
+
+      // Create chat message with PDF attachment
+      const message = await ChatMessage.create({
+        groupId: groupId,
+        userId: req.userId,
+        content: req.body.content || `Shared a PDF: ${req.file.originalname}`,
+        messageType: 'pdf_attachment',
+        pdfAttachment: {
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          mimeType: req.file.mimetype,
+          s3Key: s3Key,
+          uploadedAt: new Date()
+        }
+      });
+
+      // Update group stats
+      group.stats.totalMessages += 1;
+      await group.save();
+
+      // Update member stats
+      const member = await GroupMember.findOne({
+        groupId: groupId,
+        userId: req.userId
+      });
+
+      if (member) {
+        await member.updateStats('messagesPosted');
+      }
+
+      // Fetch user info manually (cross-connection)
+      const User = require('../models/User');
+      const user = await User.findById(req.userId).select('firstName lastName email');
+
+      // Convert message to object and attach user data
+      const messageObj = message.toObject();
+      messageObj.userId = user ? {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      } : null;
+
+      console.log(`[Chat] PDF message created: ${message._id}`);
+
+      res.status(201).json({
+        success: true,
+        message: 'PDF uploaded successfully',
+        data: messageObj
+      });
+    } catch (error) {
+      console.error('[Chat] PDF upload failed:', error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload PDF: ${error.message}`
+      });
+    }
+  });
+});
+
+// @desc    Get PDF download URL
+// @route   GET /api/groups/:groupId/messages/:messageId/pdf
+// @access  Private (Members only)
+const getPDFDownloadUrl = asyncHandler(async (req, res) => {
+  const { groupId, messageId } = req.params;
+
+  // Check if group exists and user is member
+  const group = await Group.findById(groupId);
+  if (!group) {
+    throw new AppError('Group not found', 404);
+  }
+
+  if (!group.isMember(req.userId)) {
+    throw new AppError('You must be a member to view files', 403);
+  }
+
+  // Get message
+  const message = await ChatMessage.findById(messageId);
+  if (!message) {
+    throw new AppError('Message not found', 404);
+  }
+
+  if (message.messageType !== 'pdf_attachment' || !message.pdfAttachment?.s3Key) {
+    throw new AppError('No PDF attachment found', 404);
+  }
+
+  // Generate pre-signed URL (valid for 1 hour)
+  const downloadUrl = await getDownloadUrl(message.pdfAttachment.s3Key, 3600);
+
+  res.json({
+    success: true,
+    data: {
+      downloadUrl,
+      fileName: message.pdfAttachment.fileName,
+      fileSize: message.pdfAttachment.fileSize
+    }
+  });
+});
+
 module.exports = {
   getMessages,
   sendMessage,
   editMessage,
-  deleteMessage
+  deleteMessage,
+  uploadPDF,
+  getPDFDownloadUrl
 };
 

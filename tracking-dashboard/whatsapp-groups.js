@@ -825,6 +825,9 @@ function renderMessages() {
   // Attach event listeners to job cards for opening modal
   attachJobCardClickListeners();
 
+  // Attach event listeners to PDF cards for viewing
+  attachPDFCardListeners();
+
   // Scroll to bottom
   scrollMessagesToBottom();
 }
@@ -862,6 +865,39 @@ function attachJobCardClickListeners() {
         console.warn('[WhatsApp Groups] Missing sharedJobId or groupId. sharedJobId:', sharedJobId, 'groupId:', state.selectedGroupId);
         showError('This job cannot be viewed. Please ask the sender to re-share it.');
       }
+    });
+  });
+}
+
+/**
+ * Attach event listeners to PDF cards for double-click viewing
+ */
+function attachPDFCardListeners() {
+  const pdfCards = elements.messagesContainer.querySelectorAll('.pdf-attachment-card');
+  console.log('[WhatsApp Groups] Attaching listeners to', pdfCards.length, 'PDF cards');
+
+  pdfCards.forEach(card => {
+    // Double-click to open PDF viewer
+    card.addEventListener('dblclick', async (e) => {
+      const messageId = card.getAttribute('data-message-id');
+      const pdfName = card.getAttribute('data-pdf-name');
+      console.log('[WhatsApp Groups] PDF card double-clicked, messageId:', messageId);
+
+      if (messageId && state.selectedGroupId) {
+        await openPDFViewer(messageId, state.selectedGroupId, pdfName);
+      } else {
+        console.warn('[WhatsApp Groups] Missing messageId or groupId');
+        showError('Cannot open PDF');
+      }
+    });
+
+    // Single click visual feedback
+    card.addEventListener('click', (e) => {
+      // Add a subtle highlight effect
+      card.style.background = 'var(--bg-hover)';
+      setTimeout(() => {
+        card.style.background = '';
+      }, 200);
     });
   });
 }
@@ -1202,6 +1238,125 @@ async function handleSaveJobFromMessage(button) {
   }
 }
 
+// ============================================
+// PDF VIEWER POPUP - NOTION STYLE
+// ============================================
+
+/**
+ * Open PDF viewer popup
+ */
+async function openPDFViewer(messageId, groupId, pdfName) {
+  try {
+    console.log('[WhatsApp Groups] Opening PDF viewer for message:', messageId);
+
+    // Create or get the PDF viewer modal
+    let viewer = document.getElementById('pdf-viewer-popup');
+    if (!viewer) {
+      viewer = createPDFViewerPopup();
+      document.body.appendChild(viewer);
+    }
+
+    // Show loading state
+    const viewerContent = viewer.querySelector('.pdf-viewer-content');
+    viewerContent.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px;">
+        <div style="width: 32px; height: 32px; border: 2px solid var(--border-subtle); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <p style="color: var(--text-muted); font-size: 14px;">Loading PDF...</p>
+      </div>
+    `;
+    viewer.style.display = 'flex';
+
+    // Update title
+    const titleEl = viewer.querySelector('.pdf-viewer-title');
+    if (titleEl) {
+      titleEl.textContent = pdfName || 'PDF Document';
+    }
+
+    // Fetch PDF download URL from API
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${groupId}/messages/${messageId}/pdf`,
+      {
+        headers: {
+          'Authorization': `Bearer ${window.authManager.token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to load PDF');
+    }
+
+    const data = await response.json();
+    const downloadUrl = data.data.downloadUrl;
+
+    console.log('[WhatsApp Groups] PDF URL retrieved:', downloadUrl);
+
+    // Render PDF in iframe
+    viewerContent.innerHTML = `
+      <iframe
+        src="${downloadUrl}"
+        style="width: 100%; height: 100%; border: none; border-radius: 8px;"
+        title="${escapeHtml(pdfName || 'PDF Document')}"
+      ></iframe>
+    `;
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] Error opening PDF viewer:', error);
+    showError('Failed to load PDF');
+
+    // Close viewer on error
+    const viewer = document.getElementById('pdf-viewer-popup');
+    if (viewer) viewer.style.display = 'none';
+  }
+}
+
+/**
+ * Create PDF viewer popup modal
+ */
+function createPDFViewerPopup() {
+  const viewer = document.createElement('div');
+  viewer.id = 'pdf-viewer-popup';
+  viewer.className = 'pdf-viewer-overlay';
+  viewer.innerHTML = `
+    <div class="pdf-viewer-container">
+      <div class="pdf-viewer-header">
+        <div class="pdf-viewer-title">PDF Document</div>
+        <button class="pdf-viewer-close-btn" id="close-pdf-viewer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="pdf-viewer-content">
+        <!-- PDF will be loaded here -->
+      </div>
+    </div>
+  `;
+
+  // Close button handler
+  viewer.querySelector('#close-pdf-viewer').addEventListener('click', () => {
+    viewer.style.display = 'none';
+  });
+
+  // Click outside to close
+  viewer.addEventListener('click', (e) => {
+    if (e.target === viewer) {
+      viewer.style.display = 'none';
+    }
+  });
+
+  // ESC key to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && viewer.style.display === 'flex') {
+      viewer.style.display = 'none';
+    }
+  });
+
+  return viewer;
+}
+
 /**
  * Generate Notion-style avatar URL for users
  * Using notionists style - black illustrated people on colorful backgrounds (perfect Notion match!)
@@ -1241,6 +1396,11 @@ function createMessageItem(message) {
   // Handle job_share messages differently
   if (message.messageType === 'job_share' && message.jobData) {
     return createJobShareMessage(message, senderName, avatarUrl, time, isOwnMessage);
+  }
+
+  // Handle PDF attachment messages
+  if (message.messageType === 'pdf_attachment' && message.pdfAttachment) {
+    return createPDFMessage(message, senderName, avatarUrl, time, isOwnMessage);
   }
 
   // Regular text message - Chat bubble style with alignment
@@ -1341,6 +1501,68 @@ function createJobShareMessage(message, senderName, avatarUrl, time, isOwnMessag
 }
 
 /**
+ * Create PDF attachment message - Notion-style file card
+ */
+function createPDFMessage(message, senderName, avatarUrl, time, isOwnMessage) {
+  const pdf = message.pdfAttachment;
+  const fileName = pdf.fileName || 'document.pdf';
+  const fileSize = pdf.fileSize ? formatFileSize(pdf.fileSize) : '';
+
+  // Notion-style discussion block with PDF card
+  return `
+    <div class="discussion-block ${isOwnMessage ? 'own-message' : 'other-message'}" data-message-id="${message._id}">
+      <div class="discussion-wrapper">
+        <div class="discussion-meta-row">
+          <img src="${avatarUrl}" alt="${escapeHtml(senderName)}" class="discussion-avatar" />
+          <span class="discussion-sender">${escapeHtml(senderName)}</span>
+          <span class="discussion-time">${time}</span>
+        </div>
+
+        <div class="discussion-content">
+          <div class="pdf-attachment-card" data-message-id="${message._id}" data-pdf-name="${escapeHtml(fileName)}">
+            <div class="pdf-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="pdf-info">
+              <div class="pdf-name">${escapeHtml(fileName)}</div>
+              <div class="pdf-meta">
+                <span class="pdf-type">PDF</span>
+                ${fileSize ? `<span class="pdf-size">${fileSize}</span>` : ''}
+              </div>
+            </div>
+            <div class="pdf-action">
+              <button class="pdf-view-btn" title="Double-click to view">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
  * Format relative time - Notion style
  */
 function formatRelativeTime(timestamp) {
@@ -1370,26 +1592,143 @@ function scrollMessagesToBottom() {
 }
 
 /**
- * Handle attach button click - opens file picker
+ * Handle attach button click - opens file picker for PDF
  */
 function handleAttachClick() {
   // Create a hidden file input
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
-  fileInput.accept = 'image/*,application/pdf,.doc,.docx,.txt';
+  fileInput.accept = 'application/pdf';
   fileInput.style.display = 'none';
 
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      console.log('[WhatsApp Groups] File selected:', file.name);
-      // TODO: Implement file upload functionality
-      showError('File upload feature coming soon!');
+      console.log('[WhatsApp Groups] PDF selected:', file.name);
+      await uploadPDF(file);
     }
   });
 
   // Trigger file picker
   fileInput.click();
+}
+
+/**
+ * Upload PDF to S3 and send as message
+ */
+async function uploadPDF(file) {
+  if (!state.selectedGroupId) {
+    showError('No group selected');
+    return;
+  }
+
+  // Validate file type
+  if (file.type !== 'application/pdf') {
+    showError('Only PDF files are allowed');
+    return;
+  }
+
+  // Validate file size (10MB limit)
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showError('PDF file size must be less than 10MB');
+    return;
+  }
+
+  try {
+    console.log('[WhatsApp Groups] 📄 Uploading PDF to S3:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
+
+    // Show loading indicator
+    showLoadingMessage('Uploading PDF...');
+
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('content', `Shared a PDF: ${file.name}`);
+
+    // Get auth token
+    const authToken = window.authManager.getToken();
+    if (!authToken) {
+      throw new Error('Not authenticated. Please log in.');
+    }
+
+    console.log('[WhatsApp Groups] 📤 Uploading to backend API...');
+
+    // Upload to backend API (which will upload to S3)
+    const response = await fetch(
+      `${window.API_CONFIG.API_URL.replace('/api', '')}/api/groups/${state.selectedGroupId}/messages/upload-pdf`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Upload failed');
+    }
+
+    console.log('[WhatsApp Groups] ✅ PDF uploaded successfully:', result.data);
+
+    // Add message to local state immediately
+    const pdfMessage = result.data;
+    if (!state.messagesByGroupId[state.selectedGroupId]) {
+      state.messagesByGroupId[state.selectedGroupId] = [];
+    }
+    state.messagesByGroupId[state.selectedGroupId].push(pdfMessage);
+
+    // Re-render messages
+    renderMessages();
+
+    // Hide loading indicator
+    hideLoadingMessage();
+
+    // Broadcast via socket so other users see it
+    if (window.socketClient && window.socketClient.isConnected) {
+      window.socketClient.socket.emit('new-message', {
+        message: pdfMessage,
+        groupId: state.selectedGroupId
+      });
+    }
+
+    showSuccess('PDF uploaded successfully!');
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] ❌ PDF upload failed:', error);
+    hideLoadingMessage();
+    showError(`Failed to upload PDF: ${error.message}`);
+  }
+}
+
+/**
+ * Show loading message in chat
+ */
+function showLoadingMessage(text) {
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'pdf-upload-loading';
+  loadingDiv.style.cssText = 'text-align: center; padding: 16px; color: var(--text-muted); font-size: 14px;';
+  loadingDiv.innerHTML = `
+    <div style="display: inline-flex; align-items: center; gap: 8px;">
+      <div style="width: 16px; height: 16px; border: 2px solid var(--border-subtle); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+      <span>${text}</span>
+    </div>
+  `;
+  elements.messagesContainer?.appendChild(loadingDiv);
+  scrollMessagesToBottom();
+}
+
+/**
+ * Hide loading message
+ */
+function hideLoadingMessage() {
+  const loadingDiv = document.getElementById('pdf-upload-loading');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
 }
 
 /**

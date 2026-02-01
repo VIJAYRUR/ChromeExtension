@@ -21,7 +21,7 @@ const chatMessageSchema = new mongoose.Schema({
   // Message Type
   messageType: {
     type: String,
-    enum: ['text', 'job_share', 'system'],
+    enum: ['text', 'job_share', 'system', 'pdf_attachment'],
     default: 'text',
     required: true
   },
@@ -44,6 +44,29 @@ const chatMessageSchema = new mongoose.Schema({
   jobData: {
     type: mongoose.Schema.Types.Mixed,
     default: null
+  },
+
+  // PDF Attachment (for messageType === 'pdf_attachment')
+  pdfAttachment: {
+    fileName: {
+      type: String,
+      trim: true
+    },
+    fileSize: {
+      type: Number
+    },
+    mimeType: {
+      type: String,
+      default: 'application/pdf'
+    },
+    s3Key: {
+      type: String,
+      trim: true
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
   },
 
   // Mentions

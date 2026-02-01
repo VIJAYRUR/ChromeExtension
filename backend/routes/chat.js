@@ -8,7 +8,9 @@ const {
   getMessages,
   sendMessage,
   editMessage,
-  deleteMessage
+  deleteMessage,
+  uploadPDF,
+  getPDFDownloadUrl
 } = require('../controllers/chatController');
 
 // OPTIONAL CHAT ROUTES - Only needed if chat feature is enabled
@@ -26,6 +28,10 @@ router.post('/',
 );                                                             // Send message (rate limited, check setting)
 router.put('/:messageId', editMessage);                        // Edit message (owner only)
 router.delete('/:messageId', deleteMessage);                   // Delete message (owner/admin only)
+
+// PDF Upload
+router.post('/upload-pdf', checkGroupSetting('allowChat'), messageLimiter, uploadPDF);  // Upload PDF
+router.get('/:messageId/pdf', getPDFDownloadUrl);              // Get PDF download URL
 
 module.exports = router;
 
