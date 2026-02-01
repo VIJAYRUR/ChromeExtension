@@ -211,12 +211,16 @@ class JobCacheService {
       this.logger.info(`🗑️  [CACHE INVALIDATE] Removing all cached queries for user ${userId}`);
 
       const pattern = this.getUserCachePattern(userId);
+      this.logger.info(`🔍 [DEBUG] Cache invalidation pattern: ${pattern}`);
+      this.logger.info(`🔍 [DEBUG] Cache prefix: ${this.cachePrefix}`);
 
       // Use SCAN for safer pattern matching (better than KEYS in production)
       let cursor = '0';
       let totalDeleted = 0;
+      let scanIterations = 0;
 
       do {
+        scanIterations++;
         const result = await this.redis.scan(
           cursor,
           'MATCH',
@@ -228,6 +232,11 @@ class JobCacheService {
         cursor = result[0];
         const keys = result[1];
 
+        this.logger.info(`🔍 [DEBUG] SCAN iteration ${scanIterations}: cursor=${cursor}, found ${keys.length} keys`);
+        if (keys.length > 0) {
+          this.logger.info(`🔍 [DEBUG] Keys found: ${keys.slice(0, 3).join(', ')}...`);
+        }
+
         if (keys.length > 0) {
           const deleted = await this.redis.del(...keys);
           totalDeleted += deleted;
@@ -235,7 +244,7 @@ class JobCacheService {
         }
       } while (cursor !== '0');
 
-      this.logger.info(`✅ [CACHE INVALIDATE SUCCESS] Removed ${totalDeleted} cache entries for user ${userId}`);
+      this.logger.info(`✅ [CACHE INVALIDATE SUCCESS] Removed ${totalDeleted} cache entries for user ${userId} after ${scanIterations} SCAN iterations`);
     } catch (error) {
       this.logger.error(`❌ [CACHE INVALIDATE ERROR] Failed to invalidate cache: ${error.message}`);
     }
