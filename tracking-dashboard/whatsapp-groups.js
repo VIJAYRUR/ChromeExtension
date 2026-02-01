@@ -587,6 +587,8 @@ async function loadJobsData(groupId) {
 
 async function loadMessagesData(groupId) {
   try {
+    console.log('[WhatsApp Groups] 📨 Loading messages for group:', groupId);
+
     // Reset lazy loading state for this group
     state.oldestTimestampByGroupId[groupId] = null;
     state.hasMoreByGroupId[groupId] = true;
@@ -601,11 +603,17 @@ async function loadMessagesData(groupId) {
       }
     );
 
+    console.log('[WhatsApp Groups] 📨 Messages API response status:', response.status);
+
     if (!response.ok) throw new Error('Failed to fetch messages');
 
     const data = await response.json();
     const messages = data.data || [];
     const pagination = data.pagination || {};
+
+    console.log('[WhatsApp Groups] 📨 Loaded messages:', messages.length);
+    console.log('[WhatsApp Groups] 📨 PDF messages:', messages.filter(m => m.messageType === 'pdf_attachment').length);
+    console.log('[WhatsApp Groups] 📨 All messages:', messages);
 
     // Update state
     state.messagesByGroupId[groupId] = messages;
@@ -617,7 +625,7 @@ async function loadMessagesData(groupId) {
 
     return messages;
   } catch (error) {
-    console.error('[WhatsApp Groups] Error loading messages:', error);
+    console.error('[WhatsApp Groups] ❌ Error loading messages:', error);
     state.messagesByGroupId[groupId] = [];
     return [];
   }
@@ -1573,7 +1581,13 @@ function createMessageItem(message, isGrouped = false) {
 
   // Handle PDF attachment messages
   if (message.messageType === 'pdf_attachment' && message.pdfAttachment) {
+    console.log('[WhatsApp Groups] 📄 Creating PDF message:', message);
     return createPDFMessage(message, senderName, avatarUrl, time, isOwnMessage);
+  }
+
+  // Log if PDF message is missing pdfAttachment data
+  if (message.messageType === 'pdf_attachment' && !message.pdfAttachment) {
+    console.warn('[WhatsApp Groups] ⚠️ PDF message missing pdfAttachment data:', message);
   }
 
   // Build class list
