@@ -556,6 +556,9 @@ async function loadGroupData(groupId) {
     }
 
     // Update counts
+    if (elements.jobsCount) {
+      elements.jobsCount.textContent = jobs?.length || 0;
+    }
     if (elements.membersCount) {
       elements.membersCount.textContent = members?.length || group.stats?.memberCount || 0;
     }
@@ -572,16 +575,42 @@ async function loadGroupData(groupId) {
 }
 
 // Helper functions to load data without rendering
-async function loadJobsData(groupId) {
+async function loadJobsData(groupId, page = 1, limit = 20) {
   try {
-    const response = await window.sharedJobsAPI.getSharedJobs(groupId);
-    const jobs = response.jobs || [];
-    state.jobsByGroupId[groupId] = jobs;
-    return jobs;
+    console.log('[WhatsApp Groups] 💼 Loading jobs for group:', groupId, 'page:', page);
+    const response = await window.sharedJobsAPI.getSharedJobs(groupId, { page, limit });
+    console.log('[WhatsApp Groups] 💼 Jobs API response:', response);
+
+    // sharedJobsAPI.getSharedJobs returns an array directly
+    const jobs = Array.isArray(response) ? response : (response.data || response.jobs || []);
+    console.log('[WhatsApp Groups] 💼 Jobs extracted:', jobs.length, jobs);
+
+    // For initial load (page 1), replace the jobs array
+    // For subsequent pages, append to existing jobs
+    if (page === 1) {
+      state.jobsByGroupId[groupId] = jobs;
+      // Initialize pagination state
+      if (!state.jobsPaginationByGroupId) state.jobsPaginationByGroupId = {};
+      state.jobsPaginationByGroupId[groupId] = {
+        currentPage: 1,
+        hasMore: jobs.length === limit,
+        isLoading: false
+      };
+    } else {
+      // Append new jobs to existing ones
+      const existingJobs = state.jobsByGroupId[groupId] || [];
+      state.jobsByGroupId[groupId] = [...existingJobs, ...jobs];
+      state.jobsPaginationByGroupId[groupId].currentPage = page;
+      state.jobsPaginationByGroupId[groupId].hasMore = jobs.length === limit;
+    }
+
+    return state.jobsByGroupId[groupId];
   } catch (error) {
-    console.error('[WhatsApp Groups] Error loading jobs:', error);
-    state.jobsByGroupId[groupId] = [];
-    return [];
+    console.error('[WhatsApp Groups] ❌ Error loading jobs:', error);
+    if (page === 1) {
+      state.jobsByGroupId[groupId] = [];
+    }
+    return state.jobsByGroupId[groupId] || [];
   }
 }
 
@@ -2123,6 +2152,12 @@ function renderJobs() {
     jobs.sort((a, b) => new Date(a.sharedAt || 0) - new Date(b.sharedAt || 0));
   }
 
+  // Update jobs count badge
+  const totalJobs = state.jobsByGroupId[state.selectedGroupId]?.length || 0;
+  if (elements.jobsCount) {
+    elements.jobsCount.textContent = totalJobs;
+  }
+
   if (jobs.length === 0) {
     const message = state.jobsSearchQuery
       ? `No jobs found matching "${state.jobsSearchQuery}"`
@@ -2141,16 +2176,107 @@ function renderJobs() {
 
   // Attach click handlers to job cards
   attachJobCardClickHandlers();
+
+  // Setup lazy loading for jobs
+  setupJobsLazyLoading();
+
   console.log('[WhatsApp Groups] Jobs rendered successfully');
+}
+
+/**
+ * Setup lazy loading scroll listener for jobs list
+ */
+function setupJobsLazyLoading() {
+  if (!elements.jobsList) return;
+
+  // Remove existing listener if any
+  elements.jobsList.removeEventListener('scroll', handleJobsScroll);
+
+  // Add scroll listener
+  elements.jobsList.addEventListener('scroll', handleJobsScroll);
+
+  console.log('[WhatsApp Groups] 💼 Jobs lazy loading enabled - scroll to bottom to load more');
+}
+
+/**
+ * Handle scroll event for jobs lazy loading
+ */
+function handleJobsScroll() {
+  if (!elements.jobsList) return;
+
+  const scrollTop = elements.jobsList.scrollTop;
+  const scrollHeight = elements.jobsList.scrollHeight;
+  const clientHeight = elements.jobsList.clientHeight;
+
+  // Check if scrolled to bottom (with 200px threshold)
+  if (scrollTop + clientHeight >= scrollHeight - 200) {
+    const groupId = state.selectedGroupId;
+    const pagination = state.jobsPaginationByGroupId?.[groupId];
+
+    if (pagination && pagination.hasMore && !pagination.isLoading) {
+      console.log('[WhatsApp Groups] 💼 User scrolled to bottom - loading more jobs');
+      loadMoreJobs();
+    }
+  }
+}
+
+/**
+ * Load more jobs (next page)
+ */
+async function loadMoreJobs() {
+  const groupId = state.selectedGroupId;
+  if (!groupId) return;
+
+  const pagination = state.jobsPaginationByGroupId?.[groupId];
+  if (!pagination || !pagination.hasMore || pagination.isLoading) return;
+
+  try {
+    // Set loading state
+    pagination.isLoading = true;
+
+    // Show loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'jobs-loading-indicator';
+    loadingDiv.className = 'loading-indicator';
+    loadingDiv.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+        <div style="width: 24px; height: 24px; border: 2px solid var(--border-subtle); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 8px;"></div>
+        <p style="font-size: 13px;">Loading more jobs...</p>
+      </div>
+    `;
+    elements.jobsList.appendChild(loadingDiv);
+
+    // Load next page
+    const nextPage = pagination.currentPage + 1;
+    await loadJobsData(groupId, nextPage, 20);
+
+    // Re-render jobs
+    renderJobs();
+
+  } catch (error) {
+    console.error('[WhatsApp Groups] ❌ Error loading more jobs:', error);
+    if (window.globalNotifications) {
+      window.globalNotifications.showNotionToast('Failed to load more jobs', 'error', 3000);
+    }
+  } finally {
+    // Remove loading indicator
+    const loadingDiv = document.getElementById('jobs-loading-indicator');
+    if (loadingDiv) loadingDiv.remove();
+
+    // Reset loading state
+    if (pagination) pagination.isLoading = false;
+  }
 }
 
 function attachJobCardClickHandlers() {
   const jobCards = elements.jobsList.querySelectorAll('.job-card');
+  console.log('[WhatsApp Groups] 💼 Attaching click listeners to', jobCards.length, 'job cards in Jobs tab');
+
   jobCards.forEach(card => {
     // Handle job action buttons
     const actionButtons = card.querySelectorAll('.job-action-btn');
     actionButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation(); // Prevent card click
         const action = btn.dataset.action;
         const jobId = card.dataset.jobId;
@@ -2160,22 +2286,22 @@ function attachJobCardClickHandlers() {
         } else if (action === 'save') {
           handleSaveJob(jobId, card);
         } else if (action === 'view') {
-          handleViewJob(jobId);
+          await handleViewJobPopup(jobId);
         }
         // Open link is handled by anchor tag directly
       });
     });
 
     // Handle card click (only when not clicking action buttons)
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', async (e) => {
       // Don't open page if clicking on action buttons or links
       if (e.target.closest('.job-action-btn')) {
         return;
       }
 
       const jobId = card.dataset.jobId;
-      // Navigate to shared job detail page
-      handleViewJob(jobId);
+      // Open popup instead of navigating to new page
+      await handleViewJobPopup(jobId);
     });
   });
 }
@@ -2216,8 +2342,34 @@ function handleSaveJob(jobId, cardElement) {
   }
 }
 
+// Open job detail popup (same as chat shared jobs)
+async function handleViewJobPopup(jobId) {
+  try {
+    console.log('[WhatsApp Groups] 💼 Opening job popup for jobId:', jobId, 'groupId:', state.selectedGroupId);
+
+    // Find the shared job in the current group's jobs
+    const jobs = state.jobsByGroupId[state.selectedGroupId] || [];
+    const sharedJob = jobs.find(j => (j.jobId?._id || j.jobId) === jobId || j._id === jobId);
+
+    if (sharedJob && sharedJob._id) {
+      // Use the shared job ID to open the popup (same as chat)
+      await openJobDetailPopup(sharedJob._id, state.selectedGroupId);
+    } else {
+      console.warn('[WhatsApp Groups] ⚠️ Could not find shared job, trying with jobId directly');
+      // Fallback: try with jobId directly
+      await openJobDetailPopup(jobId, state.selectedGroupId);
+    }
+  } catch (error) {
+    console.error('[WhatsApp Groups] ❌ Error opening job popup:', error);
+    if (window.globalNotifications) {
+      window.globalNotifications.showNotionToast('Failed to open job details', 'error', 3000);
+    }
+  }
+}
+
+// Legacy function - kept for backward compatibility
 function handleViewJob(jobId) {
-  window.location.href = `shared-job-detail.html?jobId=${jobId}&groupId=${state.selectedGroupId}`;
+  handleViewJobPopup(jobId);
 }
 
 function createJobCard(sharedJob) {
