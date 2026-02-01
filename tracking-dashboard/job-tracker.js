@@ -301,13 +301,21 @@ class JobTracker {
         const mongoId = job._id || job.id;
         await window.apiClient.updateJobStatus(mongoId, newStatus, note);
         console.log('[Job Tracker] 📝 Updated status in MongoDB:', job.company, '-', newStatus);
+
+        // 🔥 CRITICAL FIX: Reload from API to get fresh data (cache was invalidated on backend)
+        console.log('[Job Tracker] 🔄 Reloading jobs from API to get fresh data...');
+        await this.loadJobs();
+        console.log('[Job Tracker] ✅ Jobs reloaded from API');
       } catch (error) {
         console.error('[Job Tracker] Failed to update status in MongoDB:', error);
         // Continue with local update even if API fails
+        await this.saveJobs();
       }
+    } else {
+      // Offline mode - just save locally
+      await this.saveJobs();
     }
 
-    await this.saveJobs();
     console.log('[Job Tracker] 📝 Updated status:', job.company, '-', newStatus);
     return true;
   }
