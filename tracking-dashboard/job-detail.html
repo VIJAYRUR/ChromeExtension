@@ -26,24 +26,28 @@
 
     <!-- Main Content -->
     <main class="content">
-      <!-- Job Header -->
-      <div class="job-header">
-        <input type="text" class="job-title" id="job-title" placeholder="Untitled">
-        <input type="text" class="job-company" id="job-company" placeholder="Add company name">
-      </div>
+      <!-- Two Column Layout -->
+      <div class="two-column-layout">
+        <!-- Left Column: Main Job Info -->
+        <div class="left-column">
+          <!-- Job Header -->
+          <div class="job-header">
+            <input type="text" class="job-title" id="job-title" placeholder="Untitled">
+            <input type="text" class="job-company" id="job-company" placeholder="Add company name">
+          </div>
 
-      <!-- Job Meta - Notion Properties Style -->
-      <div class="job-meta">
+          <!-- Job Meta - Notion Properties Style -->
+          <div class="job-meta">
         <div class="meta-item">
-          <label>📍 Location</label>
+          <label>Location</label>
           <input type="text" id="location" placeholder="Add location">
         </div>
         <div class="meta-item">
-          <label>💰 Salary</label>
+          <label>Salary</label>
           <input type="text" id="salary" placeholder="Add salary range">
         </div>
         <div class="meta-item">
-          <label>💼 Work Type</label>
+          <label>Work Type</label>
           <select id="work-type">
             <option value="Remote">Remote</option>
             <option value="Hybrid">Hybrid</option>
@@ -52,7 +56,7 @@
           </select>
         </div>
         <div class="meta-item">
-          <label>📊 Status</label>
+          <label>Status</label>
           <select id="status">
             <option value="applied">Applied</option>
             <option value="interview">Interview</option>
@@ -62,49 +66,45 @@
           </select>
         </div>
         <div class="meta-item">
-          <label>📅 Date Applied</label>
+          <label>Date Applied</label>
           <input type="text" id="date-applied" placeholder="Date" readonly>
         </div>
         <div class="meta-item" id="timing-meta" style="display: none;">
-          <label>⏱️ Applied After</label>
+          <label>Applied After</label>
           <div class="timing-badge" id="timing-badge">-</div>
         </div>
         <div class="meta-item" id="competition-meta" style="display: none;">
-          <label>👥 Applicants</label>
+          <label>Applicants</label>
           <div class="competition-badge" id="competition-badge">-</div>
         </div>
         <div class="meta-item">
-          <label>🔗 LinkedIn URL</label>
+          <label>LinkedIn URL</label>
           <a href="#" id="linkedin-url" target="_blank" class="link" style="padding: 4px 8px; display: inline-block;">View on LinkedIn</a>
         </div>
       </div>
 
-      <!-- Job Description -->
-      <div class="section">
-        <div class="section-header">
-          <h3>📄 Job Description</h3>
-          <div class="description-toggle">
-            <button class="toggle-btn active" id="view-formatted">Formatted</button>
-            <button class="toggle-btn" id="view-plain">Plain</button>
+          <!-- Job Description -->
+          <div class="section">
+            <div class="section-header">
+              <h3>Job Description</h3>
+              <div class="description-toggle">
+                <button class="toggle-btn active" id="view-formatted">Formatted</button>
+                <button class="toggle-btn" id="view-plain">Plain</button>
+              </div>
+            </div>
+            <div id="description-formatted" class="description-content formatted"></div>
+            <textarea id="description" class="description-content plain" style="display: none;" placeholder="Empty"></textarea>
           </div>
         </div>
-        <div id="description-formatted" class="description-content formatted"></div>
-        <textarea id="description" class="description-content plain" style="display: none;" placeholder="Empty"></textarea>
-      </div>
 
-      <!-- Notes -->
-      <div class="section">
-        <h3>📝 Notes</h3>
-        <textarea id="notes" placeholder="Add a note..."></textarea>
-      </div>
-
-      <!-- Resume Upload -->
-      <div class="section">
-        <h3>📎 Resume</h3>
+        <!-- Right Column: Resume, Notes, Timeline -->
+        <div class="right-column">
+          <!-- Resume Upload (Top Priority) -->
+          <div class="section">
+        <h3>Resume</h3>
         <div class="upload-area" id="upload-area">
           <input type="file" id="resume-upload" accept=".pdf,.doc,.docx" hidden>
           <div id="resume-empty-state" class="empty-state" style="padding: 32px 24px;">
-            <div class="empty-state-icon">📄</div>
             <div class="empty-state-title">No resume uploaded</div>
             <div class="empty-state-description">Upload your resume to keep track of which version you sent</div>
             <button class="upload-btn" id="upload-btn" style="margin-top: 16px;">
@@ -124,13 +124,21 @@
               <button id="remove-resume" style="padding: 6px 12px; font-size: 13px; color: rgba(55, 53, 47, 0.65); background: transparent; border: none; cursor: pointer; border-radius: 3px; transition: background 0.1s ease;" onmouseover="this.style.background='rgba(55, 53, 47, 0.08)'; this.style.color='rgb(235, 87, 87)'" onmouseout="this.style.background='transparent'; this.style.color='rgba(55, 53, 47, 0.65)'">Remove</button>
             </div>
           </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="section">
+          <h3>Notes</h3>
+          <textarea id="notes" placeholder="Add a note..."></textarea>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section">
+          <h3>Timeline</h3>
+          <div class="timeline" id="timeline"></div>
         </div>
       </div>
-
-      <!-- Timeline -->
-      <div class="section">
-        <h3>⏱️ Timeline</h3>
-        <div class="timeline" id="timeline"></div>
       </div>
     </main>
   </div>

@@ -651,36 +651,18 @@ class DashboardUI {
   }
 
   setupEventListeners() {
-    // Inline search toggle
-    const searchBtn = document.getElementById('search-btn');
-    const inlineSearchContainer = document.getElementById('inline-search-container');
+    // Inline search (always visible)
     const inlineSearchInput = document.getElementById('inline-search-input');
-
-    searchBtn.addEventListener('click', () => {
-      const isHidden = inlineSearchContainer.style.display === 'none';
-
-      if (isHidden) {
-        // Show inline search, hide search button
-        inlineSearchContainer.style.display = 'flex';
-        searchBtn.style.display = 'none';
-        setTimeout(() => {
-          inlineSearchInput.focus();
-        }, 50);
-      } else {
-        // Hide inline search, show search button
-        inlineSearchContainer.style.display = 'none';
-        searchBtn.style.display = 'flex';
-        inlineSearchInput.value = '';
-        this.currentFilters.query = '';
-        this.render();
-      }
-    });
+    const clearInlineSearchBtn = document.getElementById('clear-inline-search');
 
     // Inline search input (debounced for API calls)
     let searchTimeout;
     inlineSearchInput.addEventListener('input', (e) => {
       this.currentFilters.query = e.target.value;
       this.currentPage = 1; // Reset to first page
+
+      // Show/hide clear button
+      clearInlineSearchBtn.style.display = e.target.value ? 'flex' : 'none';
 
       // Debounce search for lazy loading (wait 300ms after user stops typing)
       if (this.lazyLoadEnabled) {
@@ -693,35 +675,97 @@ class DashboardUI {
       }
     });
 
+    // Clear inline search
+    clearInlineSearchBtn.addEventListener('click', () => {
+      inlineSearchInput.value = '';
+      clearInlineSearchBtn.style.display = 'none';
+      this.currentFilters.query = '';
+      this.currentPage = 1;
+      this.reloadJobsWithFilters();
+    });
+
     // Close search on Escape key
     inlineSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        inlineSearchContainer.style.display = 'none';
-        searchBtn.style.display = 'flex';
         inlineSearchInput.value = '';
+        clearInlineSearchBtn.style.display = 'none';
         this.currentFilters.query = '';
+        this.currentPage = 1;
         this.reloadJobsWithFilters();
       }
     });
 
-    // Filters
-    document.getElementById('filter-status').addEventListener('change', (e) => {
+    // Filter button - toggle filter panel
+    const filterBtn = document.getElementById('filter-btn');
+    const filterPanel = document.getElementById('filter-panel');
+    const sortPanel = document.getElementById('sort-panel');
+
+    filterBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = filterPanel.style.display === 'block';
+      filterPanel.style.display = isVisible ? 'none' : 'block';
+      sortPanel.style.display = 'none'; // Close sort panel
+    });
+
+    // Sort button - toggle sort panel
+    const sortBtn = document.getElementById('sort-btn');
+
+    sortBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = sortPanel.style.display === 'block';
+      sortPanel.style.display = isVisible ? 'none' : 'block';
+      filterPanel.style.display = 'none'; // Close filter panel
+    });
+
+    // Close panels when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!filterBtn.contains(e.target) && !filterPanel.contains(e.target)) {
+        filterPanel.style.display = 'none';
+      }
+      if (!sortBtn.contains(e.target) && !sortPanel.contains(e.target)) {
+        sortPanel.style.display = 'none';
+      }
+    });
+
+    // Filter panel - status filter
+    const filterStatusPanel = document.getElementById('filter-status-panel');
+    filterStatusPanel.addEventListener('change', (e) => {
       this.currentFilters.status = e.target.value;
-      this.currentPage = 1; // Reset to first page
+      this.currentPage = 1;
       this.reloadJobsWithFilters();
     });
 
-    document.getElementById('filter-worktype').addEventListener('change', (e) => {
+    // Filter panel - work type filter
+    const filterWorktypePanel = document.getElementById('filter-worktype-panel');
+    filterWorktypePanel.addEventListener('change', (e) => {
       this.currentFilters.workType = e.target.value;
-      this.currentPage = 1; // Reset to first page
+      this.currentPage = 1;
       this.reloadJobsWithFilters();
     });
 
-    document.getElementById('filter-sort').addEventListener('change', (e) => {
-      this.currentFilters.sort = e.target.value;
-      this.currentPage = 1; // Reset to first page
-      this.reloadJobsWithFilters();
+    // Sort panel - sort options
+    const sortOptions = document.querySelectorAll('.sort-option');
+    sortOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const sortValue = option.dataset.sort;
+        this.currentFilters.sort = sortValue;
+        this.currentPage = 1;
+
+        // Update active state
+        sortOptions.forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+
+        // Close panel and reload
+        sortPanel.style.display = 'none';
+        this.reloadJobsWithFilters();
+      });
     });
+
+    // Set initial active sort option
+    const defaultSort = document.querySelector('.sort-option[data-sort="date-desc"]');
+    if (defaultSort) {
+      defaultSort.classList.add('active');
+    }
 
     // View toggle
     document.querySelectorAll('.view-tab').forEach(btn => {

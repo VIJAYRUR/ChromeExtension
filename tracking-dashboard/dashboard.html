@@ -144,8 +144,8 @@
             </svg>
           </button>
 
-          <!-- Inline search input (hidden by default) - appears in place of search button -->
-          <div class="inline-search-container" id="inline-search-container" style="display: none;">
+          <!-- Inline search input (always visible) -->
+          <div class="inline-search-container" id="inline-search-container">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="search-icon" style="width: 16px; height: 16px; display: block; fill: var(--text-muted); flex-shrink: 0;">
               <path d="M7.1 1.975a5.125 5.125 0 1 0 3.155 9.164l3.107 3.107a.625.625 0 1 0 .884-.884l-3.107-3.107A5.125 5.125 0 0 0 7.1 1.975M3.225 7.1a3.875 3.875 0 1 1 7.75 0 3.875 3.875 0 0 1-7.75 0"></path>
             </svg>
@@ -155,13 +155,8 @@
               placeholder="Type to search..."
               autocomplete="off"
             >
+            <button class="clear-inline-search" id="clear-inline-search" style="display: none;">×</button>
           </div>
-
-          <button class="toolbar-btn" id="search-btn" aria-label="Search" title="Search">
-            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
-              <path d="M7.1 1.975a5.125 5.125 0 1 0 3.155 9.164l3.107 3.107a.625.625 0 1 0 .884-.884l-3.107-3.107A5.125 5.125 0 0 0 7.1 1.975M3.225 7.1a3.875 3.875 0 1 1 7.75 0 3.875 3.875 0 0 1-7.75 0"></path>
-            </svg>
-          </button>
 
           <button class="toolbar-btn" id="settings-btn" aria-label="Settings" title="Settings">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
@@ -177,6 +172,62 @@
               <path d="M7.47 10.93a.75.75 0 0 0 1.06 0l4.32-4.32a.75.75 0 1 0-1.06-1.06L8 9.34 4.21 5.55a.75.75 0 0 0-1.06 1.06z"></path>
             </svg>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Panel (hidden by default, shown when filter button clicked) -->
+    <div class="filter-panel" id="filter-panel" style="display: none;">
+      <div class="filter-panel-content">
+        <div class="filter-section">
+          <label class="filter-label">Status</label>
+          <select id="filter-status-panel" class="filter-select-panel">
+            <option value="all">All Status</option>
+            <option value="saved">Saved</option>
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="filter-section">
+          <label class="filter-label">Work Type</label>
+          <select id="filter-worktype-panel" class="filter-select-panel">
+            <option value="all">All Work Types</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="onsite">Onsite</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sort Panel (hidden by default, shown when sort button clicked) -->
+    <div class="sort-panel" id="sort-panel" style="display: none;">
+      <div class="sort-panel-content">
+        <div class="sort-option" data-sort="date-desc">
+          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
+            <path d="M8 2.75a.625.625 0 0 1 .625.625v9.19l2.22-2.22a.625.625 0 1 1 .884.884l-3.334 3.334a.625.625 0 0 1-.884 0l-3.333-3.334a.625.625 0 1 1 .884-.884l2.219 2.22V3.375A.625.625 0 0 1 8 2.75"></path>
+          </svg>
+          <span>Newest First</span>
+        </div>
+        <div class="sort-option" data-sort="date-asc">
+          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0; transform: rotate(180deg);">
+            <path d="M8 2.75a.625.625 0 0 1 .625.625v9.19l2.22-2.22a.625.625 0 1 1 .884.884l-3.334 3.334a.625.625 0 0 1-.884 0l-3.333-3.334a.625.625 0 1 1 .884-.884l2.219 2.22V3.375A.625.625 0 0 1 8 2.75"></path>
+          </svg>
+          <span>Oldest First</span>
+        </div>
+        <div class="sort-option" data-sort="company-asc">
+          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
+            <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
+          </svg>
+          <span>Company A-Z</span>
+        </div>
+        <div class="sort-option" data-sort="company-desc">
+          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0; transform: rotate(180deg);">
+            <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
+          </svg>
+          <span>Company Z-A</span>
         </div>
       </div>
     </div>

@@ -31,6 +31,9 @@ class JobDetailPage {
     // Setup event listeners
     this.setupEventListeners();
 
+    // Setup storage listener to detect job updates from LinkedIn
+    this.setupStorageListener();
+
     // Initialize global notifications
     this.setupGlobalNotifications();
 
@@ -193,6 +196,29 @@ class JobDetailPage {
     }
   }
 
+  setupStorageListener() {
+    // Listen for changes to Chrome storage (e.g., when resume is uploaded from LinkedIn)
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local') {
+        // Check if jobs data changed
+        const storageKey = window.jobTracker?.storageKey;
+        if (storageKey && changes[storageKey]) {
+          console.log('[Job Detail] 🔄 Jobs data changed in storage, reloading...');
+
+          // Reload job data and re-render
+          this.loadJob().then(() => {
+            console.log('[Job Detail] ✅ Job data reloaded after storage change');
+            this.render();
+          }).catch(err => {
+            console.error('[Job Detail] ❌ Failed to reload job:', err);
+          });
+        }
+      }
+    });
+
+    console.log('[Job Detail] 👂 Storage listener setup complete');
+  }
+
   showFormattedDescription() {
     const formattedDiv = document.getElementById('description-formatted');
     const plainTextarea = document.getElementById('description');
@@ -317,13 +343,36 @@ class JobDetailPage {
     const uploadedState = document.getElementById('resume-uploaded-state');
     const fileName = document.getElementById('file-name');
 
-    console.log('[Job Detail] 📄 Resume state (S3):', {
+    const resumeState = {
+      // S3 fields
       hasFileName: !!this.job.resumeFileName,
       fileName: this.job.resumeFileName,
       fileSize: this.job.resumeFileSize,
       resumeS3Key: this.job.resumeS3Key,
-      uploadedAt: this.job.resumeUploadedAt
-    });
+      uploadedAt: this.job.resumeUploadedAt,
+      // Local storage fields (from LinkedIn upload)
+      hasResumeFile: !!this.job.resumeFile,
+      hasResumeFileData: !!this.job.resumeFileData,
+      resumeFileType: this.job.resumeFileType || this.job.resumeFile?.type,
+      resumeFileDataLength: this.job.resumeFileData?.length || this.job.resumeFile?.data?.length,
+      resumeFileObjectDataLength: this.job.resumeFile?.data?.length,
+      // All resume-related fields in job object
+      allResumeFields: Object.keys(this.job).filter(key => key.toLowerCase().includes('resume'))
+    };
+
+    console.log('[Job Detail] 📄 Resume state (ALL fields):', resumeState);
+
+    // Log the actual resumeFile object if it exists
+    if (this.job.resumeFile) {
+      console.log('[Job Detail] 📄 resumeFile object keys:', Object.keys(this.job.resumeFile));
+    }
+
+    // Log resumeFileData preview if it exists
+    if (this.job.resumeFileData) {
+      console.log('[Job Detail] 📄 resumeFileData preview:', this.job.resumeFileData.substring(0, 100) + '...');
+    } else {
+      console.warn('[Job Detail] ⚠️ resumeFileData is missing!');
+    }
 
     if (this.job.resumeFileName) {
       emptyState.style.display = 'none';
@@ -439,12 +488,51 @@ class JobDetailPage {
   }
 
   async viewResume() {
+    // Reload job data to get latest resume info
+    console.log('[Job Detail] 🔄 Reloading job data to get latest resume...');
+    await this.loadJob();
+    this.render(); // Update UI with latest data
+
     if (!this.job.resumeFileName) {
       alert('⚠️ Resume file not found.');
       return;
     }
 
     try {
+      // Check if resume is available locally (uploaded from LinkedIn but not yet in S3)
+      const localResumeData = this.job.resumeFileData || this.job.resumeFile?.data;
+
+      if (localResumeData) {
+        console.log('[Job Detail] 📄 Opening resume from local storage...');
+
+        // Create blob from base64 data
+        const base64Data = localResumeData.includes('base64,')
+          ? localResumeData.split('base64,')[1]
+          : localResumeData;
+
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytes], {
+          type: this.job.resumeFileType || this.job.resumeFile?.type || 'application/pdf'
+        });
+        const url = URL.createObjectURL(blob);
+
+        // Open in new tab
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          alert('⚠️ Please allow popups to view the resume.');
+        }
+
+        // Clean up URL after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        return;
+      }
+
+      // Fallback to S3 if no local data
       console.log('[Job Detail] 📥 Fetching resume view URL from S3...');
 
       // Get auth token
@@ -482,12 +570,53 @@ class JobDetailPage {
   }
 
   async downloadResume() {
+    // Reload job data to get latest resume info
+    console.log('[Job Detail] 🔄 Reloading job data to get latest resume...');
+    await this.loadJob();
+    this.render(); // Update UI with latest data
+
     if (!this.job.resumeFileName) {
       alert('⚠️ Resume file not found.');
       return;
     }
 
     try {
+      // Check if resume is available locally (uploaded from LinkedIn but not yet in S3)
+      const localResumeData = this.job.resumeFileData || this.job.resumeFile?.data;
+
+      if (localResumeData) {
+        console.log('[Job Detail] 📥 Downloading resume from local storage...');
+
+        // Create blob from base64 data
+        const base64Data = localResumeData.includes('base64,')
+          ? localResumeData.split('base64,')[1]
+          : localResumeData;
+
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytes], {
+          type: this.job.resumeFileType || this.job.resumeFile?.type || 'application/pdf'
+        });
+        const url = URL.createObjectURL(blob);
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.job.resumeFileName || 'resume.pdf';
+        link.click();
+
+        // Clean up URL
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        console.log('[Job Detail] ✅ Resume download started:', this.job.resumeFileName);
+        return;
+      }
+
+      // Fallback to S3 if no local data
       console.log('[Job Detail] 📥 Fetching resume download URL from S3...');
 
       // Get auth token

@@ -15,6 +15,7 @@ class LinkedInJobsFilter {
     this.panel = null;
     this.stats = { total: 0, visible: 0, hidden: 0 };
     this.hasScannedJobs = false;  // Track if we've scanned jobs for reposted status
+    this.trackButtonStates = new Map();  // Track button states by LinkedIn URL
     this.init();
   }
 
@@ -629,10 +630,30 @@ class LinkedInJobsFilter {
   }
 
   createTrackButton(detailPanel) {
+    // Extract LinkedIn job ID from URL to use as unique identifier
+    const currentJobUrl = window.location.href;
+    const jobIdMatch = currentJobUrl.match(/\/jobs\/view\/(\d+)/);
+    const jobId = jobIdMatch ? jobIdMatch[1] : null;
+
+    console.log('[Job Tracker] 🔍 Creating button for job ID:', jobId);
+
+    // Get stored state using job ID (more reliable than full URL)
+    const storedState = jobId ? this.trackButtonStates.get(jobId) : null;
+
     // Create track button
     const trackBtn = document.createElement('button');
     trackBtn.className = 'job-tracker-detail-btn';
-    trackBtn.innerHTML = 'Track';
+    trackBtn.dataset.jobId = jobId; // Store job ID on button for later reference
+
+    // Check if button should be in "Upload Resume" mode
+    if (storedState && storedState.mode === 'upload_resume') {
+      console.log('[Job Tracker] 📄 Restoring Upload Resume button state for job', jobId);
+      trackBtn.innerHTML = '📄 Upload Resume';
+      trackBtn.dataset.uploadMode = 'true';
+    } else {
+      trackBtn.innerHTML = 'Track';
+    }
+
     trackBtn.title = 'Track this job application';
     trackBtn.setAttribute('aria-label', 'Track this job application');
     trackBtn.type = 'button';
@@ -682,6 +703,17 @@ class LinkedInJobsFilter {
       e.preventDefault();
       e.stopPropagation();
 
+      // Check if button is in "Upload Resume" mode
+      if (trackBtn.dataset.uploadMode === 'true') {
+        console.log('[Job Tracker] 📤 Upload Resume button clicked (from restored state)');
+        const jobId = trackBtn.dataset.jobId;
+        const storedState = this.trackButtonStates.get(jobId);
+        if (storedState && storedState.jobData) {
+          this.handleResumeUploadFromButton(storedState.jobData, trackBtn);
+        }
+        return;
+      }
+
       // Check if already tracked
       if (trackBtn.dataset.alreadyTracked === 'true') {
         this.showNotification('This job is already in your dashboard!');
@@ -694,52 +726,10 @@ class LinkedInJobsFilter {
       const jobData = this.extractJobDataFromDetailPanel(detailPanel);
 
       if (jobData) {
-        console.log('[Job Tracker] 📝 Tracking job from detail panel:', jobData);
+        console.log('[Job Tracker] 📝 Extracted job data:', jobData);
 
-        // Get current user ID and send trackJob message
-        chrome.storage.local.get(['currentUser'], (result) => {
-          const currentUser = result.currentUser;
-          const userId = currentUser?._id || null;
-
-          // Save to storage
-          chrome.runtime.sendMessage({
-            action: 'trackJob',
-            jobData: jobData,
-            userId: userId  // Include user ID so background.js doesn't have to look it up
-          }, (response) => {
-          if (response && response.success) {
-            // Update button state
-            trackBtn.innerHTML = '✓ Tracked';
-            trackBtn.style.background = '#10B981 !important';
-            trackBtn.style.borderColor = '#10B981 !important';
-            trackBtn.disabled = true;
-
-            // Show notification
-            this.showNotification('Job tracked! View in dashboard.');
-
-            setTimeout(() => {
-              trackBtn.innerHTML = 'Track';
-              trackBtn.style.background = '#000000 !important';
-              trackBtn.style.borderColor = '#000000 !important';
-              trackBtn.disabled = false;
-            }, 2000);
-          } else if (response && response.duplicate) {
-            // Job already tracked
-            trackBtn.innerHTML = '✓ Already Tracked';
-            trackBtn.style.background = '#F59E0B !important';
-            trackBtn.style.borderColor = '#F59E0B !important';
-
-            // Show notification
-            this.showNotification('⚠️ This job is already in your dashboard!');
-
-            setTimeout(() => {
-              trackBtn.innerHTML = 'Track';
-              trackBtn.style.background = '#000000 !important';
-              trackBtn.style.borderColor = '#000000 !important';
-            }, 3000);
-          }
-          });  // Close chrome.runtime.sendMessage
-        });  // Close chrome.storage.local.get
+        // Track job immediately (no modal interruption)
+        this.sendTrackJobMessage(jobData, trackBtn, true); // Pass flag to show resume prompt after
       }
     });
 
@@ -1912,6 +1902,749 @@ class LinkedInJobsFilter {
         button.style.borderColor = '#000000';
         button.disabled = false;
       }
+    });
+  }
+
+  showResumeUploadModal(jobData, trackBtn) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    `;
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 480px;
+      width: 90%;
+      padding: 32px;
+      animation: scaleIn 0.2s ease-out;
+      position: relative;
+    `;
+
+    modal.innerHTML = `
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0 0 8px 0;">
+          Upload a customized resume?
+        </h2>
+        <p style="font-size: 14px; color: #666; margin: 0; line-height: 1.5;">
+          If you have a tailored resume for this position, upload it now to keep track of which version you sent.
+        </p>
+      </div>
+
+      <div id="resume-upload-section" style="margin-bottom: 24px;">
+        <input type="file" id="modal-resume-upload" accept=".pdf,.doc,.docx" style="display: none;">
+        <div id="file-drop-zone" style="
+          border: 2px dashed #d1d5db;
+          border-radius: 8px;
+          padding: 24px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: #f9fafb;
+        ">
+          <div style="font-size: 32px; margin-bottom: 12px;">📄</div>
+          <div style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">
+            Click to upload or drag and drop
+          </div>
+          <div style="font-size: 12px; color: #9ca3af;">
+            PDF, DOC, or DOCX (max 5MB)
+          </div>
+        </div>
+        <div id="selected-file-preview" style="display: none; margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">📎</span>
+            <span id="selected-file-name" style="flex: 1; font-size: 14px; font-weight: 500; color: #374151;"></span>
+            <button id="remove-file-btn" style="
+              background: none;
+              border: none;
+              color: #ef4444;
+              cursor: pointer;
+              font-size: 18px;
+              padding: 4px;
+              line-height: 1;
+            ">×</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button id="skip-resume-btn" style="
+          flex: 1;
+          padding: 12px 24px;
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">
+          Skip
+        </button>
+        <button id="track-with-resume-btn" style="
+          flex: 1;
+          padding: 12px 24px;
+          background: #000000;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">
+          Track Job
+        </button>
+      </div>
+    `;
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // File upload handling
+    const fileInput = modal.querySelector('#modal-resume-upload');
+    const dropZone = modal.querySelector('#file-drop-zone');
+    const filePreview = modal.querySelector('#selected-file-preview');
+    const fileName = modal.querySelector('#selected-file-name');
+    const removeFileBtn = modal.querySelector('#remove-file-btn');
+    let selectedFile = null;
+
+    // Click to upload
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#000000';
+      dropZone.style.background = '#f3f4f6';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = '#d1d5db';
+      dropZone.style.background = '#f9fafb';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#d1d5db';
+      dropZone.style.background = '#f9fafb';
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    // Handle file selection
+    const handleFileSelect = (file) => {
+      // Validate file type
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!validTypes.includes(file.type)) {
+        this.showNotification('❌ Please select a PDF or DOC file');
+        return;
+      }
+
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.showNotification('❌ File size must be less than 5MB');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      dropZone.style.display = 'none';
+      filePreview.style.display = 'block';
+    };
+
+    // Remove file
+    removeFileBtn.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      dropZone.style.display = 'block';
+      filePreview.style.display = 'none';
+    });
+
+    // Hover effects for buttons
+    const skipBtn = modal.querySelector('#skip-resume-btn');
+    const trackWithResumeBtn = modal.querySelector('#track-with-resume-btn');
+
+    skipBtn.addEventListener('mouseenter', () => {
+      skipBtn.style.background = '#f9fafb';
+    });
+    skipBtn.addEventListener('mouseleave', () => {
+      skipBtn.style.background = 'white';
+    });
+
+    trackWithResumeBtn.addEventListener('mouseenter', () => {
+      trackWithResumeBtn.style.background = '#1a1a1a';
+    });
+    trackWithResumeBtn.addEventListener('mouseleave', () => {
+      trackWithResumeBtn.style.background = '#000000';
+    });
+
+    // Skip button - track without resume
+    skipBtn.addEventListener('click', () => {
+      overlay.remove();
+      this.trackJobWithResume(jobData, null, trackBtn);
+    });
+
+    // Track with resume button
+    trackWithResumeBtn.addEventListener('click', () => {
+      overlay.remove();
+      this.trackJobWithResume(jobData, selectedFile, trackBtn);
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+  }
+
+  trackJobWithResume(jobData, resumeFile, trackBtn) {
+    console.log('[Job Tracker] 📝 Tracking job with resume:', { job: jobData.title, hasResume: !!resumeFile });
+
+    // If no resume, track normally
+    if (!resumeFile) {
+      this.sendTrackJobMessage(jobData, trackBtn);
+      return;
+    }
+
+    // Show uploading state
+    trackBtn.innerHTML = 'Uploading...';
+    trackBtn.style.background = '#6B7280 !important';
+    trackBtn.disabled = true;
+
+    // Read file as base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result.split(',')[1]; // Remove data:...;base64, prefix
+
+      // Add resume data to jobData
+      jobData.resumeFile = {
+        data: base64Data,
+        name: resumeFile.name,
+        type: resumeFile.type,
+        size: resumeFile.size
+      };
+
+      // Track job with resume
+      this.sendTrackJobMessage(jobData, trackBtn);
+    };
+
+    reader.onerror = () => {
+      console.error('[Job Tracker] Failed to read resume file');
+      this.showNotification('❌ Failed to read resume file');
+      trackBtn.innerHTML = 'Track';
+      trackBtn.style.background = '#000000 !important';
+      trackBtn.disabled = false;
+    };
+
+    reader.readAsDataURL(resumeFile);
+  }
+
+  showResumeUploadPrompt(jobData) {
+    // Create a non-intrusive toast-style prompt for resume upload
+    const prompt = document.createElement('div');
+    prompt.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      z-index: 100000;
+      max-width: 360px;
+      animation: slideUp 0.3s ease-out;
+      border: 1px solid #e5e7eb;
+    `;
+
+    prompt.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+        <div style="font-size: 24px; line-height: 1;">📄</div>
+        <div style="flex: 1;">
+          <div style="font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">
+            Upload a customized resume?
+          </div>
+          <div style="font-size: 13px; color: #6b7280; line-height: 1.4;">
+            Keep track of which resume version you sent for this position.
+          </div>
+        </div>
+        <button id="close-resume-prompt" style="
+          background: none;
+          border: none;
+          color: #9ca3af;
+          cursor: pointer;
+          font-size: 20px;
+          padding: 0;
+          line-height: 1;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s;
+        ">×</button>
+      </div>
+
+      <input type="file" id="post-track-resume-upload" accept=".pdf,.doc,.docx" style="display: none;">
+
+      <div style="display: flex; gap: 8px;">
+        <button id="dismiss-resume-prompt" style="
+          flex: 1;
+          padding: 10px 16px;
+          background: #f3f4f6;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #374151;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">
+          Not now
+        </button>
+        <button id="upload-resume-btn" style="
+          flex: 1;
+          padding: 10px 16px;
+          background: #000000;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">
+          Upload Resume
+        </button>
+      </div>
+    `;
+
+    // Add slide-up animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(prompt);
+
+    // Get elements
+    const fileInput = prompt.querySelector('#post-track-resume-upload');
+    const uploadBtn = prompt.querySelector('#upload-resume-btn');
+    const dismissBtn = prompt.querySelector('#dismiss-resume-prompt');
+    const closeBtn = prompt.querySelector('#close-resume-prompt');
+
+    // Close prompt function
+    const closePrompt = () => {
+      prompt.style.animation = 'slideDown 0.2s ease-out';
+      setTimeout(() => {
+        prompt.remove();
+      }, 200);
+    };
+
+    // Close button handler
+    closeBtn.addEventListener('click', closePrompt);
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.color = '#374151';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.color = '#9ca3af';
+    });
+
+    // Dismiss button handler
+    dismissBtn.addEventListener('click', closePrompt);
+    dismissBtn.addEventListener('mouseenter', () => {
+      dismissBtn.style.background = '#e5e7eb';
+    });
+    dismissBtn.addEventListener('mouseleave', () => {
+      dismissBtn.style.background = '#f3f4f6';
+    });
+
+    // Upload button handlers
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    uploadBtn.addEventListener('mouseenter', () => {
+      uploadBtn.style.background = '#1f1f1f';
+    });
+    uploadBtn.addEventListener('mouseleave', () => {
+      uploadBtn.style.background = '#000000';
+    });
+
+    // File selection handler
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validate file
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!validTypes.includes(file.type)) {
+        this.showNotification('Please select a PDF, DOC, or DOCX file');
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        this.showNotification('File size must be less than 5MB');
+        return;
+      }
+
+      // Show uploading state
+      uploadBtn.innerHTML = 'Uploading...';
+      uploadBtn.disabled = true;
+      uploadBtn.style.opacity = '0.6';
+
+      // Read file and attach to job
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result;
+
+        // Update the job with resume data
+        jobData.resumeFile = {
+          data: base64Data,
+          name: file.name,
+          type: file.type,
+          size: file.size
+        };
+
+        // Send update to background
+        chrome.storage.local.get(['currentUser'], (result) => {
+          const currentUser = result.currentUser;
+          const userId = currentUser?._id || null;
+
+          chrome.runtime.sendMessage({
+            action: 'updateJobResume',
+            linkedinUrl: jobData.linkedinUrl,
+            resumeFile: jobData.resumeFile,
+            userId: userId
+          }, (response) => {
+            if (response && response.success) {
+              this.showNotification('Resume uploaded successfully!');
+              closePrompt();
+            } else {
+              this.showNotification('Failed to upload resume');
+              uploadBtn.innerHTML = 'Upload Resume';
+              uploadBtn.disabled = false;
+              uploadBtn.style.opacity = '1';
+            }
+          });
+        });
+      };
+
+      reader.onerror = () => {
+        this.showNotification('Failed to read file');
+        uploadBtn.innerHTML = 'Upload Resume';
+        uploadBtn.disabled = false;
+        uploadBtn.style.opacity = '1';
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    // Auto-dismiss after 12 seconds
+    setTimeout(() => {
+      if (document.body.contains(prompt)) {
+        closePrompt();
+      }
+    }, 12000);
+
+    // Add slide-down animation
+    const slideDownStyle = document.createElement('style');
+    slideDownStyle.textContent = `
+      @keyframes slideDown {
+        from {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(slideDownStyle);
+  }
+
+  handleResumeUploadFromButton(jobData, uploadBtn) {
+    // Create hidden file input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.pdf,.doc,.docx';
+    fileInput.style.display = 'none';
+
+    // Handle file selection
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!validTypes.includes(file.type)) {
+        this.showNotification('Please select a PDF, DOC, or DOCX file');
+        return;
+      }
+
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        this.showNotification('File size must be less than 5MB');
+        return;
+      }
+
+      // Show uploading state
+      uploadBtn.innerHTML = 'Uploading...';
+      uploadBtn.disabled = true;
+      uploadBtn.style.opacity = '0.6';
+
+      // Read file as base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result;
+
+        console.log('[Job Tracker] 📤 Resume file read:', {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          dataLength: base64Data.length,
+          dataPreview: base64Data.substring(0, 50) + '...'
+        });
+
+        // Update the job with resume data
+        jobData.resumeFile = {
+          data: base64Data,
+          name: file.name,
+          type: file.type,
+          size: file.size
+        };
+
+        console.log('[Job Tracker] 📤 Sending updateJobResume message:', {
+          linkedinUrl: jobData.linkedinUrl,
+          resumeFileName: file.name,
+          hasResumeData: !!jobData.resumeFile.data
+        });
+
+        // Send update to background
+        chrome.storage.local.get(['currentUser'], (result) => {
+          const currentUser = result.currentUser;
+          const userId = currentUser?._id || null;
+
+          chrome.runtime.sendMessage({
+            action: 'updateJobResume',
+            linkedinUrl: jobData.linkedinUrl,
+            resumeFile: jobData.resumeFile,
+            userId: userId
+          }, (response) => {
+            console.log('[Job Tracker] 📥 Response from background:', response);
+            if (response && response.success) {
+              // Clear the stored state using job ID
+              const jobIdMatch = jobData.linkedinUrl?.match(/\/jobs\/view\/(\d+)/) ||
+                                jobData.linkedinJobId;
+              const jobId = jobIdMatch ? (typeof jobIdMatch === 'string' ? jobIdMatch : jobIdMatch[1]) : null;
+              if (jobId) {
+                this.trackButtonStates.delete(jobId);
+                console.log('[Job Tracker] ✅ Resume uploaded, cleared button state for job', jobId);
+              }
+
+              // Show success state
+              uploadBtn.innerHTML = '✓ Resume Uploaded';
+              uploadBtn.style.background = '#10B981 !important';
+              uploadBtn.style.borderColor = '#10B981 !important';
+              uploadBtn.style.opacity = '1';
+
+              this.showNotification('Resume uploaded successfully!');
+
+              // Reset to normal after 2 seconds
+              setTimeout(() => {
+                uploadBtn.innerHTML = 'Track';
+                uploadBtn.style.background = '#000000 !important';
+                uploadBtn.style.borderColor = '#000000 !important';
+                uploadBtn.disabled = false;
+                uploadBtn.dataset.uploadMode = 'false';
+              }, 2000);
+            } else {
+              // Show error
+              this.showNotification('Failed to upload resume');
+              uploadBtn.innerHTML = '📄 Upload Resume';
+              uploadBtn.disabled = false;
+              uploadBtn.style.opacity = '1';
+            }
+          });
+        });
+      };
+
+      reader.onerror = () => {
+        this.showNotification('Failed to read file');
+        uploadBtn.innerHTML = '📄 Upload Resume';
+        uploadBtn.disabled = false;
+        uploadBtn.style.opacity = '1';
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    // Trigger file picker
+    fileInput.click();
+  }
+
+  sendTrackJobMessage(jobData, trackBtn, showResumePrompt = false) {
+    // Get current user ID and send trackJob message
+    chrome.storage.local.get(['currentUser'], (result) => {
+      const currentUser = result.currentUser;
+      const userId = currentUser?._id || null;
+
+      // Save to storage
+      chrome.runtime.sendMessage({
+        action: 'trackJob',
+        jobData: jobData,
+        userId: userId
+      }, (response) => {
+        if (response && response.success) {
+          // Update button state
+          trackBtn.innerHTML = '✓ Tracked';
+          trackBtn.style.background = '#10B981 !important';
+          trackBtn.style.borderColor = '#10B981 !important';
+          trackBtn.disabled = true;
+
+          // Show notification
+          const message = jobData.resumeFile
+            ? 'Job tracked with resume! View in dashboard.'
+            : 'Job tracked! View in dashboard.';
+          this.showNotification(message);
+
+          // Transform button to "Upload Resume" after success message
+          console.log('[Job Tracker] 🔍 Resume prompt check:', {
+            showResumePrompt,
+            hasResumeFile: !!jobData.resumeFile,
+            willShowUpload: showResumePrompt && !jobData.resumeFile
+          });
+
+          if (showResumePrompt && !jobData.resumeFile) {
+            console.log('[Job Tracker] 📄 Transforming button to Upload Resume in 2 seconds...');
+
+            // Extract job ID from LinkedIn URL to use as unique key
+            const jobIdMatch = jobData.linkedinUrl?.match(/\/jobs\/view\/(\d+)/) ||
+                              jobData.linkedinJobId;
+            const jobId = jobIdMatch ? (typeof jobIdMatch === 'string' ? jobIdMatch : jobIdMatch[1]) : null;
+
+            console.log('[Job Tracker] 💾 Storing state for job ID:', jobId);
+
+            // Store the state so it persists across page updates (use job ID as key)
+            if (jobId) {
+              this.trackButtonStates.set(jobId, {
+                mode: 'upload_resume',
+                jobData: jobData
+              });
+            }
+
+            setTimeout(() => {
+              console.log('[Job Tracker] 📄 NOW transforming button to Upload Resume');
+              trackBtn.innerHTML = '📄 Upload Resume';
+              trackBtn.style.background = '#000000 !important';
+              trackBtn.style.borderColor = '#000000 !important';
+              trackBtn.disabled = false;
+              trackBtn.dataset.uploadMode = 'true';
+
+              // Remove old click listeners and add upload handler
+              const newBtn = trackBtn.cloneNode(true);
+              trackBtn.parentNode.replaceChild(newBtn, trackBtn);
+
+              console.log('[Job Tracker] ✅ Button transformed to Upload Resume');
+
+              // Add upload click handler
+              newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Job Tracker] 📤 Upload Resume button clicked');
+                this.handleResumeUploadFromButton(jobData, newBtn);
+              });
+
+              // Add hover effect
+              newBtn.addEventListener('mouseenter', () => {
+                newBtn.style.background = '#1f1f1f !important';
+              });
+              newBtn.addEventListener('mouseleave', () => {
+                newBtn.style.background = '#000000 !important';
+              });
+            }, 2000);
+          } else {
+            console.log('[Job Tracker] ⚠️ NOT showing upload button - returning to Track state');
+            // No resume prompt - return to normal state
+            setTimeout(() => {
+              trackBtn.innerHTML = 'Track';
+              trackBtn.style.background = '#000000 !important';
+              trackBtn.style.borderColor = '#000000 !important';
+              trackBtn.disabled = false;
+            }, 2000);
+          }
+        } else if (response && response.duplicate) {
+          // Job already tracked
+          trackBtn.innerHTML = '✓ Already Tracked';
+          trackBtn.style.background = '#F59E0B !important';
+          trackBtn.style.borderColor = '#F59E0B !important';
+
+          // Show notification
+          this.showNotification('⚠️ This job is already in your dashboard!');
+
+          setTimeout(() => {
+            trackBtn.innerHTML = 'Track';
+            trackBtn.style.background = '#000000 !important';
+            trackBtn.style.borderColor = '#000000 !important';
+          }, 3000);
+        }
+      });
     });
   }
 

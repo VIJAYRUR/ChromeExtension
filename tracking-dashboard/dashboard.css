@@ -474,6 +474,7 @@ body {
   height: 40px;
   width: 100%;
   max-width: 1400px;
+  position: relative;
 }
 
 .view-tabs {
@@ -552,7 +553,7 @@ body {
 }
 
 .inline-search-container {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 10px;
@@ -560,6 +561,7 @@ body {
   border-radius: 6px;
   height: 28px;
   min-width: 240px;
+  position: relative;
 }
 
 .inline-search-container .search-icon {
@@ -579,6 +581,112 @@ body {
 
 .inline-search-container input::placeholder {
   color: var(--text-muted);
+}
+
+.clear-inline-search {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: background 20ms ease-in;
+}
+
+.clear-inline-search:hover {
+  background: rgba(55, 53, 47, 0.08);
+}
+
+/* Filter and Sort Panels */
+.filter-panel,
+.sort-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
+  z-index: 100;
+  min-width: 240px;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+.filter-panel-content,
+.sort-panel-content {
+  padding: 8px;
+}
+
+.filter-section {
+  margin-bottom: 12px;
+}
+
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.65);
+  margin-bottom: 6px;
+  padding: 0 8px;
+}
+
+.filter-select-panel {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  font-size: 14px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+
+.filter-select-panel:hover {
+  background: var(--bg-hover);
+}
+
+.filter-select-panel:focus {
+  outline: none;
+  border-color: rgb(35, 131, 226);
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+  font-size: 14px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.sort-option:hover {
+  background: var(--bg-hover);
+}
+
+.sort-option.active {
+  background: rgba(35, 131, 226, 0.1);
+  color: rgb(35, 131, 226);
+}
+
+.sort-option svg {
+  flex-shrink: 0;
 }
 
 @keyframes slideInRight {
