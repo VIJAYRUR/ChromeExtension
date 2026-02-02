@@ -1126,6 +1126,8 @@ class LinkedInJobsFilter {
           trackBtn.style.borderColor = '#6B7280 !important';
           trackBtn.style.cursor = 'default !important';
           trackBtn.dataset.alreadyTracked = 'true';
+          // Remove upload mode if it was set
+          trackBtn.dataset.uploadMode = 'false';
         }
       });
     } catch (error) {
@@ -2599,6 +2601,15 @@ class LinkedInJobsFilter {
 
               // Remove old click listeners and add upload handler
               const newBtn = trackBtn.cloneNode(true);
+
+              // Preserve important dataset flags
+              if (trackBtn.dataset.alreadyTracked) {
+                newBtn.dataset.alreadyTracked = trackBtn.dataset.alreadyTracked;
+              }
+              if (trackBtn.dataset.jobId) {
+                newBtn.dataset.jobId = trackBtn.dataset.jobId;
+              }
+
               trackBtn.parentNode.replaceChild(newBtn, trackBtn);
 
               console.log('[Job Tracker] ✅ Button transformed to Upload Resume');
@@ -2607,6 +2618,13 @@ class LinkedInJobsFilter {
               newBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // Check if job is already tracked (shouldn't happen, but safety check)
+                if (newBtn.dataset.alreadyTracked === 'true') {
+                  this.showNotification('⚠️ This job is already in your dashboard!');
+                  return;
+                }
+
                 console.log('[Job Tracker] 📤 Upload Resume button clicked');
                 this.handleResumeUploadFromButton(jobData, newBtn);
               });
