@@ -40,9 +40,9 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 96px 96px 48px;
+  padding: 96px 48px 48px;
 }
 
 /* Header - Notion style */
@@ -244,7 +244,7 @@ body {
   padding-right: 28px;
 }
 
-/* Special styling for location, salary, work-type inputs to look like pills */
+/* Special styling for location, salary inputs - Professional muted style */
 #location,
 #salary {
   display: inline-flex !important;
@@ -258,32 +258,18 @@ body {
   white-space: nowrap;
   min-width: 120px;
   border: none !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
 }
 
-#location {
-  background: rgba(211, 229, 239, 0.5) !important;
-  color: rgb(35, 131, 226) !important;
-}
-
-#location:hover {
-  background: rgba(211, 229, 239, 0.6) !important;
-}
-
-#location:focus {
-  background: rgba(211, 229, 239, 0.7) !important;
-}
-
-#salary {
-  background: rgba(232, 222, 238, 0.5) !important;
-  color: rgb(144, 101, 176) !important;
-}
-
+#location:hover,
 #salary:hover {
-  background: rgba(232, 222, 238, 0.6) !important;
+  background: var(--bg-hover) !important;
 }
 
+#location:focus,
 #salary:focus {
-  background: rgba(232, 222, 238, 0.7) !important;
+  background: var(--bg-hover) !important;
 }
 
 /* Work Type Select - Notion style colored pills */
@@ -303,42 +289,18 @@ body {
   cursor: pointer;
 }
 
-/* Work Type - Remote (Green) */
-#work-type.work-type-remote {
-  background: rgba(219, 237, 219, 0.5) !important;
-  color: rgb(0, 135, 107) !important;
-}
-
-#work-type.work-type-remote:hover {
-  background: rgba(219, 237, 219, 0.7) !important;
-}
-
-/* Work Type - Hybrid (Orange) */
-#work-type.work-type-hybrid {
-  background: rgba(253, 236, 200, 0.5) !important;
-  color: rgb(217, 115, 13) !important;
-}
-
-#work-type.work-type-hybrid:hover {
-  background: rgba(253, 236, 200, 0.7) !important;
-}
-
-/* Work Type - Onsite (Gray) */
-#work-type.work-type-onsite {
-  background: rgba(227, 226, 224, 0.5) !important;
-  color: rgb(120, 119, 116) !important;
-}
-
-#work-type.work-type-onsite:hover {
-  background: rgba(227, 226, 224, 0.7) !important;
-}
-
-/* Work Type - Not specified */
+/* Work Type - Professional subtle styling */
+#work-type.work-type-remote,
+#work-type.work-type-hybrid,
+#work-type.work-type-onsite,
 #work-type.work-type-not-specified {
   background: transparent !important;
-  color: var(--text-muted) !important;
+  color: var(--text-primary) !important;
 }
 
+#work-type.work-type-remote:hover,
+#work-type.work-type-hybrid:hover,
+#work-type.work-type-onsite:hover,
 #work-type.work-type-not-specified:hover {
   background: var(--bg-hover) !important;
 }
@@ -360,57 +322,25 @@ body {
   cursor: pointer;
 }
 
-/* Status - Applied (Gray) */
-#status.status-applied {
-  background: rgba(227, 226, 224, 0.5) !important;
-  color: rgb(120, 119, 116) !important;
-}
-
-#status.status-applied:hover {
-  background: rgba(227, 226, 224, 0.7) !important;
-}
-
-/* Status - Interview (Blue) */
-#status.status-interview {
-  background: rgba(211, 229, 239, 0.5) !important;
-  color: rgb(35, 131, 226) !important;
-}
-
-#status.status-interview:hover {
-  background: rgba(211, 229, 239, 0.7) !important;
-}
-
-/* Status - Offer (Green) */
-#status.status-offer {
-  background: rgba(219, 237, 219, 0.5) !important;
-  color: rgb(0, 135, 107) !important;
-}
-
-#status.status-offer:hover {
-  background: rgba(219, 237, 219, 0.7) !important;
-}
-
-/* Status - Rejected (Red) */
-#status.status-rejected {
-  background: rgba(255, 235, 230, 0.5) !important;
-  color: rgb(235, 87, 87) !important;
-}
-
-#status.status-rejected:hover {
-  background: rgba(255, 235, 230, 0.7) !important;
-}
-
-/* Status - Withdrawn (Gray) */
+/* Status - Professional subtle styling with minimal color hints */
+#status.status-applied,
+#status.status-interview,
+#status.status-offer,
+#status.status-rejected,
 #status.status-withdrawn {
-  background: rgba(227, 226, 224, 0.5) !important;
-  color: rgb(120, 119, 116) !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
 }
 
+#status.status-applied:hover,
+#status.status-interview:hover,
+#status.status-offer:hover,
+#status.status-rejected:hover,
 #status.status-withdrawn:hover {
-  background: rgba(227, 226, 224, 0.7) !important;
+  background: var(--bg-hover) !important;
 }
 
-/* Date Applied - Notion style with subtle color */
+/* Date Applied - Professional style */
 #date-applied {
   display: inline-flex !important;
   align-items: center;
@@ -422,14 +352,14 @@ body {
   line-height: 1.2;
   white-space: nowrap;
   min-width: 120px;
-  background: rgba(251, 243, 219, 0.5) !important;
-  color: rgb(159, 107, 0) !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
   border: none !important;
   cursor: default;
 }
 
 #date-applied:hover {
-  background: rgba(251, 243, 219, 0.6) !important;
+  background: var(--bg-hover) !important;
 }
 
 /* Property Pills - Notion style */
@@ -471,6 +401,22 @@ body {
 .property-pill.salary {
   background: rgba(232, 222, 238, 0.5);
   color: rgb(144, 101, 176);
+}
+
+/* Two Column Layout */
+.two-column-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 48px;
+  margin-top: 0;
+}
+
+.left-column {
+  min-width: 0; /* Prevent grid blowout */
+}
+
+.right-column {
+  min-width: 0; /* Prevent grid blowout */
 }
 
 /* Sections - Notion block style */
@@ -722,7 +668,8 @@ body {
 .empty-state-icon {
   font-size: 48px;
   margin-bottom: 16px;
-  opacity: 0.5;
+  opacity: 0.3;
+  display: none; /* Hide emoji icons */
 }
 
 .empty-state-title {
@@ -982,6 +929,28 @@ input, textarea, select, button {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 1000px;
+  }
+
+  .two-column-layout {
+    grid-template-columns: 1fr 350px;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 900px) {
+  .two-column-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .right-column {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 48px 24px 24px;
@@ -1011,7 +980,7 @@ input, textarea, select, button {
   }
 }
 
-/* Timing and Competition Badges */
+/* Timing and Competition Badges - Professional style */
 .timing-badge,
 .competition-badge {
   display: inline-flex;
@@ -1020,18 +989,27 @@ input, textarea, select, button {
   padding: 0 8px;
   border-radius: 3px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
   white-space: nowrap;
+  background: transparent;
+  color: var(--text-primary);
 }
 
-.timing-badge {
-  background: rgba(253, 230, 138, 0.5);
-  color: rgb(180, 83, 9);
+/* Resume uploaded state - prevent overflow */
+#resume-uploaded-state {
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.competition-badge {
-  background: rgba(219, 234, 254, 0.5);
-  color: rgb(29, 78, 216);
+#resume-uploaded-state > div {
+  max-width: 100%;
+}
+
+#file-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
