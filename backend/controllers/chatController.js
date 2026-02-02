@@ -249,7 +249,14 @@ const sendMessage = asyncHandler(async (req, res) => {
   
   // Populate user info
   await message.populate('userId', 'firstName lastName email');
-  
+
+  // Cache the new message
+  const messageObj = message.toObject();
+  console.log(`[Chat] 💾 Caching new message ${messageObj._id} in group ${req.params.groupId}`);
+  chatCache.cacheMessage(messageObj, req.params.groupId).catch(err => {
+    console.warn('[Chat] ❌ Failed to cache message:', err.message);
+  });
+
   res.status(201).json({
     success: true,
     message: 'Message sent',
@@ -430,6 +437,12 @@ const uploadPDF = asyncHandler(async (req, res) => {
       } : null;
 
       console.log(`[Chat] PDF message created: ${message._id}`);
+
+      // Cache the new PDF message
+      console.log(`[Chat] 💾 Caching new PDF message ${messageObj._id} in group ${groupId}`);
+      chatCache.cacheMessage(messageObj, groupId).catch(err => {
+        console.warn('[Chat] ❌ Failed to cache PDF message:', err.message);
+      });
 
       res.status(201).json({
         success: true,
