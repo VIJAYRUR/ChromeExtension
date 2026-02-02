@@ -7,26 +7,36 @@
 }
 
 :root {
-  /* Notion color palette */
+  /* Notion color palette - Exact colors */
+  --notion-text: #37352f;
+  --notion-secondary: #73726e;
+  --notion-bg-grey: #f7f7f5;
+  --notion-border: #edece9;
+  --notion-blue: #2383e2;
+
   --bg-main: #ffffff;
   --bg-soft: #f7f7f5;
   --bg-hover: rgba(55, 53, 47, 0.08);
-  --border-subtle: rgba(55, 53, 47, 0.09);
+  --border-subtle: #edece9;
   --text-primary: #37352f;
-  --text-secondary: #787774;
+  --text-secondary: #73726e;
   --text-muted: #9b9a97;
 
-  /* Status colors */
-  --status-applied: rgb(120, 119, 116);
-  --status-interview: rgb(35, 131, 226);
-  --status-offer: rgb(0, 135, 107);
-  --status-rejected: rgb(235, 87, 87);
+  /* Status colors - Notion style */
+  --status-applied: #787774;
+  --status-interview: #604b1f;
+  --status-offer: #0f7b6c;
+  --status-rejected: #eb5757;
 
-  /* Backgrounds */
+  /* Backgrounds - Notion style */
   --bg-applied: rgba(227, 226, 224, 0.5);
-  --bg-interview: rgba(211, 229, 239, 0.5);
+  --bg-interview: rgba(245, 224, 150, 0.4);
   --bg-offer: rgba(219, 237, 219, 0.5);
   --bg-rejected: rgba(255, 235, 230, 0.5);
+
+  /* Work type colors - subtle */
+  --bg-remote: rgba(28, 126, 107, 0.1);
+  --text-remote: rgb(28, 126, 107);
 }
 
 body {
@@ -40,7 +50,7 @@ body {
 }
 
 .container {
-  max-width: 1400px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 96px 48px 48px;
 }
@@ -71,7 +81,7 @@ body {
   margin-left: -6px;
   background: transparent;
   border: none;
-  color: rgba(55, 53, 47, 0.65);
+  color: #9b9a97;
   font-weight: 500;
 }
 
@@ -97,7 +107,7 @@ body {
   justify-content: center;
   white-space: nowrap;
   height: 28px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 14px;
   line-height: 1.2;
   padding: 0 12px;
@@ -106,7 +116,7 @@ body {
 }
 
 .btn-primary {
-  background: rgb(35, 131, 226);
+  background: #2383e2;
   color: white;
 }
 
@@ -153,13 +163,13 @@ body {
 }
 
 .job-company {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.5;
   border: none;
   width: 100%;
   padding: 3px 2px;
-  color: var(--text-secondary);
+  color: #73726e;
   background: transparent;
 }
 
@@ -197,13 +207,29 @@ body {
 
 .meta-item label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: var(--text-primary);
-  min-width: 180px;
+  color: #9b9a97;
+  min-width: 140px;
+  width: 140px;
   padding: 0 8px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Icon styling for labels */
+.meta-item label::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.5;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .meta-item input,
@@ -421,9 +447,9 @@ body {
 
 /* Sections - Notion block style */
 .section {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 24px;
+  padding: 0;
+  border-bottom: none;
 }
 
 .section:last-child {
@@ -439,6 +465,22 @@ body {
   color: var(--text-primary);
   margin-bottom: 12px;
   padding: 3px 2px;
+}
+
+/* Sidebar sections with Notion-style subtle backgrounds */
+.right-column .section {
+  background: #f7f7f5;
+  border: 1px solid #edece9;
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.right-column .section h3 {
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .section textarea {
@@ -515,7 +557,7 @@ body {
   justify-content: center;
   white-space: nowrap;
   height: 24px;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 12px;
   line-height: 1.2;
   padding: 0 8px;
@@ -543,7 +585,7 @@ body {
   border: none;
   border-radius: 3px;
   background: transparent;
-  line-height: 1.5;
+  line-height: 1.6;
   font-size: 14px;
 }
 
@@ -654,44 +696,45 @@ body {
   border-bottom-color: rgb(35, 131, 226);
 }
 
-/* Empty States - Notion style */
+/* Empty States - Notion style - Compact */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  padding: 24px 16px;
   text-align: center;
   color: var(--text-muted);
 }
 
 .empty-state-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 32px;
+  margin-bottom: 12px;
   opacity: 0.3;
   display: none; /* Hide emoji icons */
 }
 
 .empty-state-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .empty-state-description {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
-  max-width: 320px;
+  max-width: 280px;
   line-height: 1.5;
+  margin-bottom: 12px;
 }
 
 .empty-description {
   color: var(--text-muted);
   font-style: normal;
   text-align: center;
-  padding: 48px 24px;
-  font-size: 14px;
+  padding: 24px 16px;
+  font-size: 13px;
 }
 
 /* Upload Area - Notion style */
@@ -699,15 +742,11 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  background: var(--bg-soft);
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
   transition: background 20ms ease-in;
-}
-
-.upload-area:hover {
-  background: var(--bg-hover);
 }
 
 .upload-btn {
@@ -718,19 +757,21 @@ body {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  height: 28px;
-  border-radius: 6px;
+  height: 32px;
+  border-radius: 4px;
   font-size: 14px;
   line-height: 1.2;
-  padding: 0 12px;
+  padding: 0 14px;
   font-weight: 500;
-  background: transparent;
-  border: 1px solid var(--border-subtle);
+  background: white;
+  border: 1px solid #edece9;
   color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .upload-btn:hover {
   background: var(--bg-hover);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .file-name {
@@ -738,63 +779,65 @@ body {
   color: var(--text-secondary);
 }
 
-/* Timeline - Notion style with colored backgrounds */
+/* Timeline - Notion style with subtle indicators */
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .timeline-item {
   display: flex;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 6px 8px;
   background: transparent;
   border-radius: 3px;
-  border-left: 3px solid var(--border-subtle);
+  border-left: 1px solid var(--border-subtle);
   transition: background 20ms ease-in;
+  position: relative;
 }
 
 .timeline-item:hover {
   background: var(--bg-hover);
 }
 
-/* Colored timeline items based on activity type */
+/* Subtle colored timeline items based on activity type */
 .timeline-item.status-applied {
-  background: rgba(227, 226, 224, 0.3);
-  border-left-color: rgb(120, 119, 116);
+  background: transparent;
+  border-left-color: rgba(120, 119, 116, 0.3);
 }
 
 .timeline-item.status-interview {
-  background: rgba(211, 229, 239, 0.3);
-  border-left-color: rgb(35, 131, 226);
+  background: transparent;
+  border-left-color: rgba(35, 131, 226, 0.4);
 }
 
 .timeline-item.status-offer {
-  background: rgba(219, 237, 219, 0.3);
-  border-left-color: rgb(0, 135, 107);
+  background: transparent;
+  border-left-color: rgba(0, 135, 107, 0.4);
 }
 
 .timeline-item.status-rejected {
-  background: rgba(255, 235, 230, 0.3);
-  border-left-color: rgb(235, 87, 87);
+  background: transparent;
+  border-left-color: rgba(235, 87, 87, 0.4);
 }
 
 .timeline-item.status-withdrawn {
-  background: rgba(227, 226, 224, 0.3);
-  border-left-color: rgb(120, 119, 116);
+  background: transparent;
+  border-left-color: rgba(120, 119, 116, 0.3);
 }
 
 .timeline-item.created {
-  background: rgba(221, 244, 255, 0.2);
-  border-left-color: rgb(35, 131, 226);
+  background: transparent;
+  border-left-color: rgba(35, 131, 226, 0.3);
 }
 
 .timeline-date {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  min-width: 100px;
+  min-width: 90px;
   flex-shrink: 0;
+  font-weight: 400;
 }
 
 .timeline-content {
@@ -802,7 +845,7 @@ body {
 }
 
 .timeline-event {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 2px;
@@ -811,6 +854,7 @@ body {
 .timeline-note {
   font-size: 12px;
   color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 /* Link - Notion style */
@@ -863,12 +907,12 @@ body {
 }
 
 .status-badge-property.interview {
-  background: var(--bg-interview);
-  color: var(--status-interview);
+  background: rgba(245, 224, 150, 0.4);
+  color: #604b1f;
 }
 
 .status-badge-property.interview::before {
-  background: var(--status-interview);
+  background: #604b1f;
 }
 
 .status-badge-property.offer {

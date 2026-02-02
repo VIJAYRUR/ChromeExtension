@@ -11,9 +11,19 @@ const { connectRedis, disconnectRedis } = require('./config/redis');
 const { chatCache, jobCache } = require('./utils/cache');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const {
+  initializeSentry,
+  getSentryRequestHandler,
+  getSentryTracingHandler,
+  getSentryErrorHandler
+} = require('./config/sentry');
+const { sanitizeMongoQueries, sanitizeXSS } = require('./middleware/security');
 
 // Initialize express app
 const app = express();
+
+// Initialize Sentry FIRST (before any other middleware)
+initializeSentry(app);
 
 // Trust proxy - Required for Render.com, Railway, Heroku, etc.
 // This allows express-rate-limit to correctly identify users behind proxies
@@ -37,8 +47,28 @@ connectRedis()
     console.log('   Application will continue without caching');
   });
 
+// Sentry request handler - MUST be first middleware
+app.use(getSentryRequestHandler());
+
+// Sentry tracing handler - MUST be after request handler
+app.use(getSentryTracingHandler());
+
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
 
 // CORS configuration
 const corsOptions = {
@@ -91,6 +121,10 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' })); // Increased for base64 file uploads
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Security: Sanitize user input to prevent NoSQL injection and XSS
+app.use(sanitizeMongoQueries);
+app.use(sanitizeXSS);
+
 // Logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -110,6 +144,9 @@ app.get('/', (req, res) => {
     documentation: '/api/health'
   });
 });
+
+// Sentry error handler - MUST be before custom error handlers
+app.use(getSentryErrorHandler());
 
 // Error handling
 app.use(notFound);

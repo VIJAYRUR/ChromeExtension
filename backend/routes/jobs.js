@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
 const { validate, jobRules, jobQueryRules, objectIdRule } = require('../middleware/validate');
+const { createJobLimiter, uploadLimiter } = require('../middleware/security');
 const {
   getJobs,
   getJob,
@@ -30,8 +31,8 @@ router.use(auth);
 // Statistics (before :id route to avoid conflict)
 router.get('/stats', getStats);
 
-// Sync from extension
-router.post('/sync', syncJobs);
+// Sync from extension (with rate limiting)
+router.post('/sync', createJobLimiter, syncJobs);
 
 // Find duplicates
 router.get('/duplicates', findDuplicates);
@@ -42,7 +43,7 @@ router.post('/bulk-status', bulkUpdateStatus);
 
 // CRUD operations
 router.get('/', jobQueryRules, validate, getJobs);
-router.post('/', jobRules, validate, createJob);
+router.post('/', createJobLimiter, jobRules, validate, createJob);
 router.get('/:id', objectIdRule('id'), validate, getJob);
 router.put('/:id', objectIdRule('id'), validate, updateJob);
 router.delete('/:id', objectIdRule('id'), validate, deleteJob);
@@ -57,8 +58,8 @@ router.post('/:id/notes', objectIdRule('id'), validate, addNote);
 router.post('/:id/interviews', objectIdRule('id'), validate, addInterview);
 router.put('/:id/interviews/:interviewId', updateInterview);
 
-// Resume operations (S3-backed)
-router.post('/:id/resume', objectIdRule('id'), validate, uploadResume);
+// Resume operations (S3-backed with rate limiting)
+router.post('/:id/resume', uploadLimiter, objectIdRule('id'), validate, uploadResume);
 router.get('/:id/resume', objectIdRule('id'), validate, getResumeDownloadUrl);
 router.delete('/:id/resume', objectIdRule('id'), validate, deleteResume);
 
