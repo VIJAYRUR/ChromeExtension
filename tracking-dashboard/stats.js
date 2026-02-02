@@ -217,23 +217,22 @@ class StatsManager {
   renderWaitingList() {
     const container = document.getElementById('waiting-list');
 
-    // Jobs with status "applied" sorted by date (oldest first = waiting longest)
-    const waitingJobs = this.jobs
-      .filter(j => j.status === 'applied')
-      .sort((a, b) => new Date(a.dateApplied) - new Date(b.dateApplied))
+    // Jobs with status "saved" sorted by date (newest first = most recently saved)
+    const savedJobs = this.jobs
+      .filter(j => j.status === 'saved')
+      .sort((a, b) => new Date(b.dateApplied) - new Date(a.dateApplied))
       .slice(0, 5);
 
-    if (waitingJobs.length === 0) {
-      container.innerHTML = '<div class="empty-state-small">No applications waiting for response</div>';
+    if (savedJobs.length === 0) {
+      container.innerHTML = '<div class="empty-state-small">No saved jobs</div>';
       return;
     }
 
-    container.innerHTML = waitingJobs.map(job => {
+    container.innerHTML = savedJobs.map(job => {
       const daysAgo = this.getDaysAgo(job.dateApplied);
-      const urgencyClass = daysAgo > 14 ? 'urgent' : daysAgo > 7 ? 'moderate' : '';
 
       return `
-        <div class="waiting-item ${urgencyClass}" data-job-id="${job.id}">
+        <div class="waiting-item" data-job-id="${job.id}">
           <div class="waiting-info">
             <div class="waiting-company">${job.company}</div>
             <div class="waiting-title">${job.title}</div>
