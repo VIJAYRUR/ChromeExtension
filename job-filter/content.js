@@ -7,7 +7,10 @@ class LinkedInJobsFilter {
       hideReposted: false,
       hidePromoted: false,  // NEW: Hide promoted jobs
       earlyApplicants: false,  // NEW: Filter for early applicants
-      blacklistedCompanies: []
+      hideViewed: false,  // NEW: Hide viewed jobs
+      hideEasyApply: false,  // NEW: Hide Easy Apply jobs
+      blacklistedCompanies: [],
+      viewedJobs: []  // Track viewed job IDs
     };
     this.pendingSettings = null;  // Track pending changes
     this.observer = null;
@@ -20,19 +23,40 @@ class LinkedInJobsFilter {
   }
 
   async init() {
-    console.log('[LinkedIn Jobs Filter] 🚀 Starting...');
+    console.log('[LinkedIn Jobs Filter] 🚀 Starting initialization...');
+    console.log('[LinkedIn Jobs Filter] 📍 Current URL:', window.location.href);
 
-    // Load settings from storage
-    await this.loadSettings();
+    // Check if we're on a jobs page
+    if (!this.isOnJobsPage()) {
+      console.log('[LinkedIn Jobs Filter] ⚠️ Not on jobs page, will wait for navigation...');
+      this.waitForJobsPage();
+      return;
+    }
 
-    // Create floating panel
-    this.createFloatingPanel();
+    console.log('[LinkedIn Jobs Filter] ✅ On jobs page, proceeding with initialization...');
 
-    // Start observing for job cards
-    this.startObserver();
+    try {
+      // Load settings from storage
+      await this.loadSettings();
+      console.log('[LinkedIn Jobs Filter] ✅ Settings loaded:', this.settings);
 
-    // Initial filter
-    this.filterAllJobs();
+      // Create floating panel immediately (don't wait for job cards)
+      this.createFloatingPanel();
+      console.log('[LinkedIn Jobs Filter] ✅ Panel created and added to page');
+
+      // Wait for job cards to be present (in background)
+      this.waitForJobCards().then(() => {
+        console.log('[LinkedIn Jobs Filter] ✅ Job cards ready, starting observer and filtering');
+
+        // Start observing for job cards
+        this.startObserver();
+
+        // Initial filter
+        this.filterAllJobs();
+      });
+    } catch (error) {
+      console.error('[LinkedIn Jobs Filter] ❌ Initialization error:', error);
+    }
 
     // Listen for settings changes
     chrome.storage.onChanged.addListener((changes) => {
@@ -73,7 +97,9 @@ class LinkedInJobsFilter {
         if (visibleJobs.length === jobCards.length &&
             (this.settings.blacklistedCompanies.length > 0 ||
              this.settings.hideReposted ||
-             this.settings.hidePromoted)) {
+             this.settings.hidePromoted ||
+             this.settings.hideViewed ||
+             this.settings.hideEasyApply)) {
           console.log('[LinkedIn Jobs Filter] 🔄 Periodic check: re-applying filters...');
           this.filterAllJobs();
         }
@@ -83,50 +109,133 @@ class LinkedInJobsFilter {
     console.log('[LinkedIn Jobs Filter] ✅ Ready!');
   }
 
+  isOnJobsPage() {
+    // Check if current URL is a jobs page
+    return window.location.href.includes('/jobs/');
+  }
+
+  waitForJobsPage() {
+    // Wait for navigation to jobs page
+    const checkInterval = setInterval(() => {
+      if (this.isOnJobsPage()) {
+        console.log('[LinkedIn Jobs Filter] ✅ Jobs page detected, initializing...');
+        clearInterval(checkInterval);
+        this.init();
+      }
+    }, 1000);
+  }
+
+  async waitForJobCards() {
+    // Wait for job cards to appear on the page
+    return new Promise((resolve) => {
+      const checkJobCards = () => {
+        const jobCards = document.querySelectorAll('li.jobs-search-results__list-item, li[data-occludable-job-id]');
+        if (jobCards.length > 0) {
+          console.log('[LinkedIn Jobs Filter] ✅ Job cards found:', jobCards.length);
+          resolve();
+        } else {
+          console.log('[LinkedIn Jobs Filter] ⏳ Waiting for job cards...');
+          setTimeout(checkJobCards, 500);
+        }
+      };
+
+      // Start checking immediately
+      checkJobCards();
+
+      // But also resolve after 5 seconds even if no cards found (don't wait forever)
+      setTimeout(() => {
+        console.log('[LinkedIn Jobs Filter] ⚠️ Timeout waiting for job cards, proceeding anyway...');
+        resolve();
+      }, 5000);
+    });
+  }
+
   setupURLChangeListener() {
     // Store the current URL
     let lastUrl = location.href;
+    let wasOnJobsPage = this.isOnJobsPage();
 
     // Check for URL changes periodically
     setInterval(() => {
       const currentUrl = location.href;
+      const isOnJobsPageNow = this.isOnJobsPage();
+
       if (currentUrl !== lastUrl) {
-        console.log('[LinkedIn Jobs Filter] 🔄 URL changed, re-filtering...');
+        console.log('[LinkedIn Jobs Filter] 🔄 URL changed:', currentUrl);
         lastUrl = currentUrl;
 
-        // Wait a bit for LinkedIn to load new content
-        setTimeout(() => {
-          this.filterAllJobs();
-        }, 500);
+        // If we just navigated TO the jobs page, ensure panel and filters are active
+        if (!wasOnJobsPage && isOnJobsPageNow) {
+          console.log('[LinkedIn Jobs Filter] ✅ Navigated to jobs page, activating...');
+          setTimeout(() => {
+            this.waitForJobCards().then(() => {
+              if (!this.panel) {
+                this.createFloatingPanel();
+              }
+              this.filterAllJobs();
+            });
+          }, 1000);
+        }
+        // If already on jobs page, just re-filter
+        else if (isOnJobsPageNow) {
+          setTimeout(() => {
+            this.filterAllJobs();
+          }, 500);
+        }
+
+        wasOnJobsPage = isOnJobsPageNow;
       }
     }, 500);
 
     // Also listen for popstate events (back/forward navigation)
     window.addEventListener('popstate', () => {
-      console.log('[LinkedIn Jobs Filter] ⬅️ Navigation detected, re-filtering...');
-      setTimeout(() => {
-        this.filterAllJobs();
-      }, 500);
+      console.log('[LinkedIn Jobs Filter] ⬅️ Navigation detected');
+      if (this.isOnJobsPage()) {
+        setTimeout(() => {
+          this.waitForJobCards().then(() => {
+            if (!this.panel) {
+              this.createFloatingPanel();
+            }
+            this.filterAllJobs();
+          });
+        }, 1000);
+      }
     });
 
     // Listen for pushState/replaceState (LinkedIn's SPA navigation)
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
+    const self = this;
+
     history.pushState = function(...args) {
       originalPushState.apply(this, args);
-      console.log('[LinkedIn Jobs Filter] ➡️ Page navigation detected, re-filtering...');
-      setTimeout(() => {
-        window.linkedInJobsFilter?.filterAllJobs();
-      }, 500);
+      console.log('[LinkedIn Jobs Filter] ➡️ Page navigation detected');
+      if (self.isOnJobsPage()) {
+        setTimeout(() => {
+          self.waitForJobCards().then(() => {
+            if (!self.panel) {
+              self.createFloatingPanel();
+            }
+            self.filterAllJobs();
+          });
+        }, 1000);
+      }
     };
 
     history.replaceState = function(...args) {
       originalReplaceState.apply(this, args);
-      console.log('[LinkedIn Jobs Filter] 🔄 Page state changed, re-filtering...');
-      setTimeout(() => {
-        window.linkedInJobsFilter?.filterAllJobs();
-      }, 500);
+      console.log('[LinkedIn Jobs Filter] 🔄 Page state changed');
+      if (self.isOnJobsPage()) {
+        setTimeout(() => {
+          self.waitForJobCards().then(() => {
+            if (!self.panel) {
+              self.createFloatingPanel();
+            }
+            self.filterAllJobs();
+          });
+        }, 1000);
+      }
     };
   }
 
@@ -152,7 +261,7 @@ class LinkedInJobsFilter {
     // Create panel HTML
     const panel = document.createElement('div');
     panel.id = 'linkedin-filter-panel';
-    panel.className = 'visible';
+    panel.className = 'visible minimized';  // Start minimized by default
     panel.innerHTML = `
       <div class="panel-header" id="panel-header">
         <div class="panel-title">
@@ -165,17 +274,6 @@ class LinkedInJobsFilter {
         </div>
       </div>
       <div class="panel-body">
-        <!-- Hide Reposted Toggle -->
-        <div class="filter-section">
-          <div class="toggle-row">
-            <label class="filter-label">Hide Reposted Jobs</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="hide-reposted-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
         <!-- Hide Promoted Toggle -->
         <div class="filter-section">
           <div class="toggle-row">
@@ -198,14 +296,64 @@ class LinkedInJobsFilter {
           </div>
         </div>
 
+        <!-- Hide Viewed Jobs Toggle -->
+        <div class="filter-section">
+          <div class="toggle-row">
+            <label class="filter-label">Hide Viewed Jobs</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hide-viewed-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Hide Easy Apply Toggle -->
+        <div class="filter-section">
+          <div class="toggle-row">
+            <label class="filter-label">Hide Easy Apply Jobs</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hide-easy-apply-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
         <!-- Time Range -->
         <div class="filter-section">
           <label class="filter-label">Time Range</label>
-          <div class="input-row">
-            <input type="number" id="hours-input" min="0" placeholder="24">
-            <span class="unit">hours</span>
+          <div class="time-range-controls">
+            <div class="time-input-group">
+              <select id="hours-select" class="time-select">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="24" selected>24</option>
+                <option value="48">48</option>
+                <option value="72">72</option>
+              </select>
+              <span class="time-label">hours</span>
+            </div>
+            <div class="time-input-group">
+              <select id="minutes-select" class="time-select">
+                <option value="0" selected>0</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+              </select>
+              <span class="time-label">minutes</span>
+            </div>
           </div>
-          <div class="hint">Enter 0 to show all jobs</div>
+          <div class="hint">Set both to 0 to show all jobs</div>
         </div>
 
         <!-- Company Blacklist -->
@@ -223,7 +371,7 @@ class LinkedInJobsFilter {
         <!-- Stats -->
         <div class="filter-section">
           <div class="stats">
-            <div>Filter Results</div>
+            <div class="stats-title">Filter Results</div>
             <div class="stats-row">
               <div class="stat-item">
                 <div class="stat-value" id="stat-total">0</div>
@@ -304,11 +452,6 @@ class LinkedInJobsFilter {
       this.applyPendingSettings();
     });
 
-    // Hide reposted toggle - just update pending settings
-    document.getElementById('hide-reposted-toggle').addEventListener('change', (e) => {
-      this.updatePendingSettings({ hideReposted: e.target.checked });
-    });
-
     // Hide promoted toggle - just update pending settings
     document.getElementById('hide-promoted-toggle').addEventListener('change', (e) => {
       this.updatePendingSettings({ hidePromoted: e.target.checked });
@@ -319,10 +462,30 @@ class LinkedInJobsFilter {
       this.updatePendingSettings({ earlyApplicants: e.target.checked });
     });
 
-    // Hours input - just update pending settings
-    document.getElementById('hours-input').addEventListener('input', (e) => {
-      const value = parseInt(e.target.value) || 0;
-      this.updatePendingSettings({ hoursRange: value });
+    // Hide viewed toggle - just update pending settings
+    document.getElementById('hide-viewed-toggle').addEventListener('change', (e) => {
+      this.updatePendingSettings({ hideViewed: e.target.checked });
+    });
+
+    // Hide Easy Apply toggle - just update pending settings
+    document.getElementById('hide-easy-apply-toggle').addEventListener('change', (e) => {
+      this.updatePendingSettings({ hideEasyApply: e.target.checked });
+    });
+
+    // Hours select - calculate total hours from hours + minutes
+    document.getElementById('hours-select').addEventListener('change', (e) => {
+      const hours = parseInt(e.target.value) || 0;
+      const minutes = parseInt(document.getElementById('minutes-select').value) || 0;
+      const totalHours = hours + (minutes / 60);
+      this.updatePendingSettings({ hoursRange: totalHours });
+    });
+
+    // Minutes select - calculate total hours from hours + minutes
+    document.getElementById('minutes-select').addEventListener('change', (e) => {
+      const hours = parseInt(document.getElementById('hours-select').value) || 0;
+      const minutes = parseInt(e.target.value) || 0;
+      const totalHours = hours + (minutes / 60);
+      this.updatePendingSettings({ hoursRange: totalHours });
     });
 
     // Company input
@@ -464,6 +627,15 @@ class LinkedInJobsFilter {
 
       card.addEventListener('click', () => {
         console.log('[Job Tracker] 🖱️ Job card clicked, checking detail panel...');
+
+        // Track this job as viewed
+        const jobId = card.getAttribute('data-occludable-job-id');
+        if (jobId && !this.settings.viewedJobs.includes(jobId)) {
+          this.settings.viewedJobs.push(jobId);
+          // Save to storage immediately
+          chrome.storage.local.set({ settings: this.settings });
+          console.log('[LinkedIn Jobs Filter] 👁️ Marked job as viewed:', jobId);
+        }
 
         // Wait for LinkedIn to update the detail panel
         setTimeout(() => {
@@ -1384,7 +1556,22 @@ class LinkedInJobsFilter {
       return true; // Hide - promoted
     }
 
-    // Filter 3: Blacklisted companies - ULTRA ROBUST MATCHING
+    // Filter 3: Hide viewed jobs
+    if (this.settings.hideViewed) {
+      const jobId = card.getAttribute('data-occludable-job-id');
+      if (jobId && this.settings.viewedJobs.includes(jobId)) {
+        console.log(`[LinkedIn Jobs Filter] 👁️ HIDING VIEWED: "${jobData.company || 'Unknown'}" (ID: ${jobId})`);
+        return true; // Hide - already viewed
+      }
+    }
+
+    // Filter 4: Hide Easy Apply jobs
+    if (this.settings.hideEasyApply && jobData.isEasyApply) {
+      console.log(`[LinkedIn Jobs Filter] ✅ HIDING EASY APPLY: "${jobData.company || 'Unknown'}"`);
+      return true; // Hide - Easy Apply
+    }
+
+    // Filter 5: Blacklisted companies - ULTRA ROBUST MATCHING
     if (this.settings.blacklistedCompanies.length > 0 && jobData.company) {
       const isBlacklisted = this.isCompanyBlacklisted(jobData.company);
 
@@ -1394,7 +1581,7 @@ class LinkedInJobsFilter {
       }
     }
 
-    // Filter 4: Time range (hours)
+    // Filter 6: Time range (hours)
     if (this.settings.hoursRange > 0) {
       const hoursAgo = this.getJobAgeInHours(jobData.timeText);
       if (hoursAgo > this.settings.hoursRange) {
@@ -1631,7 +1818,10 @@ class LinkedInJobsFilter {
     // ULTRA ROBUST PROMOTED DETECTION
     const isPromoted = this.detectPromoted(card);
 
-    return { company, timeText, isReposted, isPromoted };
+    // EASY APPLY DETECTION
+    const isEasyApply = this.detectEasyApply(card);
+
+    return { company, timeText, isReposted, isPromoted, isEasyApply };
   }
 
   detectReposted(card) {
@@ -1744,6 +1934,64 @@ class LinkedInJobsFilter {
       const badgeText = (badge.textContent || '').trim().toLowerCase();
       if (badgeText === 'promoted' || badgeText === 'sponsored') {
         console.log('[LinkedIn Jobs Filter] 📢 PROMOTED detected via badge');
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  detectEasyApply(card) {
+    // Method 1: Check for Easy Apply button
+    const easyApplyButton = card.querySelector('button[aria-label*="Easy Apply" i], button[data-easy-apply-button]');
+    if (easyApplyButton) {
+      console.log('[LinkedIn Jobs Filter] ✅ EASY APPLY detected via button');
+      return true;
+    }
+
+    // Method 2: Check all text content (case-insensitive)
+    const allText = (card.textContent || '').toLowerCase();
+    if (allText.includes('easy apply')) {
+      console.log('[LinkedIn Jobs Filter] ✅ EASY APPLY detected via text');
+      return true;
+    }
+
+    // Method 3: Check for Easy Apply related classes
+    const easyApplyClasses = [
+      '[class*="easy-apply"]',
+      '[class*="easyapply"]',
+      '[data-easy-apply]',
+      '[aria-label*="easy apply" i]'
+    ];
+
+    for (const selector of easyApplyClasses) {
+      if (card.querySelector(selector)) {
+        console.log('[LinkedIn Jobs Filter] ✅ EASY APPLY detected via class:', selector);
+        return true;
+      }
+    }
+
+    // Method 4: Check all child elements
+    const allElements = card.querySelectorAll('*');
+    for (const el of allElements) {
+      const text = (el.textContent || '').toLowerCase();
+      const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
+      const title = (el.getAttribute('title') || '').toLowerCase();
+
+      if (text.includes('easy apply') ||
+          ariaLabel.includes('easy apply') ||
+          title.includes('easy apply')) {
+        console.log('[LinkedIn Jobs Filter] ✅ EASY APPLY detected in element');
+        return true;
+      }
+    }
+
+    // Method 5: Check for specific Easy Apply badge/icon
+    const badges = card.querySelectorAll('span, div, button');
+    for (const badge of badges) {
+      const badgeText = (badge.textContent || '').trim().toLowerCase();
+      if (badgeText === 'easy apply') {
+        console.log('[LinkedIn Jobs Filter] ✅ EASY APPLY detected via badge');
         return true;
       }
     }
@@ -2777,10 +3025,6 @@ class LinkedInJobsFilter {
   updatePanelUI() {
     if (!this.panel) return;
 
-    // Update hide reposted toggle
-    const hideRepostedToggle = document.getElementById('hide-reposted-toggle');
-    if (hideRepostedToggle) hideRepostedToggle.checked = this.settings.hideReposted;
-
     // Update hide promoted toggle
     const hidePromotedToggle = document.getElementById('hide-promoted-toggle');
     if (hidePromotedToggle) hidePromotedToggle.checked = this.settings.hidePromoted;
@@ -2789,9 +3033,35 @@ class LinkedInJobsFilter {
     const earlyApplicantsToggle = document.getElementById('early-applicants-toggle');
     if (earlyApplicantsToggle) earlyApplicantsToggle.checked = this.settings.earlyApplicants;
 
-    // Update hours input
-    const hoursInput = document.getElementById('hours-input');
-    if (hoursInput) hoursInput.value = this.settings.hoursRange;
+    // Update hide viewed toggle
+    const hideViewedToggle = document.getElementById('hide-viewed-toggle');
+    if (hideViewedToggle) hideViewedToggle.checked = this.settings.hideViewed;
+
+    // Update hide Easy Apply toggle
+    const hideEasyApplyToggle = document.getElementById('hide-easy-apply-toggle');
+    if (hideEasyApplyToggle) hideEasyApplyToggle.checked = this.settings.hideEasyApply;
+
+    // Update hours and minutes selects
+    const totalHours = this.settings.hoursRange || 0;
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+
+    const hoursSelect = document.getElementById('hours-select');
+    const minutesSelect = document.getElementById('minutes-select');
+
+    if (hoursSelect) {
+      // Find the closest option or select the value
+      const options = Array.from(hoursSelect.options);
+      const closestOption = options.find(opt => parseInt(opt.value) === hours);
+      if (closestOption) {
+        hoursSelect.value = closestOption.value;
+      } else {
+        // If exact value not found, set to closest lower value
+        hoursSelect.value = hours;
+      }
+    }
+
+    if (minutesSelect) minutesSelect.value = minutes;
 
     // Update company tags
     this.renderCompanyTags();
@@ -2920,7 +3190,11 @@ class LinkedInJobsFilter {
     // Get current blacklist (from pending settings if exists, otherwise from settings)
     const currentBlacklist = this.pendingSettings?.blacklistedCompanies || [...this.settings.blacklistedCompanies];
 
-    if (!currentBlacklist.includes(company)) {
+    // Check if company already exists (case-insensitive)
+    const companyLower = company.toLowerCase().trim();
+    const alreadyExists = currentBlacklist.some(c => c.toLowerCase().trim() === companyLower);
+
+    if (!alreadyExists) {
       currentBlacklist.push(company);
 
       // Update pending settings (don't save yet)
@@ -2931,6 +3205,8 @@ class LinkedInJobsFilter {
 
       console.log('[LinkedIn Jobs Filter] ➕ Added to blacklist (pending):', company);
       console.log('[LinkedIn Jobs Filter] 💡 Click "Apply Filters" to apply changes');
+    } else {
+      console.log('[LinkedIn Jobs Filter] ⚠️ Company already in blacklist (case-insensitive match):', company);
     }
   }
 
@@ -2993,11 +3269,22 @@ class LinkedInJobsFilter {
 }
 
 // Start the filter when page loads
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+console.log('[LinkedIn Jobs Filter] 📦 Content script loaded');
+console.log('[LinkedIn Jobs Filter] 📄 Document state:', document.readyState);
+console.log('[LinkedIn Jobs Filter] 🌐 URL:', window.location.href);
+
+try {
+  if (document.readyState === 'loading') {
+    console.log('[LinkedIn Jobs Filter] ⏳ Waiting for DOM content loaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[LinkedIn Jobs Filter] ✅ DOM content loaded, initializing...');
+      window.linkedInJobsFilter = new LinkedInJobsFilter();
+    });
+  } else {
+    console.log('[LinkedIn Jobs Filter] ✅ Document already loaded, initializing immediately...');
     window.linkedInJobsFilter = new LinkedInJobsFilter();
-  });
-} else {
-  window.linkedInJobsFilter = new LinkedInJobsFilter();
+  }
+} catch (error) {
+  console.error('[LinkedIn Jobs Filter] ❌ Failed to initialize:', error);
 }
 
