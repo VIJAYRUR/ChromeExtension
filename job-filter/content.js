@@ -1097,28 +1097,33 @@ class LinkedInJobsFilter {
         chrome.storage.local.get([storageKey], (result) => {
           const jobs = result[storageKey] || [];
 
-          // Find if this job is already tracked
+          console.log('[Job Tracker] 🔍 Checking if job is tracked:', {
+            jobUrl: jobData.linkedinUrl,
+            jobCompany: jobData.company,
+            jobTitle: jobData.title,
+            totalTrackedJobs: jobs.length
+          });
+
+          // Find if this job is already tracked (strict matching by LinkedIn URL only)
           const trackedJob = jobs.find(existingJob => {
-            // Check by LinkedIn URL
+            // Only check by LinkedIn URL - most reliable
             if (jobData.linkedinUrl && existingJob.linkedinUrl) {
               const newJobId = jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
               const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
 
               if (newJobId && existingJobId && newJobId === existingJobId) {
+                console.log('[Job Tracker] ✅ Found tracked job by URL match:', newJobId);
                 return true;
               }
             }
 
-            // Fallback: Check by company + title
-            const sameCompany = existingJob.company.toLowerCase().trim() ===
-                               jobData.company.toLowerCase().trim();
-            const sameTitle = existingJob.title.toLowerCase().trim() ===
-                             jobData.title.toLowerCase().trim();
-
-            return sameCompany && sameTitle;
+            return false; // Don't use company+title fallback here to avoid false positives
           });
 
           if (trackedJob) {
+            console.log('[Job Tracker] 📋 Job is tracked:', {
+              hasResume: !!(trackedJob.resumeS3Key || trackedJob.resumeFileName)
+            });
             // Job is tracked - check if it has a resume
             const hasResume = trackedJob.resumeS3Key || trackedJob.resumeFileName;
 
@@ -1148,6 +1153,8 @@ class LinkedInJobsFilter {
                 });
               }
             }
+          } else {
+            console.log('[Job Tracker] ℹ️ Job is NOT tracked - keeping button as "Track"');
           }
           // If not tracked, button stays as "Track" (default state)
         });
