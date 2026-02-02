@@ -703,6 +703,12 @@ class LinkedInJobsFilter {
       e.preventDefault();
       e.stopPropagation();
 
+      // Check if already tracked (priority check - do this FIRST!)
+      if (trackBtn.dataset.alreadyTracked === 'true') {
+        this.showNotification('⚠️ This job is already in your dashboard!');
+        return;
+      }
+
       // Check if button is in "Upload Resume" mode
       if (trackBtn.dataset.uploadMode === 'true') {
         console.log('[Job Tracker] 📤 Upload Resume button clicked (from restored state)');
@@ -711,12 +717,6 @@ class LinkedInJobsFilter {
         if (storedState && storedState.jobData) {
           this.handleResumeUploadFromButton(storedState.jobData, trackBtn);
         }
-        return;
-      }
-
-      // Check if already tracked
-      if (trackBtn.dataset.alreadyTracked === 'true') {
-        this.showNotification('This job is already in your dashboard!');
         return;
       }
 
