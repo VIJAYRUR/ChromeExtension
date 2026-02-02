@@ -16,6 +16,9 @@
 const Sentry = require('@sentry/node');
 const { nodeProfilingIntegration } = require('@sentry/profiling-node');
 
+// Track if Sentry is initialized
+let isSentryInitialized = false;
+
 /**
  * Initialize Sentry for backend error tracking
  * Call this BEFORE any other app code
@@ -25,6 +28,7 @@ function initializeSentry(app) {
   if (!process.env.SENTRY_DSN) {
     console.log('⚠️  Sentry DSN not configured - error tracking disabled');
     console.log('   Set SENTRY_DSN in .env to enable Sentry');
+    isSentryInitialized = false;
     return;
   }
 
@@ -101,6 +105,7 @@ function initializeSentry(app) {
     release: process.env.SENTRY_RELEASE || `job-tracker-api@${require('../package.json').version}`,
   });
 
+  isSentryInitialized = true;
   console.log(`✅ Sentry initialized (${environment})`);
   console.log(`   Traces sample rate: ${environment === 'production' ? '10%' : '100%'}`);
 }
@@ -110,6 +115,10 @@ function initializeSentry(app) {
  * Add this BEFORE all routes
  */
 function getSentryRequestHandler() {
+  if (!isSentryInitialized) {
+    // Return no-op middleware if Sentry is not initialized
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.requestHandler();
 }
 
@@ -118,6 +127,10 @@ function getSentryRequestHandler() {
  * Add this AFTER request handler but BEFORE routes
  */
 function getSentryTracingHandler() {
+  if (!isSentryInitialized) {
+    // Return no-op middleware if Sentry is not initialized
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.tracingHandler();
 }
 
@@ -126,6 +139,10 @@ function getSentryTracingHandler() {
  * Add this AFTER all routes but BEFORE custom error handler
  */
 function getSentryErrorHandler() {
+  if (!isSentryInitialized) {
+    // Return no-op middleware if Sentry is not initialized
+    return (err, req, res, next) => next(err);
+  }
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
       // Only send 5xx errors to Sentry (server errors)
@@ -143,8 +160,8 @@ function getSentryErrorHandler() {
  * Use this for try-catch blocks where you want to log to Sentry
  */
 function captureException(error, context = {}) {
-  if (!process.env.SENTRY_DSN) return;
-  
+  if (!isSentryInitialized) return;
+
   Sentry.captureException(error, {
     extra: context,
   });
@@ -154,8 +171,8 @@ function captureException(error, context = {}) {
  * Manually capture a message (for warnings, info)
  */
 function captureMessage(message, level = 'info', context = {}) {
-  if (!process.env.SENTRY_DSN) return;
-  
+  if (!isSentryInitialized) return;
+
   Sentry.captureMessage(message, {
     level, // 'fatal', 'error', 'warning', 'log', 'info', 'debug'
     extra: context,
