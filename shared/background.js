@@ -126,6 +126,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const jobStatus = message.jobData.status || 'applied';
       console.log('[Background] 🔍 Creating job with status:', jobStatus);
 
+      // Handle resume file if provided - store metadata only, upload to S3 later
+      let resumeMetadata = null;
+      let resumeUploadData = null; // Store temporarily for S3 upload
+      let timelineEvent = 'Application tracked from LinkedIn';
+
+      if (message.jobData.resumeFile) {
+        console.log('[Background] 📎 Resume file included:', message.jobData.resumeFile.name);
+        resumeMetadata = {
+          name: message.jobData.resumeFile.name,
+          type: message.jobData.resumeFile.type,
+          size: message.jobData.resumeFile.size
+        };
+        resumeUploadData = message.jobData.resumeFile.data; // Keep for S3 upload
+        timelineEvent = 'Application tracked from LinkedIn with resume';
+      }
+
+      if (message.jobData.source === 'WhatsApp Group') {
+        timelineEvent = 'Job saved from WhatsApp group';
+      }
+
       const job = {
         id: 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         company: message.jobData.company || 'Unknown Company',
@@ -144,15 +164,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         applicantsText: message.jobData.applicantsText || null,
         timeToApplyBucket: message.jobData.timeToApplyBucket || null,
         competitionBucket: message.jobData.competitionBucket || null,
-        resumeFile: null,
+        // Resume metadata only - no base64 data stored locally!
+        resumeFileName: resumeMetadata ? resumeMetadata.name : null,
+        resumeFileType: resumeMetadata ? resumeMetadata.type : null,
+        resumeFileSize: resumeMetadata ? resumeMetadata.size : null,
+        resumeS3Key: null, // Will be set after S3 upload
+        uploadedAt: null, // Will be set after S3 upload
         coverLetter: '',
         notes: '',
         timeline: [
           {
             date: new Date().toISOString(),
-            event: message.jobData.source === 'WhatsApp Group'
-              ? 'Job saved from WhatsApp group'
-              : 'Application tracked from LinkedIn',
+            event: timelineEvent,
             type: 'created'
           }
         ],
@@ -178,7 +201,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, job: job });
 
         // Sync to server immediately so new job doesn't get overwritten by sync manager
-        chrome.storage.local.get(['authToken'], (result) => {
+        chrome.storage.local.get(['authToken'], async (result) => {
           if (result.authToken) {
             console.log('[Background] 🔄 Syncing new job to server...');
             // Send to API to create job on server
@@ -194,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 console.log('[Background] 📡 Sync response status:', res.status);
                 return res.json().then(data => ({ status: res.status, data }));
               })
-              .then(({ status, data }) => {
+              .then(async ({ status, data }) => {
                 if (status === 200 || status === 201) {
                   const mongoId = data.data?._id;
                   console.log('[Background] ✅ Job synced to server with ID:', mongoId);
@@ -207,6 +230,56 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     chrome.storage.local.set(updatedData, () => {
                       console.log('[Background] ✅ Local job updated with server _id to prevent duplicates');
                     });
+
+                    // UPLOAD RESUME TO S3 if resume data exists
+                    if (resumeUploadData && resumeMetadata) {
+                      try {
+                        console.log('[Background] ☁️ Uploading resume to S3 for new job...');
+
+                        // Convert base64 to blob
+                        const base64Data = resumeUploadData.split(',')[1];
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                          byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: resumeMetadata.type });
+
+                        // Create FormData for file upload
+                        const formData = new FormData();
+                        formData.append('resume', blob, resumeMetadata.name);
+
+                        // Upload to backend API
+                        const uploadResponse = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${mongoId}/resume`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${result.authToken}`
+                          },
+                          body: formData
+                        });
+
+                        const uploadResult = await uploadResponse.json();
+
+                        if (uploadResponse.ok && uploadResult.success) {
+                          console.log('[Background] ✅ Resume uploaded to S3:', uploadResult.data);
+
+                          // Update local job with S3 metadata
+                          job.resumeS3Key = uploadResult.data.resumeS3Key || uploadResult.data.s3Key;
+                          job.uploadedAt = new Date().toISOString();
+
+                          const finalData = {};
+                          finalData[storageKey] = jobs;
+                          chrome.storage.local.set(finalData, () => {
+                            console.log('[Background] ✅ Resume S3 metadata saved locally');
+                          });
+                        } else {
+                          console.error('[Background] ❌ Resume upload failed:', uploadResult.message);
+                        }
+                      } catch (error) {
+                        console.error('[Background] ❌ Resume upload error:', error);
+                      }
+                    }
                   }
                 } else {
                   console.error('[Background] ❌ Sync failed with status', status, ':', data);
@@ -220,6 +293,135 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         });
       });
+    });
+
+    return true; // Keep message channel open for async response
+  }
+
+  // Handle updating a job with resume data
+  if (message.action === 'updateJobResume') {
+    console.log('[Background] 📎 Updating job with resume:', message.linkedinUrl);
+    console.log('[Background] 📎 Resume data received:', {
+      fileName: message.resumeFile?.name,
+      fileType: message.resumeFile?.type,
+      fileSize: message.resumeFile?.size,
+      hasData: !!message.resumeFile?.data,
+      dataLength: message.resumeFile?.data?.length
+    });
+
+    const userId = message.userId;
+    const storageKey = getStorageKey(userId);
+
+    chrome.storage.local.get([storageKey, 'authToken'], async (result) => {
+      const jobs = result[storageKey] || [];
+      const authToken = result.authToken;
+
+      console.log('[Background] 📎 Searching for job in', jobs.length, 'jobs');
+
+      // Find the job by LinkedIn URL
+      const jobIndex = jobs.findIndex(job => job.linkedinUrl === message.linkedinUrl);
+
+      if (jobIndex === -1) {
+        console.error('[Background] ❌ Job not found for resume update');
+        console.error('[Background] ❌ Looking for:', message.linkedinUrl);
+        console.error('[Background] ❌ Available URLs:', jobs.map(j => j.linkedinUrl).slice(0, 3));
+        sendResponse({ success: false, error: 'Job not found' });
+        return;
+      }
+
+      console.log('[Background] ✅ Found job at index', jobIndex);
+
+      // UPLOAD TO S3 FIRST (don't store large base64 in local storage!)
+      if (authToken && jobs[jobIndex]._id) {
+        try {
+          console.log('[Background] ☁️ Uploading resume to S3...');
+
+          // Convert base64 to blob
+          const base64Data = message.resumeFile.data.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: message.resumeFile.type });
+
+          // Create FormData for file upload
+          const formData = new FormData();
+          formData.append('resume', blob, message.resumeFile.name);
+
+          // Upload to backend API (which uploads to S3)
+          const uploadResponse = await fetch(`https://job-tracker-api-j7ef.onrender.com/api/jobs/${jobs[jobIndex]._id}/resume`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+          });
+
+          const uploadResult = await uploadResponse.json();
+
+          if (!uploadResponse.ok || !uploadResult.success) {
+            throw new Error(uploadResult.message || 'S3 upload failed');
+          }
+
+          console.log('[Background] ✅ Resume uploaded to S3:', uploadResult.data);
+
+          // Update job with S3 metadata ONLY (no base64 data!)
+          jobs[jobIndex].resumeFileName = uploadResult.data.resumeFileName || uploadResult.data.fileName;
+          jobs[jobIndex].resumeFileType = uploadResult.data.resumeFileType || uploadResult.data.fileType;
+          jobs[jobIndex].resumeFileSize = uploadResult.data.resumeFileSize || uploadResult.data.fileSize;
+          jobs[jobIndex].resumeS3Key = uploadResult.data.resumeS3Key || uploadResult.data.s3Key;
+          jobs[jobIndex].uploadedAt = new Date().toISOString();
+
+          // DO NOT store base64 data - it's too large!
+          delete jobs[jobIndex].resumeFile;
+          delete jobs[jobIndex].resumeFileData;
+
+          console.log('[Background] 📎 Updated job resume fields (S3 metadata only):', {
+            resumeFileName: jobs[jobIndex].resumeFileName,
+            resumeS3Key: jobs[jobIndex].resumeS3Key,
+            resumeFileSize: jobs[jobIndex].resumeFileSize
+          });
+
+          // Add timeline entry
+          const timelineEntry = {
+            date: new Date().toISOString(),
+            event: 'Resume uploaded',
+            details: `Uploaded ${message.resumeFile.name} to cloud storage`
+          };
+
+          if (!jobs[jobIndex].timeline) {
+            jobs[jobIndex].timeline = [];
+          }
+          jobs[jobIndex].timeline.push(timelineEntry);
+
+          // Save updated jobs (only metadata, no large files!)
+          const updatedData = {};
+          updatedData[storageKey] = jobs;
+
+          chrome.storage.local.set(updatedData, () => {
+            if (chrome.runtime.lastError) {
+              console.error('[Background] ❌ Failed to save resume metadata:', chrome.runtime.lastError);
+              sendResponse({ success: false, error: chrome.runtime.lastError.message });
+              return;
+            }
+
+            console.log('[Background] ✅ Resume metadata saved to local storage');
+            console.log('[Background] ✅ Full base64 data uploaded to S3 and NOT stored locally');
+            sendResponse({ success: true });
+          });
+
+        } catch (error) {
+          console.error('[Background] ❌ S3 upload failed:', error);
+          sendResponse({ success: false, error: error.message });
+          return;
+        }
+      } else {
+        console.warn('[Background] ⚠️ Not authenticated or no server job ID - cannot upload to S3');
+        sendResponse({ success: false, error: 'Not authenticated. Please log in to upload resumes.' });
+        return;
+      }
     });
 
     return true; // Keep message channel open for async response
