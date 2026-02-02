@@ -637,29 +637,22 @@ class LinkedInJobsFilter {
 
     console.log('[Job Tracker] 🔍 Creating button for job ID:', jobId);
 
-    // Get stored state using job ID (more reliable than full URL)
-    const storedState = jobId ? this.trackButtonStates.get(jobId) : null;
-
     // Create track button
     const trackBtn = document.createElement('button');
     trackBtn.className = 'job-tracker-detail-btn';
     trackBtn.dataset.jobId = jobId; // Store job ID on button for later reference
 
-    // Check if button should be in "Upload Resume" mode
-    if (storedState && storedState.mode === 'upload_resume') {
-      console.log('[Job Tracker] 📄 Restoring Upload Resume button state for job', jobId);
-      trackBtn.innerHTML = '📄 Upload Resume';
-      trackBtn.dataset.uploadMode = 'true';
-    } else {
-      trackBtn.innerHTML = 'Track';
-    }
+    // Always start with "Track" state
+    trackBtn.innerHTML = 'Track';
+    trackBtn.dataset.uploadMode = 'false';
 
     trackBtn.title = 'Track this job application';
     trackBtn.setAttribute('aria-label', 'Track this job application');
     trackBtn.type = 'button';
 
     // Check if this job is already tracked
-    this.checkIfJobTracked(detailPanel, trackBtn);
+    // This will update button to "Already Tracked" or "Upload Resume" as appropriate
+    this.checkIfJobTrackedAndSetButton(detailPanel, trackBtn);
 
     // Add sleek styles - make it very visible
     trackBtn.style.cssText = `
@@ -710,12 +703,12 @@ class LinkedInJobsFilter {
       }
 
       // Check if button is in "Upload Resume" mode
-      if (trackBtn.dataset.uploadMode === 'true') {
-        console.log('[Job Tracker] 📤 Upload Resume button clicked (from restored state)');
-        const jobId = trackBtn.dataset.jobId;
-        const storedState = this.trackButtonStates.get(jobId);
-        if (storedState && storedState.jobData) {
-          this.handleResumeUploadFromButton(storedState.jobData, trackBtn);
+      if (trackBtn.dataset.uploadMode === 'true' && trackBtn.dataset.alreadyTracked === 'true') {
+        console.log('[Job Tracker] 📤 Upload Resume button clicked');
+        // Extract job data from panel
+        const jobData = this.extractJobDataFromDetailPanel(detailPanel);
+        if (jobData) {
+          this.handleResumeUploadFromButton(jobData, trackBtn);
         }
         return;
       }
@@ -1088,47 +1081,76 @@ class LinkedInJobsFilter {
     return result;
   }
 
-  async checkIfJobTracked(detailPanel, trackBtn) {
+  async checkIfJobTrackedAndSetButton(detailPanel, trackBtn) {
     try {
       // Extract job data to check
       const jobData = this.extractJobDataFromDetailPanel(detailPanel);
       if (!jobData) return;
 
-      // Get tracked jobs from storage
-      chrome.storage.local.get(['trackedJobs'], (result) => {
-        const jobs = result.trackedJobs || [];
+      // Get current user to access correct storage key
+      chrome.storage.local.get(['currentUser'], (userResult) => {
+        const currentUser = userResult.currentUser;
+        const userId = currentUser?._id || null;
+        const storageKey = userId ? `trackedJobs_${userId}` : 'trackedJobs_anonymous';
 
-        // Check if this job is already tracked
-        const isTracked = jobs.some(existingJob => {
-          // Check by LinkedIn URL
-          if (jobData.linkedinUrl && existingJob.linkedinUrl) {
-            const newJobId = jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
-            const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+        // Get tracked jobs from storage
+        chrome.storage.local.get([storageKey], (result) => {
+          const jobs = result[storageKey] || [];
 
-            if (newJobId && existingJobId && newJobId === existingJobId) {
-              return true;
+          // Find if this job is already tracked
+          const trackedJob = jobs.find(existingJob => {
+            // Check by LinkedIn URL
+            if (jobData.linkedinUrl && existingJob.linkedinUrl) {
+              const newJobId = jobData.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+              const existingJobId = existingJob.linkedinUrl.match(/\/jobs\/view\/(\d+)/)?.[1];
+
+              if (newJobId && existingJobId && newJobId === existingJobId) {
+                return true;
+              }
+            }
+
+            // Fallback: Check by company + title
+            const sameCompany = existingJob.company.toLowerCase().trim() ===
+                               jobData.company.toLowerCase().trim();
+            const sameTitle = existingJob.title.toLowerCase().trim() ===
+                             jobData.title.toLowerCase().trim();
+
+            return sameCompany && sameTitle;
+          });
+
+          if (trackedJob) {
+            // Job is tracked - check if it has a resume
+            const hasResume = trackedJob.resumeS3Key || trackedJob.resumeFileName;
+
+            if (hasResume) {
+              // Has resume - show "Already Tracked"
+              trackBtn.innerHTML = '✓ Already Tracked';
+              trackBtn.style.background = '#6B7280 !important';
+              trackBtn.style.borderColor = '#6B7280 !important';
+              trackBtn.style.cursor = 'default !important';
+              trackBtn.dataset.alreadyTracked = 'true';
+              trackBtn.dataset.uploadMode = 'false';
+            } else {
+              // No resume - show "Upload Resume"
+              trackBtn.innerHTML = '📄 Upload Resume';
+              trackBtn.style.background = '#000000 !important';
+              trackBtn.style.borderColor = '#000000 !important';
+              trackBtn.style.cursor = 'pointer !important';
+              trackBtn.dataset.alreadyTracked = 'true'; // Still tracked!
+              trackBtn.dataset.uploadMode = 'true';
+
+              // Store job data for upload handler
+              const jobId = trackBtn.dataset.jobId;
+              if (jobId) {
+                this.trackButtonStates.set(jobId, {
+                  mode: 'upload_resume',
+                  jobData: jobData
+                });
+              }
             }
           }
-
-          // Fallback: Check by company + title
-          const sameCompany = existingJob.company.toLowerCase().trim() ===
-                             jobData.company.toLowerCase().trim();
-          const sameTitle = existingJob.title.toLowerCase().trim() ===
-                           jobData.title.toLowerCase().trim();
-
-          return sameCompany && sameTitle;
+          // If not tracked, button stays as "Track" (default state)
         });
-
-        if (isTracked) {
-          // Update button to show it's already tracked
-          trackBtn.innerHTML = '✓ Already Tracked';
-          trackBtn.style.background = '#6B7280 !important';
-          trackBtn.style.borderColor = '#6B7280 !important';
-          trackBtn.style.cursor = 'default !important';
-          trackBtn.dataset.alreadyTracked = 'true';
-          // Remove upload mode if it was set
-          trackBtn.dataset.uploadMode = 'false';
-        }
       });
     } catch (error) {
       console.error('[Job Tracker] Error checking if job is tracked:', error);
@@ -2576,21 +2598,6 @@ class LinkedInJobsFilter {
           if (showResumePrompt && !jobData.resumeFile) {
             console.log('[Job Tracker] 📄 Transforming button to Upload Resume in 2 seconds...');
 
-            // Extract job ID from LinkedIn URL to use as unique key
-            const jobIdMatch = jobData.linkedinUrl?.match(/\/jobs\/view\/(\d+)/) ||
-                              jobData.linkedinJobId;
-            const jobId = jobIdMatch ? (typeof jobIdMatch === 'string' ? jobIdMatch : jobIdMatch[1]) : null;
-
-            console.log('[Job Tracker] 💾 Storing state for job ID:', jobId);
-
-            // Store the state so it persists across page updates (use job ID as key)
-            if (jobId) {
-              this.trackButtonStates.set(jobId, {
-                mode: 'upload_resume',
-                jobData: jobData
-              });
-            }
-
             setTimeout(() => {
               console.log('[Job Tracker] 📄 NOW transforming button to Upload Resume');
               trackBtn.innerHTML = '📄 Upload Resume';
@@ -2598,14 +2605,14 @@ class LinkedInJobsFilter {
               trackBtn.style.borderColor = '#000000 !important';
               trackBtn.disabled = false;
               trackBtn.dataset.uploadMode = 'true';
+              trackBtn.dataset.alreadyTracked = 'true'; // Job is now tracked
 
               // Remove old click listeners and add upload handler
               const newBtn = trackBtn.cloneNode(true);
 
               // Preserve important dataset flags
-              if (trackBtn.dataset.alreadyTracked) {
-                newBtn.dataset.alreadyTracked = trackBtn.dataset.alreadyTracked;
-              }
+              newBtn.dataset.alreadyTracked = 'true';
+              newBtn.dataset.uploadMode = 'true';
               if (trackBtn.dataset.jobId) {
                 newBtn.dataset.jobId = trackBtn.dataset.jobId;
               }
@@ -2619,8 +2626,8 @@ class LinkedInJobsFilter {
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Check if job is already tracked (shouldn't happen, but safety check)
-                if (newBtn.dataset.alreadyTracked === 'true') {
+                // Check if job is already tracked
+                if (newBtn.dataset.alreadyTracked === 'true' && newBtn.dataset.uploadMode !== 'true') {
                   this.showNotification('⚠️ This job is already in your dashboard!');
                   return;
                 }
