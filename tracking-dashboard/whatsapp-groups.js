@@ -643,11 +643,16 @@ async function loadMessagesData(groupId) {
     console.log('[WhatsApp Groups] 📨 Loaded messages:', messages.length);
     console.log('[WhatsApp Groups] 📨 PDF messages:', messages.filter(m => m.messageType === 'pdf_attachment').length);
     console.log('[WhatsApp Groups] 📨 All messages:', messages);
+    console.log('[WhatsApp Groups] 📨 Pagination:', pagination);
+    console.log('[WhatsApp Groups] 📨 Has more:', pagination.hasMore);
+    console.log('[WhatsApp Groups] 📨 Oldest timestamp:', pagination.oldestTimestamp);
 
     // Update state
     state.messagesByGroupId[groupId] = messages;
     state.hasMoreByGroupId[groupId] = pagination.hasMore || false;
     state.oldestTimestampByGroupId[groupId] = pagination.oldestTimestamp;
+
+    console.log('[WhatsApp Groups] 📨 State updated - hasMore:', state.hasMoreByGroupId[groupId], 'oldestTimestamp:', state.oldestTimestampByGroupId[groupId]);
 
     // Setup lazy loading scroll listener
     setupLazyLoading();
@@ -842,6 +847,7 @@ function handleMessagesScroll() {
     const groupId = state.selectedGroupId;
     const hasMore = state.hasMoreByGroupId[groupId];
     const isLoadingMore = state.isLoadingMoreByGroupId[groupId];
+    const oldestTimestamp = state.oldestTimestampByGroupId[groupId];
 
     if (hasMore && !isLoadingMore) {
       console.log('[WhatsApp Groups] 📜 User scrolled to top - loading older messages');
@@ -854,6 +860,8 @@ function renderMessages() {
   if (!elements.messagesContainer) return;
 
   const messages = state.messagesByGroupId[state.selectedGroupId] || [];
+  const groupId = state.selectedGroupId;
+  const hasMore = state.hasMoreByGroupId[groupId];
 
   if (messages.length === 0) {
     elements.messagesContainer.innerHTML = `
@@ -864,7 +872,17 @@ function renderMessages() {
     return;
   }
 
-  elements.messagesContainer.innerHTML = messages.map((msg, index) => {
+  // Add "no more messages" indicator at the top if there are no more messages to load
+  let noMoreIndicator = '';
+  if (!hasMore && messages.length > 0) {
+    noMoreIndicator = `
+      <div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-subtle);">
+        <span>📜 Beginning of conversation (${messages.length} message${messages.length !== 1 ? 's' : ''})</span>
+      </div>
+    `;
+  }
+
+  elements.messagesContainer.innerHTML = noMoreIndicator + messages.map((msg, index) => {
     // Check if this message should be grouped with previous message
     const prevMsg = index > 0 ? messages[index - 1] : null;
     const isGrouped = prevMsg && isSameSender(prevMsg, msg) && isSameMessageType(prevMsg, msg);
@@ -879,6 +897,9 @@ function renderMessages() {
 
   // Attach event listeners to PDF cards for viewing
   attachPDFCardListeners();
+
+  // Setup lazy loading for messages (must be called after rendering)
+  setupLazyLoading();
 
   // Scroll to bottom
   scrollMessagesToBottom();
