@@ -16,36 +16,6 @@
       "js": ["job-filter/content.js"],
       "css": ["job-filter/floating-panel.css"],
       "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://*.myworkdayjobs.com/*",
-        "https://*.greenhouse.io/*",
-        "https://boards.greenhouse.io/*",
-        "https://job-boards.greenhouse.io/*",
-        "https://*.lever.co/*",
-        "https://jobs.lever.co/*",
-        "https://*.taleo.net/*",
-        "https://*.icims.com/*",
-        "https://*.smartrecruiters.com/*",
-        "https://*.jobvite.com/*",
-        "https://*.breezy.hr/*",
-        "https://*.workable.com/*",
-        "https://*/*apply*",
-        "https://*/*application*",
-        "https://*/*careers*",
-        "https://*/*jobs/*"
-      ],
-      "js": [
-        "autofill/resume-manager.js",
-        "autofill/semantic-matcher.js",
-        "autofill/intelligent-value-mapper.js",
-        "autofill/ats-platform-intelligence.js",
-        "autofill/autofill-engine.js",
-        "autofill/autofill-content.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
     }
   ],
   "action": {
@@ -103,10 +73,25 @@
         "shared/group-api.js",
         "shared/shared-jobs-api.js",
         "shared/notification-manager.js",
-        "shared/smart-notifications.js",
-        "test-notification.html"
+        "shared/smart-notifications.js"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "https://www.linkedin.com/*",
+        "https://www.indeed.com/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.taleo.net/*",
+        "https://*.icims.com/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.jobvite.com/*",
+        "https://*.breezy.hr/*",
+        "https://*.workable.com/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://*.bamboohr.com/*",
+        "https://recruiting.ultipro.com/*",
+        "https://*.applytojob.com/*"
+      ]
     }
   ]
 }
