@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Track376</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 10px;
+    }
+
+    .last-updated {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 15px;
+      color: #555;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    strong {
+      color: #111;
+      font-weight: 600;
+    }
+
+    a {
+      color: #2383E2;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy for Track376 Chrome Extension</h1>
+    <p class="last-updated"><strong>Last Updated:</strong> February 3, 2026</p>
+
+    <h2>Introduction</h2>
+    <p>Track376 ("we", "our", or "the extension") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our Chrome extension.</p>
+
+    <h2>Data We Collect</h2>
+
+    <h3>Personal Information</h3>
+    <ul>
+      <li><strong>Account Information:</strong> Email address, name, password (hashed with bcrypt)</li>
+      <li><strong>Profile Data:</strong> Phone number, address, LinkedIn URL, GitHub URL, portfolio website</li>
+      <li><strong>Resume Files:</strong> PDF/DOC/DOCX files uploaded for autofill functionality</li>
+    </ul>
+
+    <h3>Job Application Data</h3>
+    <ul>
+      <li><strong>Job Details:</strong> Company name, job title, location, salary, work type, job description</li>
+      <li><strong>Application Tracking:</strong> Status, dates applied, interview dates, notes, tags, priority levels</li>
+      <li><strong>Resume Attachments:</strong> Resume files associated with specific job applications</li>
+    </ul>
+
+    <h3>Group Collaboration Data</h3>
+    <ul>
+      <li><strong>Group Information:</strong> Group names, descriptions, member lists, roles</li>
+      <li><strong>Chat Messages:</strong> Text messages, timestamps, reactions, typing indicators</li>
+      <li><strong>Shared Jobs:</strong> Job opportunities shared within groups</li>
+    </ul>
+
+    <h3>Usage Data</h3>
+    <ul>
+      <li><strong>Analytics:</strong> Error logs, performance metrics (via Sentry - anonymized)</li>
+      <li><strong>Activity:</strong> Login times, feature usage patterns</li>
+    </ul>
+
+    <h2>How We Use Your Data</h2>
+    <p>We use your data to:</p>
+    <ul>
+      <li><strong>Provide Core Functionality:</strong> Track job applications, autofill forms, sync across devices</li>
+      <li><strong>Enable Collaboration:</strong> Facilitate group chat and job sharing features</li>
+      <li><strong>Improve Service:</strong> Analyze errors and performance to fix bugs and optimize features</li>
+      <li><strong>Authenticate Users:</strong> Secure access to your account with JWT tokens</li>
+      <li><strong>Store Files:</strong> Save resumes on AWS S3 for autofill functionality</li>
+    </ul>
+
+    <h2>Data Storage</h2>
+
+    <h3>Storage Locations</h3>
+    <ul>
+      <li><strong>User Accounts & Personal Jobs:</strong> MongoDB Atlas (cloud database, encrypted at rest)</li>
+      <li><strong>Group Features & Chat:</strong> Local MongoDB instance (for collaborative features)</li>
+      <li><strong>Resume Files:</strong> AWS S3 (private bucket, encrypted, signed URLs with 1-hour expiry)</li>
+      <li><strong>Cache:</strong> Upstash Redis (temporary cache, 24-hour TTL for chat, 5-minute TTL for jobs)</li>
+      <li><strong>Local Storage:</strong> Chrome Storage API (offline access, synced across your devices)</li>
+    </ul>
+
+    <h3>Security Measures</h3>
+    <ul>
+      <li>Passwords hashed with bcrypt (industry-standard encryption)</li>
+      <li>JWT tokens for secure authentication</li>
+      <li>HTTPS/TLS encryption for all data transmission</li>
+      <li>AWS S3 private buckets with signed URLs (1-hour expiry)</li>
+      <li>Input sanitization to prevent XSS and injection attacks</li>
+      <li>Rate limiting to prevent abuse</li>
+      <li>Helmet.js security headers (CSP, HSTS, etc.)</li>
+    </ul>
+
+    <h2>Data Sharing</h2>
+    <p>We <strong>DO NOT</strong> sell, rent, or trade your personal information to third parties.</p>
+
+    <h3>Limited Sharing</h3>
+    <ul>
+      <li><strong>Group Members:</strong> Jobs you share in groups are visible to group members only</li>
+      <li><strong>Service Providers:</strong> AWS (file storage), MongoDB Atlas (database), Upstash (cache), Sentry (error monitoring)</li>
+      <li><strong>Legal Requirements:</strong> We may disclose data if required by law or to protect our rights</li>
+    </ul>
+
+    <h2>Your Rights</h2>
+    <p>You have the right to:</p>
+    <ul>
+      <li><strong>Access:</strong> View all your personal data stored in the extension</li>
+      <li><strong>Export:</strong> Download your job application data as CSV</li>
+      <li><strong>Delete:</strong> Remove individual jobs, groups, or your entire account</li>
+      <li><strong>Modify:</strong> Edit your profile, job details, and settings at any time</li>
+      <li><strong>Opt-Out:</strong> Disable analytics or error reporting in settings</li>
+    </ul>
+
+    <h2>Data Retention</h2>
+    <ul>
+      <li><strong>Active Accounts:</strong> Data retained as long as your account is active</li>
+      <li><strong>Deleted Jobs:</strong> Permanently removed from database immediately</li>
+      <li><strong>Deleted Accounts:</strong> All data permanently deleted within 30 days</li>
+      <li><strong>Cache:</strong> Automatically expires (24 hours for chat, 5 minutes for jobs)</li>
+      <li><strong>Resume Files:</strong> Deleted from S3 when you remove them or delete your account</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>Track376 uses the following third-party services:</p>
+    <ul>
+      <li><strong>MongoDB Atlas:</strong> Database hosting (see <a href="https://www.mongodb.com/legal/privacy-policy" target="_blank">MongoDB Privacy Policy</a>)</li>
+      <li><strong>AWS S3:</strong> File storage (see <a href="https://aws.amazon.com/privacy/" target="_blank">AWS Privacy Policy</a>)</li>
+      <li><strong>Upstash Redis:</strong> Caching (see <a href="https://upstash.com/privacy" target="_blank">Upstash Privacy Policy</a>)</li>
+      <li><strong>Sentry:</strong> Error monitoring (see <a href="https://sentry.io/privacy/" target="_blank">Sentry Privacy Policy</a>)</li>
+    </ul>
+
+    <h2>Cookies and Tracking</h2>
+    <p>Track376 uses:</p>
+    <ul>
+      <li><strong>JWT Tokens:</strong> Stored in Chrome Storage for authentication (not cookies)</li>
+      <li><strong>Local Storage:</strong> For offline functionality and sync</li>
+      <li><strong>No Third-Party Tracking:</strong> We do not use Google Analytics or advertising trackers</li>
+    </ul>
+
+    <h2>Children's Privacy</h2>
+    <p>Track376 is not intended for users under 13 years of age. We do not knowingly collect personal information from children under 13.</p>
+
+    <h2>International Users</h2>
+    <p>Your data may be stored and processed in the United States or other countries where our service providers operate. By using Track376, you consent to the transfer of your data to these locations.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by:</p>
+    <ul>
+      <li>Updating the "Last Updated" date at the top of this policy</li>
+      <li>Displaying a notification in the extension</li>
+      <li>Sending an email to your registered email address (for major changes)</li>
+    </ul>
+
+    <h2>Contact Us</h2>
+    <p>If you have questions about this Privacy Policy or your data, please contact us:</p>
+    <ul>
+      <li><strong>GitHub:</strong> <a href="https://github.com/VIJAYRUR/ChromeExtension" target="_blank">https://github.com/VIJAYRUR/ChromeExtension</a></li>
+      <li><strong>Email:</strong> Create an issue on our GitHub repository</li>
+    </ul>
+
+    <h2>Consent</h2>
+    <p>By using Track376, you consent to this Privacy Policy and agree to its terms.</p>
+
+    <div class="footer">
+      <p>&copy; 2026 Track376. All rights reserved.</p>
+      <p><a href="https://github.com/VIJAYRUR/ChromeExtension" target="_blank">GitHub Repository</a></p>
+    </div>
+  </div>
+</body>
+</html>
+
