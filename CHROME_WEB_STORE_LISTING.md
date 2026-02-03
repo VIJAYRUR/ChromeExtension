@@ -1,96 +1,120 @@
-# Chrome Web Store Listing - Job Tracker
+# Chrome Web Store Listing - Track376
 
 ## Title (Max 45 characters)
 ```
-Job Tracker - Organize Your Job Search
+Track376 - Job Tracker with Kanban & Chat
 ```
-**Character count:** 40/45 ✅
+**Character count:** 41/45 ✅
+
+---
+
+## Tagline
+```
+Track Jobs with Friends - Share Opportunities, Chat & Succeed
+```
 
 ---
 
 ## Short Description (Max 132 characters)
 ```
-Track applications, autofill forms, collaborate with friends. Kanban boards, analytics, real-time chat. Your job search, simplified.
+Track job applications with friends using Kanban boards, smart autofill, real-time chat, and group collaboration features.
 ```
-**Character count:** 132/132 ✅
+**Character count:** 124/132 ✅
 
 ---
 
 ## Detailed Description (Max 16,384 characters)
 
 ```markdown
-# Job Tracker - Your Personal Job Search Manager
+# Track376 - Track Jobs with Friends
 
-Stop losing track of job applications! Job Tracker helps you organize your entire job search in one place with powerful collaboration features.
+Job hunting is better together! Track376 helps you and your friends stay organized and land your dream jobs faster.
 
 ## ✨ Key Features
 
-### 📊 Powerful Organization
-- **5-Column Kanban Board** - Visual workflow (Saved → Applied → Interview → Offer → Rejected)
-- **Table View** - Sortable, filterable list of all applications
-- **Calendar View** - Never miss an interview with monthly calendar
-- **Tags & Priorities** - Categorize and prioritize applications
-- **Smart Search** - Find jobs instantly by company, title, or location
+### 🤝 GROUP COLLABORATION
+- **Create Groups** - Invite friends to track jobs together
+- **Share Jobs Instantly** - Share opportunities with your group in one click
+- **Real-Time Chat** - Built-in chat for each group with Socket.io
+- **Typing Indicators** - See when friends are typing
+- **Online Status** - Green dot shows who's currently online
+- **Message History** - All chats saved in the cloud
+- **Job Sharing** - Share job postings with embedded details
+- **Save Shared Jobs** - Add friends' job finds to your pipeline
 
-### 🤝 Collaborate with Friends
-- **Private Groups** - Share job opportunities with trusted friends
-- **Real-time Chat** - Discuss applications and prep together with Socket.io
-- **Job Sharing** - One-click share with embedded job details
-- **Save Shared Jobs** - Add friends' job finds to your "Saved" column
-- **Online Status** - See who's currently online with green dot indicators
+### 📊 KANBAN BOARDS
+- **Visual Pipeline** - Drag-and-drop cards across columns
+- **5 Status Columns** - Saved → Applied → Interview → Offer → Rejected
+- **Color-Coded Cards** - Quick visual identification
+- **Track Multiple Searches** - Organize different job hunts
+- **Move Jobs Easily** - Drag between columns to update status
 
-### ⚡ One-Click Autofill
-- **Smart Form Detection** - Works on 10+ platforms (Workday, Greenhouse, Lever, Taleo, iCIMS, SmartRecruiters, Jobvite, Breezy HR, Workable)
-- **Resume Parsing** - Upload resume once, auto-extract all information
-- **90+ Field Types** - Personal info, work experience, education, skills, legal questions
-- **Multi-Page Forms** - Automatically detects and fills across multiple pages
-- **GitHub Integration** - Auto-fill your GitHub profile URL
+### ⚡ SMART AUTOFILL (90+ Field Types, 10+ Platforms)
+- **Works Everywhere** - LinkedIn, Indeed, Workday, Greenhouse, Lever, Taleo, iCIMS, SmartRecruiters, Jobvite, Breezy HR, Workable
+- **Resume Parsing** - Upload once, auto-extract all information
+- **90+ Field Types** - Name, email, phone, address, education, experience, skills, legal questions
+- **One-Click Fill** - Fill entire applications instantly
+- **Multi-Page Support** - Works across multiple form pages
 
-### 🔄 Sync Across Devices
-- Access from Chrome extension, web dashboard, or mobile
-- Automatic cloud sync every 5 minutes
-- Offline mode - works without internet
-- Never lose your data
+### � MULTIPLE VIEWS
+- **Kanban Board** - Visual pipeline management
+- **Table View** - Spreadsheet-style with filters and sorting
+- **Calendar View** - See interviews and deadlines at a glance
+- **Stats Dashboard** - Track metrics and success rates
 
-### 📝 Rich Job Details
-- Company, position, salary range, location (auto-extracted from LinkedIn)
-- Application status tracking with drag-and-drop
-- Interview scheduling and notes
-- Multiple notes per job with timestamps
-- Resume management (upload, download, delete)
-- Application timing tracking (how fast you applied)
-- Competition level tracking (number of applicants)
+### 📝 COMPREHENSIVE TRACKING
+- **Job Details** - Company, position, salary, location (auto-extracted from LinkedIn)
+- **Status Tracking** - Drag-and-drop to update application status
+- **Interview Scheduling** - Add interview dates and notes
+- **Multiple Notes** - Add notes with timestamps
+- **Resume Upload** - Store resumes with AWS S3
+- **Application Timing** - Track how fast you applied
+- **Competition Tracking** - See number of applicants
 
-### 📈 Analytics & Insights
-- **Success Rate Tracking** - Monitor your offer-to-application ratio
+### 📈 ANALYTICS & INSIGHTS
+- **Success Rate** - Monitor offer-to-application ratio
 - **Interview Conversion** - See which applications lead to interviews
-- **Response Time Analysis** - Track how long companies take to respond
-- **Application Timeline** - Visualize your job search progress with charts
-- **Timing Insights** - Discover your best application window
-- **Competition Analysis** - See how applicant count affects your success
+- **Response Time** - Track how long companies take to respond
+- **Visual Charts** - Application timeline with Chart.js
+- **Recent Saved Jobs** - Quick overview of latest opportunities
 
-### 🔒 Privacy & Security
-- End-to-end encryption for sensitive data
-- Passwords hashed with bcrypt
-- JWT authentication with secure tokens
-- Your data is never sold or shared
-- Full data export and deletion available
-- Open source - audit the code yourself
+### 🔄 CLOUD SYNC & STORAGE
+- **MongoDB Atlas** - Cloud database for all your jobs
+- **AWS S3** - Secure resume storage
+- **Redis Caching** - 3-4x faster load times
+- **Access Anywhere** - Sync across all devices
+- **Never Lose Data** - Automatic backup
 
-## 💰 Pricing
-**One-time payment of $5**
+### 🔒 PRIVACY & SECURITY
+- **Secure Authentication** - JWT tokens with bcrypt password hashing
+- **Data Encryption** - Enterprise-grade encryption
+- **GDPR/CCPA Compliant** - Full privacy compliance
+- **Never Sold** - Your data is never sold or shared
+- **Full Control** - Export and delete your data anytime
+
+## 🤝 WHY TRACK376?
+
+Job hunting can be lonely and overwhelming. Track376 makes it collaborative and fun:
+
+✓ **Share opportunities** your friends might love
+✓ **Get support** when you receive rejections
+✓ **Celebrate together** when someone gets an offer
+✓ **Hold each other accountable** to apply daily
+✓ **Learn from each other's** experiences
+
+## 🎯 PERFECT FOR
+- College students job hunting together
+- Bootcamp graduates supporting each other
+- Career changers navigating new industries
+- Friends coordinating job searches
+- Anyone who wants to stay organized and get hired faster
+
+## 💰 PRICING
+**100% FREE**
 - No subscriptions
 - No hidden fees
-- Lifetime access
 - All features included
 - Free updates forever
-
-## 🎯 Perfect For
-- Recent graduates starting their job search
-- Professionals exploring new opportunities
-- Career changers tracking multiple applications
-- Anyone tired of messy spreadsheets
-- Study groups and bootcamp cohorts sharing job leads
 
 ## 🚀 Get Started in 30 Seconds
 1. Install the extension

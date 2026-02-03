@@ -1,10 +1,10 @@
-# Privacy Policy for Job Tracker Chrome Extension
+# Privacy Policy for Track376 Chrome Extension
 
-**Last Updated:** February 2, 2026
+**Last Updated:** February 3, 2026
 
 ## Introduction
 
-Job Tracker ("we", "our", or "the extension") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our Chrome extension.
+Track376 ("we", "our", or "the extension") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our Chrome extension.
 
 ## Data We Collect
 

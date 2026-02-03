@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LinkedIn Jobs Filter & Tracker",
-  "version": "2.2.0",
-  "description": "Filter LinkedIn jobs and track your applications with a beautiful dashboard and smart autofill",
+  "name": "Track376",
+  "version": "3.0.0",
+  "description": "Track Jobs with Friends - Share Opportunities, Chat & Succeed. Kanban boards, smart autofill, and real-time collaboration.",
   "permissions": [
     "storage",
     "notifications"

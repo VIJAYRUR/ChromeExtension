@@ -1,6 +1,8 @@
-# 🚀 Job Tracker Chrome Extension
+# 🚀 Track376 - Job Tracker with Kanban & Chat
 
-**Supercharge your job search with smart filtering, application tracking, analytics, real-time group collaboration, and one-click autofill.**
+**Track Jobs with Friends - Share Opportunities, Chat & Succeed**
+
+Track job applications with Kanban boards, smart autofill, real-time chat, and group collaboration features.
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://www.google.com/chrome/)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/VIJAYRUR/ChromeExtension)
