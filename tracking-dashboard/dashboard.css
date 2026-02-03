@@ -717,15 +717,17 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 24px;
+  padding: 0;
 }
 
 /* Notion-style column headers with light background colors */
 .column-header-notion {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 4px 8px;
+  padding-left: 8px;
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 500;
@@ -833,12 +835,14 @@ body {
 .kanban-board {
   display: flex;
   gap: 16px;
-  align-items: start;
+  align-items: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 8px;
+  padding: 0 24px 16px 24px;
   width: 100%;
   margin: 0;
+  min-height: calc(100vh - 260px);
+  height: calc(100vh - 260px);
 }
 
 .kanban-board::-webkit-scrollbar {
@@ -876,7 +880,7 @@ body {
   height: calc(100vh - 280px);
   min-height: calc(100vh - 280px);
   max-height: calc(100vh - 280px);
-  padding: 12px;
+  padding: 8px;
   border-radius: 8px;
   overflow-y: auto;
   overflow-x: hidden;
