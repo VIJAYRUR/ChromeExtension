@@ -156,8 +156,20 @@ function showOfflineWarning() {
 // ========================================
 
 async function loadStats() {
-  const result = await chrome.storage.local.get(['trackedJobs']);
-  const jobs = result.trackedJobs || [];
+  // Get current user to determine storage key
+  const userResult = await chrome.storage.local.get(['currentUser']);
+  const currentUser = userResult.currentUser;
+  const userId = currentUser?._id || null;
+
+  // Use user-specific storage key (same as background.js)
+  const storageKey = userId ? `trackedJobs_${userId}` : 'trackedJobs_anonymous';
+
+  const result = await chrome.storage.local.get([storageKey]);
+  const jobs = result[storageKey] || [];
+
+  console.log('[Popup] 📊 Loading stats from key:', storageKey);
+  console.log('[Popup] 📊 Found jobs:', jobs.length);
+
   const active = jobs.filter(j => j.status === 'applied' || j.status === 'interview').length;
   const interviews = jobs.filter(j => j.status === 'interview').length;
 

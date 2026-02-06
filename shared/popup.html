@@ -294,34 +294,37 @@
 
     .stats {
       background: var(--bg-soft);
-      border-radius: 6px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 14px;
       margin-top: 12px;
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-medium);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 0;
-      font-size: 13px;
+      padding: 8px 0;
+      font-size: 14px;
     }
 
     .stat-row:not(:last-child) {
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-medium);
+      margin-bottom: 2px;
     }
 
     .stat-label {
-      color: var(--text-secondary);
-      font-weight: 400;
+      color: var(--text-primary);
+      font-weight: 500;
     }
 
     .stat-value {
-      font-weight: 600;
-      font-size: 15px;
+      font-weight: 700;
+      font-size: 18px;
       color: var(--text-primary);
       font-feature-settings: 'tnum';
+      letter-spacing: -0.02em;
     }
 
     .footer {
