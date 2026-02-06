@@ -211,13 +211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Open profile
-  document.getElementById('open-profile')?.addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('autofill/profile.html')
-    });
-  });
-
   // Toggle filter panel (only works on LinkedIn jobs pages)
   document.getElementById('toggle-panel')?.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -240,14 +233,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Close dropdown when clicking outside
   document.addEventListener('click', () => {
     document.getElementById('user-dropdown')?.classList.remove('show');
-  });
-
-  // Profile button in dropdown
-  document.getElementById('profile-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('autofill/profile.html')
-    });
-    window.close();
   });
 
   // Logout button
