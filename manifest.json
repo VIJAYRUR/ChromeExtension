@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Track376",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Track Jobs with Friends - Share Opportunities, Chat & Succeed. Kanban boards, smart autofill, and real-time collaboration.",
   "permissions": [
     "storage",
