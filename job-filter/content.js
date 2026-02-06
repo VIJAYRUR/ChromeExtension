@@ -887,6 +887,14 @@ class LinkedInJobsFilter {
 
       console.log('[Job Tracker] 🎯 Track button clicked!');
 
+      // CHECK IF USER IS LOGGED IN FIRST!
+      const isLoggedIn = await this.checkIfUserLoggedIn();
+      if (!isLoggedIn) {
+        console.log('[Job Tracker] ⚠️ User not logged in - showing login prompt');
+        this.showLoginPrompt();
+        return;
+      }
+
       // Extract job data from detail panel
       const jobData = this.extractJobDataFromDetailPanel(detailPanel);
 
@@ -3264,6 +3272,137 @@ class LinkedInJobsFilter {
 
     chrome.storage.local.set({ settings: newSettings }, () => {
       console.log('[LinkedIn Jobs Filter] 💾 Settings saved:', newSettings);
+    });
+  }
+
+  // Check if user is logged in
+  async checkIfUserLoggedIn() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['authToken', 'currentUser'], (result) => {
+        const isLoggedIn = !!(result.authToken && result.currentUser);
+        console.log('[Job Tracker] 🔐 Login check:', { isLoggedIn, hasToken: !!result.authToken, hasUser: !!result.currentUser });
+        resolve(isLoggedIn);
+      });
+    });
+  }
+
+  // Show login prompt when user tries to track without being logged in
+  showLoginPrompt() {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    `;
+
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      animation: slideUp 0.3s ease-out;
+    `;
+
+    modal.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+      <h2 style="margin: 0 0 12px 0; font-size: 24px; font-weight: 600; color: #1a1a1a;">
+        Login Required
+      </h2>
+      <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.5;">
+        Please log in to Track376 to save and track your job applications.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button id="login-btn-prompt" style="
+          background: #000000;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 24px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">
+          Login
+        </button>
+        <button id="cancel-btn-prompt" style="
+          background: #f3f4f6;
+          color: #374151;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 24px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        ">
+          Cancel
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Login button handler
+    const loginBtn = modal.querySelector('#login-btn-prompt');
+    loginBtn.addEventListener('mouseenter', () => {
+      loginBtn.style.background = '#1a1a1a';
+    });
+    loginBtn.addEventListener('mouseleave', () => {
+      loginBtn.style.background = '#000000';
+    });
+    loginBtn.addEventListener('click', () => {
+      // Open login page
+      const loginUrl = chrome.runtime.getURL('auth/login.html');
+      window.open(loginUrl, '_blank');
+      overlay.remove();
+    });
+
+    // Cancel button handler
+    const cancelBtn = modal.querySelector('#cancel-btn-prompt');
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.background = '#e5e7eb';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.background = '#f3f4f6';
+    });
+    cancelBtn.addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
     });
   }
 }
