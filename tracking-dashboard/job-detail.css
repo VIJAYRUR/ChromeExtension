@@ -18,7 +18,7 @@
   --bg-soft: #f7f7f5;
   --bg-hover: rgba(55, 53, 47, 0.08);
   --border-subtle: #edece9;
-  --text-primary: #37352f;
+  --text-primary: #1a1a1a; /* Fix 1: Darkened from #37352f to near-black for authority */
   --text-secondary: #73726e;
   --text-muted: #9b9a97;
 
@@ -50,9 +50,9 @@ body {
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 96px 48px 48px;
+  padding: 96px 64px 48px;
 }
 
 /* Header - Notion style */
@@ -147,7 +147,7 @@ body {
   width: 100%;
   padding: 3px 2px;
   margin-bottom: 2px;
-  color: var(--text-primary);
+  color: #0d0d0d; /* Fix 1: Near-black for title authority */
   background: transparent;
   resize: none;
   overflow: hidden;
@@ -182,92 +182,156 @@ body {
   color: rgba(55, 53, 47, 0.4);
 }
 
-/* Job Meta - Notion properties style */
-.job-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 32px;
-  padding: 0;
-  background: transparent;
-  border-radius: 0;
+/* Soft Section Dividers - CRITICAL */
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(55, 53, 47, 0.20); /* Fix 2: Darkened for clear visibility */
+  margin: 40px 0;
+  border: none;
 }
 
-.meta-item {
-  display: flex;
+/* Job Properties - Structured Grid Layout */
+.job-properties-grid {
+  max-width: 720px; /* Prompt 5: Lock the properties width */
+  margin-bottom: 40px;
+  padding: 16px 12px 24px; /* Added horizontal padding for background */
+  background: rgba(55, 53, 47, 0.025); /* Fix 3: Subtle 2.5% gray tint to separate metadata */
+  border-radius: 4px; /* Subtle rounding, not card-like */
+  border-bottom: 1px solid rgba(55, 53, 47, 0.20); /* Fix 2: Darkened divider after properties */
+}
+
+/* Prompt 3: Group properties by meaning */
+.property-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Prompt 1: True grid with consistent columns */
+  gap: 12px 32px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.16); /* Fix 2: Darkened group divider */
+}
+
+.property-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Prompt 4: De-emphasize links group */
+.property-group-links {
+  opacity: 0.75;
+  margin-top: 8px;
+}
+
+/* Prompt 1: Vertical alignment of labels and values */
+/* Prompt 2: Row separators for reading rhythm */
+.property-item {
+  display: grid;
+  grid-template-columns: 100px 1fr; /* Fixed label width for alignment */
+  gap: 12px;
   align-items: center;
-  gap: 0;
-  min-height: 28px;
-  padding: 4px 0;
+  min-height: 32px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.14); /* Fix 2: Darkened row separator */
 }
 
-.meta-item:hover {
-  background: var(--bg-hover);
+.property-item:last-child {
+  border-bottom: none; /* No separator after last item */
 }
 
-.meta-item label {
+.property-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.65); /* Fix 4: Muted to 0.65 - labels support, don't lead */
+  white-space: nowrap;
+  user-select: none;
+  text-align: left;
+}
+
+.property-value {
   font-size: 14px;
   font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #9b9a97;
-  min-width: 140px;
-  width: 140px;
-  padding: 0 8px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Icon styling for labels */
-.meta-item label::before {
-  content: '';
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  opacity: 0.5;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.meta-item input,
-.meta-item select {
-  flex: 1;
+  color: #1a1a1a; /* Fix 4: Dark gray for values - values lead */
   padding: 4px 8px;
   border: none;
   border-radius: 3px;
-  font-size: 14px;
   background: transparent;
-  color: var(--text-primary);
   transition: background 20ms ease-in;
   font-family: inherit;
-  line-height: 1.5;
+  line-height: 1.4;
+  width: 100%;
 }
 
-.meta-item input:hover,
-.meta-item select:hover {
-  background: var(--bg-hover);
+.property-value:hover {
+  background: rgba(55, 53, 47, 0.06);
 }
 
-.meta-item input:focus,
-.meta-item select:focus {
+.property-value:focus {
   outline: none;
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
 }
 
-.meta-item input::placeholder {
+.property-value::placeholder {
+  color: rgba(55, 53, 47, 0.35);
+}
+
+/* Prompt 2: Visually separate empty properties */
+.property-empty {
+  font-style: italic;
   color: rgba(55, 53, 47, 0.4);
 }
 
-.meta-item select {
+.property-empty::placeholder {
+  color: rgba(55, 53, 47, 0.25);
+}
+
+.property-empty:hover {
+  background: rgba(55, 53, 47, 0.04);
+  border: 1px dashed rgba(55, 53, 47, 0.2);
+  padding: 3px 7px; /* Adjust for border */
+}
+
+.property-empty:focus {
+  background: rgba(55, 53, 47, 0.06);
+  border: 1px solid rgba(35, 131, 226, 0.3);
+  padding: 3px 7px; /* Adjust for border */
+  font-style: normal;
+  color: var(--text-primary);
+}
+
+.property-select {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23787774' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23999' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 28px;
+}
+
+.property-link {
+  color: rgb(35, 131, 226);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(35, 131, 226, 0.25);
+  padding: 4px 8px;
+  display: inline-block;
+}
+
+.property-link:hover {
+  background: rgba(35, 131, 226, 0.08);
+  border-bottom-color: rgb(35, 131, 226);
+}
+
+/* Prompt 4: Secondary link styling */
+.property-link-secondary {
+  color: rgba(55, 53, 47, 0.65);
+  border-bottom-color: rgba(55, 53, 47, 0.2);
+  font-size: 13px;
+}
+
+.property-link-secondary:hover {
+  color: rgb(35, 131, 226);
+  background: rgba(35, 131, 226, 0.06);
+  border-bottom-color: rgba(35, 131, 226, 0.4);
 }
 
 /* Special styling for location, salary inputs - Professional muted style */
@@ -429,86 +493,103 @@ body {
   color: rgb(144, 101, 176);
 }
 
-/* Two Column Layout */
-.two-column-layout {
+/* Single Column Layout with Utility Rail */
+.page-layout {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 48px;
+  grid-template-columns: 1fr 280px;
+  gap: 64px;
   margin-top: 0;
+  align-items: start;
 }
 
-.left-column {
-  min-width: 0; /* Prevent grid blowout */
+.primary-column {
+  min-width: 0;
+  max-width: 900px;
 }
 
-.right-column {
-  min-width: 0; /* Prevent grid blowout */
+.utility-rail {
+  min-width: 0;
+  position: sticky;
+  top: 96px;
+  align-self: start;
+  padding-left: 32px; /* Space for vertical guide */
+  border-left: 1px solid rgba(55, 53, 47, 0.24); /* Fix 5: Clearer vertical divider for professional feel */
 }
 
-/* Sections - Notion block style */
-.section {
-  margin-bottom: 24px;
-  padding: 0;
-  border-bottom: none;
+/* Sections - Notion block style with soft dividers */
+.primary-column > .section {
+  margin-bottom: 40px;
+  padding: 0 0 40px 0;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.20); /* Fix 2: Darkened section divider */
 }
 
-.section:last-child {
+.primary-column > .section:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
 .section h3 {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800; /* Fix 6: Increased to 800 for stronger document structure */
   text-transform: none;
   letter-spacing: 0;
-  color: var(--text-primary);
+  color: #0d0d0d; /* Fix 1: Near-black for section header authority */
   margin-bottom: 12px;
   padding: 3px 2px;
 }
 
-/* Sidebar sections with Notion-style subtle backgrounds */
-.right-column .section {
-  background: #f7f7f5;
-  border: 1px solid #edece9;
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 14px;
-}
-
-.right-column .section h3 {
-  padding: 0;
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.section textarea {
-  width: 100%;
-  min-height: 150px;
-  padding: 3px 2px;
+/* Utility Rail - Quiet, Minimal Styling */
+.utility-rail .section {
+  background: transparent;
   border: none;
-  border-radius: 3px;
-  font-size: 14px;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 32px;
+}
+
+.utility-rail .section h3 {
+  padding: 0 0 8px 0;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(55, 53, 47, 0.4);
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+/* Notes Block - Document Style */
+.notes-block {
+  width: 100%;
+  min-height: 80px;
+  max-height: 400px;
+  padding: 8px 4px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  font-size: 13px;
   font-family: inherit;
-  line-height: 1.5;
+  line-height: 1.6;
   resize: vertical;
   background: transparent;
   color: var(--text-primary);
-  transition: background 20ms ease-in;
+  transition: all 20ms ease-in;
 }
 
-.section textarea:hover {
-  background: var(--bg-hover);
+.notes-block:hover {
+  border-left-color: rgba(55, 53, 47, 0.12);
+  background: rgba(55, 53, 47, 0.02);
 }
 
-.section textarea:focus {
+.notes-block:focus {
   outline: none;
-  background: var(--bg-hover);
+  border-left-color: rgba(35, 131, 226, 0.3);
+  background: rgba(55, 53, 47, 0.03);
 }
 
-.section textarea::placeholder {
-  color: rgba(55, 53, 47, 0.4);
+.notes-block::placeholder {
+  color: rgba(55, 53, 47, 0.25);
+  font-style: italic;
 }
 
 /* Clickable property pills */
@@ -540,40 +621,49 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.description-toggle {
+/* Minimal Icon-Only Toggle */
+.description-toggle-minimal {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  opacity: 0.5;
+  transition: opacity 20ms ease-in;
 }
 
-.toggle-btn {
+.description-toggle-minimal:hover {
+  opacity: 1;
+}
+
+.toggle-icon-btn {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 20ms ease-in;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
+  width: 24px;
   height: 24px;
   border-radius: 3px;
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 0 8px;
-  font-weight: 500;
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: rgba(55, 53, 47, 0.35);
+  padding: 0;
 }
 
-.toggle-btn:hover {
-  background: var(--bg-hover);
+.toggle-icon-btn:hover {
+  background: rgba(55, 53, 47, 0.06);
+  color: rgba(55, 53, 47, 0.65);
 }
 
-.toggle-btn.active {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+.toggle-icon-btn.active {
+  background: rgba(55, 53, 47, 0.08);
+  color: rgba(55, 53, 47, 0.75);
+}
+
+.toggle-icon-btn svg {
+  display: block;
 }
 
 .description-content {
@@ -696,146 +786,218 @@ body {
   border-bottom-color: rgb(35, 131, 226);
 }
 
-/* Empty States - Notion style - Compact */
+/* Empty States - Minimal Utility Rail Style */
 .empty-state {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px 16px;
-  text-align: center;
-  color: var(--text-muted);
+  padding: 12px 0;
+  text-align: left;
+  color: rgba(55, 53, 47, 0.35);
 }
 
 .empty-state-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-  opacity: 0.3;
-  display: none; /* Hide emoji icons */
+  display: none;
 }
 
 .empty-state-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(55, 53, 47, 0.4);
+  margin-bottom: 0;
 }
 
 .empty-state-description {
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 280px;
+  font-size: 12px;
+  color: rgba(55, 53, 47, 0.35);
+  max-width: 100%;
   line-height: 1.5;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .empty-description {
-  color: var(--text-muted);
-  font-style: normal;
-  text-align: center;
-  padding: 24px 16px;
-  font-size: 13px;
+  color: rgba(55, 53, 47, 0.35);
+  font-style: italic;
+  text-align: left;
+  padding: 12px 0;
+  font-size: 12px;
 }
 
-/* Upload Area - Notion style */
+/* Upload Area - De-emphasized */
 .upload-area {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 0;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
-  transition: background 20ms ease-in;
 }
 
-.upload-btn {
+/* Resume Empty State - Subtle */
+.resume-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.resume-placeholder {
+  font-size: 13px;
+  color: rgba(55, 53, 47, 0.3);
+  font-style: italic;
+  flex: 1;
+}
+
+.upload-btn-secondary {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 20ms ease-in;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  height: 32px;
-  border-radius: 4px;
-  font-size: 14px;
+  height: 24px;
+  border-radius: 3px;
+  font-size: 12px;
   line-height: 1.2;
-  padding: 0 14px;
+  padding: 0 10px;
   font-weight: 500;
-  background: white;
-  border: 1px solid #edece9;
-  color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: transparent;
+  border: none;
+  color: rgba(55, 53, 47, 0.45);
 }
 
-.upload-btn:hover {
-  background: var(--bg-hover);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.upload-btn-secondary:hover {
+  background: rgba(55, 53, 47, 0.06);
+  color: rgba(55, 53, 47, 0.65);
+}
+
+/* Resume Uploaded State - Minimal */
+.resume-uploaded {
+  display: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.resume-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.file-icon {
+  font-size: 16px;
+  opacity: 0.6;
 }
 
 .file-name {
-  font-size: 14px;
-  color: var(--text-secondary);
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 400;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Timeline - Notion style with subtle indicators */
+.resume-action-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  font-weight: 500;
+  transition: all 20ms ease-in;
+  white-space: nowrap;
+}
+
+.resume-view-btn {
+  color: rgb(35, 131, 226);
+  background: transparent;
+}
+
+.resume-view-btn:hover {
+  background: rgba(35, 131, 226, 0.08);
+}
+
+.resume-download-btn {
+  color: rgba(55, 53, 47, 0.65);
+  background: transparent;
+}
+
+.resume-download-btn:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: var(--text-primary);
+}
+
+.resume-remove-btn {
+  color: rgba(55, 53, 47, 0.5);
+  background: transparent;
+}
+
+.resume-remove-btn:hover {
+  background: rgba(235, 87, 87, 0.08);
+  color: rgb(235, 87, 87);
+}
+
+/* Timeline - Inline Chronological List */
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  padding: 0;
 }
 
 .timeline-item {
   display: flex;
   gap: 12px;
-  padding: 6px 8px;
+  padding: 10px 0;
   background: transparent;
-  border-radius: 3px;
-  border-left: 1px solid var(--border-subtle);
-  transition: background 20ms ease-in;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.06);
+  transition: none;
   position: relative;
 }
 
+.timeline-item:last-child {
+  border-bottom: none;
+}
+
 .timeline-item:hover {
-  background: var(--bg-hover);
-}
-
-/* Subtle colored timeline items based on activity type */
-.timeline-item.status-applied {
   background: transparent;
-  border-left-color: rgba(120, 119, 116, 0.3);
 }
 
-.timeline-item.status-interview {
-  background: transparent;
-  border-left-color: rgba(35, 131, 226, 0.4);
-}
-
-.timeline-item.status-offer {
-  background: transparent;
-  border-left-color: rgba(0, 135, 107, 0.4);
-}
-
-.timeline-item.status-rejected {
-  background: transparent;
-  border-left-color: rgba(235, 87, 87, 0.4);
-}
-
-.timeline-item.status-withdrawn {
-  background: transparent;
-  border-left-color: rgba(120, 119, 116, 0.3);
-}
-
+/* Remove status-specific styling - keep it uniform */
+.timeline-item.status-applied,
+.timeline-item.status-interview,
+.timeline-item.status-offer,
+.timeline-item.status-rejected,
+.timeline-item.status-withdrawn,
 .timeline-item.created {
   background: transparent;
-  border-left-color: rgba(35, 131, 226, 0.3);
+  border-bottom: 1px solid rgba(55, 53, 47, 0.06);
+}
+
+.timeline-item.status-applied:last-child,
+.timeline-item.status-interview:last-child,
+.timeline-item.status-offer:last-child,
+.timeline-item.status-rejected:last-child,
+.timeline-item.status-withdrawn:last-child,
+.timeline-item.created:last-child {
+  border-bottom: none;
 }
 
 .timeline-date {
   font-size: 11px;
-  color: var(--text-muted);
-  min-width: 90px;
+  color: rgba(55, 53, 47, 0.4);
+  min-width: 80px;
   flex-shrink: 0;
   font-weight: 400;
 }
@@ -846,14 +1008,14 @@ body {
 
 .timeline-event {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
+  font-weight: 400;
+  color: rgba(55, 53, 47, 0.75);
   margin-bottom: 2px;
 }
 
 .timeline-note {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(55, 53, 47, 0.5);
   line-height: 1.5;
 }
 
@@ -973,25 +1135,44 @@ input, textarea, select, button {
 }
 
 /* Responsive */
+@media (max-width: 1400px) {
+  .container {
+    max-width: 1100px;
+    padding: 96px 48px 48px;
+  }
+
+  .page-layout {
+    grid-template-columns: 1fr 280px;
+    gap: 56px;
+  }
+}
+
 @media (max-width: 1200px) {
   .container {
     max-width: 1000px;
   }
 
-  .two-column-layout {
-    grid-template-columns: 1fr 350px;
-    gap: 32px;
+  .page-layout {
+    grid-template-columns: 1fr 260px;
+    gap: 48px;
+  }
+
+  .primary-column {
+    max-width: 100%;
   }
 }
 
 @media (max-width: 900px) {
-  .two-column-layout {
+  .page-layout {
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 32px;
   }
 
-  .right-column {
+  .utility-rail {
+    position: static;
     margin-top: 0;
+    border-left: none; /* Remove vertical guide on mobile */
+    padding-left: 0;
   }
 }
 
@@ -1022,6 +1203,21 @@ input, textarea, select, button {
   .meta-item label {
     min-width: auto;
   }
+
+  /* Properties grid responsive */
+  .property-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .property-item {
+    grid-template-columns: 90px 1fr;
+    gap: 8px;
+  }
+
+  .property-label {
+    font-size: 12px;
+  }
 }
 
 /* Timing and Competition Badges - Professional style */
@@ -1040,20 +1236,5 @@ input, textarea, select, button {
   color: var(--text-primary);
 }
 
-/* Resume uploaded state - prevent overflow */
-#resume-uploaded-state {
-  max-width: 100%;
-  overflow: hidden;
-}
 
-#resume-uploaded-state > div {
-  max-width: 100%;
-}
-
-#file-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
