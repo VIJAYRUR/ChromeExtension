@@ -44,35 +44,75 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prompt 1: Single Source of Truth Header (CRITICAL) */
+/* Prompt 2: Remove Header Ownership From Views */
+/* Prompt 3: Lock Header Layout */
+/* This header is locked and NEVER changes across views */
 .header {
   background: var(--bg-soft);
-  border-bottom: none;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: none;
   margin: 0 auto;
-  padding: 24px 48px 32px;
+  padding: 16px 48px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.logo {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Prompt 3: Lock Header Layout */
+/* Title size, weight, and color are LOCKED - never change across views */
 .logo h1 {
-  font-size: 40px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   line-height: 1.2;
+  margin: 0;
+  opacity: 1;
+}
+
+/* Prompt 3: Lock Header Layout */
+/* Subtitle size and color are LOCKED - never change across views */
+.logo-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(55, 53, 47, 0.65);
+  letter-spacing: 0;
+  line-height: 1.3;
+  margin: 0;
+  opacity: 1;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
+}
+
+.global-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 24px;
+  border-left: 1px solid rgba(55, 53, 47, 0.12);
+  margin-left: 24px;
 }
 
 /* Add Job Button */
@@ -244,28 +284,32 @@ body {
 .toolbar-icons {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex: 0 1 auto;
 }
 
 .toolbar-btn {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 150ms ease;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   height: 28px;
-  width: 28px;
+  min-width: 28px;
+  width: auto;
   border-radius: 6px;
   border: none;
   background: transparent;
   padding: 6px;
   color: var(--text-secondary);
   fill: var(--text-secondary);
+  margin-top: 4px;
 }
 
 .toolbar-btn:hover {
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
 }
 
 .toolbar-btn:focus {
@@ -274,6 +318,15 @@ body {
 
 .toolbar-btn.active {
   background: var(--bg-hover);
+}
+
+/* Sort button label */
+.sort-btn-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding-right: 2px;
 }
 
 .toolbar-btn.spinning svg {
@@ -289,16 +342,23 @@ body {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
+  flex-grow: 0;
   border-radius: 6px;
   overflow: hidden;
-  height: 28px;
+  height: 36px;
   font-size: 14px;
-  margin-inline-start: 6px;
+  margin-inline-start: auto;
+}
+
+.new-button-group {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
 }
 
 .new-btn-main {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 150ms ease;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -306,21 +366,31 @@ body {
   white-space: nowrap;
   border-start-start-radius: 6px;
   border-end-start-radius: 6px;
-  padding-inline: 8px;
+  padding: 8px 16px;
   font-size: 14px;
-  font-weight: 500;
-  background: #37352f;
+  font-weight: 600;
+  background: #2383e2;
   color: white;
   border: none;
+  height: 36px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .new-btn-main:hover {
-  background: #4a4a45;
+  background: #1a6ec7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.new-btn-main:active {
+  background: #1560b0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transform: translateY(0);
 }
 
 .new-btn-dropdown {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 150ms ease;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -329,24 +399,32 @@ body {
   align-self: stretch;
   border-start-end-radius: 6px;
   border-end-end-radius: 6px;
-  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1);
-  background: #37352f;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.12);
+  background: #2383e2;
   color: white;
+  opacity: 0.85;
   border: none;
+  height: 36px;
 }
 
 .new-btn-dropdown:hover {
-  background: #4a4a45;
+  background: #1a6ec7;
+  opacity: 1;
+}
+
+.new-btn-dropdown:active {
+  background: #1560b0;
 }
 
 .c-icoSec {
   fill: var(--text-secondary);
 }
 
+/* Prompt 4: Reduce Visual Crowding in Kanban */
 .search-section {
   background: var(--bg-soft);
-  border-bottom: none;
-  padding: 0 48px 16px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  padding: 12px 48px 16px;
   display: none !important;
   animation: slideDown 200ms ease-out;
 }
@@ -454,26 +532,37 @@ body {
   background: var(--bg-main);
 }
 
+/* Prompt 1: Relocate View Navigation Row (CRITICAL) */
+/* Prompt 2: Eliminate Duplicate Navigation Rendering */
+/* Prompt 3: Match Calendar Vertical Spacing */
+/* Prompt 4: Lock Header + Nav as a Single Unit */
+/* View navigation is part of the locked header unit - never changes across views */
 .view-toggle {
-  min-height: 40px;
-  padding-inline: 48px;
-  margin-top: 16px;
+  min-height: 48px;
+  padding-inline: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   position: sticky;
+  top: 64px;
   inset-inline-start: 0;
   flex-shrink: 0;
-  z-index: 86;
+  z-index: 99;
   background: var(--bg-soft);
   display: flex;
   justify-content: center;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  box-shadow: none;
 }
 
 .view-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 40px;
+  height: 48px;
   width: 100%;
-  max-width: 1400px;
+  max-width: none;
+  margin: 0 auto;
+  padding-inline: 48px;
   position: relative;
 }
 
@@ -481,56 +570,63 @@ body {
   display: flex;
   align-items: center;
   height: 100%;
-  margin-top: -3px;
+  gap: 8px;
   overflow: hidden;
-  margin-inline-start: -4px;
   flex-shrink: 0;
 }
 
+/* Prompt 1: Restore Navigation Contrast */
+/* Prompt 3: Active vs Inactive State Redesign */
 .view-tab {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: color 120ms ease-out, background 120ms ease-out, border-color 120ms ease-out, font-weight 120ms ease-out;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: unset;
-  height: 32px;
-  padding-inline: 12px;
-  border-radius: 20px;
+  justify-content: center;
+  height: 100%;
+  padding-inline: 14px;
   white-space: nowrap;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
-  color: var(--text-secondary);
+  color: rgb(55, 53, 47);
+  opacity: 1;
   flex-shrink: 0;
   min-width: 0;
   max-width: 220px;
-  padding: 6px 12px;
   border: none;
-  background: none;
-  margin-inline-end: 1px;
+  background: transparent;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  gap: 7px;
 }
 
 .view-tab:hover {
-  background: var(--bg-hover);
+  color: rgb(55, 53, 47);
+  opacity: 1;
+  background: rgba(55, 53, 47, 0.04);
 }
 
 .view-tab.active {
-  background: rgba(55, 53, 47, 0.08);
-  color: var(--text-primary);
+  background: rgba(35, 131, 226, 0.08);
+  color: rgb(35, 131, 226);
+  font-weight: 600;
+  opacity: 1;
+  border-bottom-color: rgb(35, 131, 226);
 }
 
 .view-tab.active .view-tab-icon {
-  background-color: var(--text-primary);
+  background-color: rgb(35, 131, 226);
 }
 
 .view-tab-icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  transform: scale(1.2);
-  background-color: var(--text-secondary);
-  margin-inline-end: 6px;
+  transform: scale(1.15);
+  background-color: rgba(55, 53, 47, 0.65);
+  margin-inline-end: 0;
 }
 
 .view-tab span {
@@ -547,21 +643,39 @@ body {
   transition: opacity 200ms ease-in-out;
   display: flex;
   flex-direction: row;
-  justify-content: end;
+  justify-content: space-between;
   align-items: center;
+  gap: 16px;
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: center;
+  background: rgba(55, 53, 47, 0.04);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
   gap: 8px;
+  flex: 0 1 auto;
 }
 
 .inline-search-container {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 12px;
   background: rgba(55, 53, 47, 0.08);
   border-radius: 6px;
-  height: 28px;
-  min-width: 240px;
+  height: 32px;
+  min-width: 280px;
   position: relative;
+  transition: background 150ms ease;
+  margin-top: 2px;
+}
+
+.inline-search-container:focus-within {
+  background: rgba(55, 53, 47, 0.12);
+  box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.12);
 }
 
 .inline-search-container .search-icon {
@@ -576,11 +690,13 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   outline: none;
-  min-width: 180px;
+  min-width: 200px;
+  padding: 6px 0;
 }
 
 .inline-search-container input::placeholder {
-  color: var(--text-muted);
+  color: rgba(55, 53, 47, 0.45);
+  font-size: 14px;
 }
 
 .clear-inline-search {
@@ -620,72 +736,219 @@ body {
   animation: dropdownFadeIn 0.15s ease;
 }
 
-.filter-panel-content,
+.filter-panel-content {
+  padding: 6px;
+}
+
 .sort-panel-content {
-  padding: 8px;
+  padding: 6px;
+}
+
+/* Filter Panel Header */
+.filter-panel-header {
+  padding: 6px 10px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(55, 53, 47, 0.45);
+  user-select: none;
+}
+
+/* Filter Group */
+.filter-group {
+  margin-bottom: 8px;
+}
+
+.filter-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.filter-group-label {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.5);
+  user-select: none;
 }
 
 .filter-section {
-  margin-bottom: 12px;
-}
-
-.filter-section:last-child {
   margin-bottom: 0;
+  padding: 0 6px;
 }
 
 .filter-label {
   display: block;
   font-size: 12px;
-  font-weight: 500;
-  color: rgba(55, 53, 47, 0.65);
-  margin-bottom: 6px;
-  padding: 0 8px;
+  font-weight: 400;
+  color: rgba(55, 53, 47, 0.5);
+  margin-bottom: 4px;
+  padding: 0 4px;
 }
 
+/* Reduced form heaviness - lighter, more inline feel */
 .filter-select-panel {
   width: 100%;
   padding: 6px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 5px;
+  border: 1px solid rgba(55, 53, 47, 0.06);
+  border-radius: 4px;
   font-size: 14px;
   background: var(--bg-main);
   color: var(--text-primary);
   cursor: pointer;
-  transition: background 20ms ease-in;
+  transition: all 20ms ease-in;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
 }
 
 .filter-select-panel:hover {
-  background: var(--bg-hover);
+  background-color: rgba(55, 53, 47, 0.03);
+  border-color: rgba(55, 53, 47, 0.12);
 }
 
 .filter-select-panel:focus {
   outline: none;
-  border-color: rgb(35, 131, 226);
+  border-color: rgba(35, 131, 226, 0.4);
+  background-color: var(--bg-main);
 }
 
+/* De-emphasize default values */
+.filter-option-default {
+  color: rgba(55, 53, 47, 0.4);
+}
+
+/* Clear Filters */
+.filter-clear-container {
+  padding: 8px 10px 4px;
+  border-top: 1px solid rgba(55, 53, 47, 0.09);
+  margin-top: 8px;
+}
+
+.filter-clear-btn {
+  background: none;
+  border: none;
+  color: rgba(55, 53, 47, 0.5);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 20ms ease-in;
+  user-select: none;
+  width: 100%;
+  text-align: left;
+}
+
+.filter-clear-btn:hover {
+  color: var(--text-primary);
+}
+
+.filter-clear-btn:focus {
+  outline: none;
+}
+
+/* Filter Button Badge */
+.filter-btn-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgb(35, 131, 226);
+  background: rgba(35, 131, 226, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* Sort Panel Header */
+.sort-panel-header {
+  padding: 6px 10px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(55, 53, 47, 0.45);
+  user-select: none;
+}
+
+/* Sort Section */
+.sort-section {
+  margin-bottom: 4px;
+}
+
+.sort-section:last-child {
+  margin-bottom: 0;
+}
+
+.sort-section-label {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.5);
+  user-select: none;
+}
+
+/* Sort Divider */
+.sort-divider {
+  height: 1px;
+  background: rgba(55, 53, 47, 0.09);
+  margin: 6px 0;
+}
+
+/* Sort Option */
 .sort-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 5px;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background 20ms ease-in;
   font-size: 14px;
   color: var(--text-primary);
   user-select: none;
+  position: relative;
+}
+
+.sort-option-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
 
 .sort-option:hover {
   background: var(--bg-hover);
 }
 
+/* Calm selected state - subtle background + checkmark */
 .sort-option.active {
-  background: rgba(35, 131, 226, 0.1);
-  color: rgb(35, 131, 226);
+  background: rgba(35, 131, 226, 0.04);
+  color: var(--text-primary);
 }
 
-.sort-option svg {
+.sort-option.active .sort-option-check {
+  display: block !important;
+  fill: rgb(35, 131, 226);
+}
+
+/* Sort Option Icons */
+.sort-option-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  fill: rgba(55, 53, 47, 0.45);
+  flex-shrink: 0;
+}
+
+.sort-option.active .sort-option-icon {
+  fill: rgba(55, 53, 47, 0.45);
+}
+
+.sort-option-check {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
 
@@ -703,7 +966,7 @@ body {
 .main-content {
   width: 100%;
   margin: 0;
-  padding: 16px 0 24px 0;
+  padding: 40px 0 24px 0;
   background: var(--bg-soft);
   display: flex;
   justify-content: flex-start;
@@ -726,12 +989,13 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 6px 8px;
   padding-left: 8px;
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
+  line-height: 1.4;
 }
 
 /* Light background colors for each column header */
@@ -744,15 +1008,15 @@ body {
 }
 
 .kanban-column[data-status="interview"] .column-header-notion {
-  background-color: rgba(221, 244, 255, 0.3);
+  background-color: rgba(221, 244, 255, 0.4);
 }
 
 .kanban-column[data-status="offer"] .column-header-notion {
-  background-color: rgba(237, 247, 237, 0.4);
+  background-color: rgba(237, 247, 237, 0.5);
 }
 
 .kanban-column[data-status="rejected"] .column-header-notion {
-  background-color: rgba(255, 235, 230, 0.3);
+  background-color: rgba(255, 235, 230, 0.2);
 }
 
 .column-header-notion .status-icon {
@@ -1093,17 +1357,21 @@ body {
 }
 
 .add-card-btn:hover {
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
+  border-color: rgba(55, 53, 47, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 /* Notion-style table container */
 .table-container {
   background: var(--bg-soft);
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: auto;
   position: relative;
   padding-bottom: 16px;
   margin-top: 16px;
+  max-height: calc(100vh - 280px); /* Allow scrolling with sticky header */
 }
 
 /* Notion-style table */
@@ -1301,11 +1569,59 @@ body {
   z-index: 1;
 }
 
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .pagination-info {
   font-size: 14px;
   color: rgba(55, 53, 47, 0.65);
   user-select: none;
   flex-shrink: 0;
+}
+
+.rows-per-page-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rows-per-page-label {
+  font-size: 14px;
+  color: rgba(55, 53, 47, 0.5);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.rows-per-page-select {
+  padding: 4px 24px 4px 8px;
+  border: 1px solid rgba(55, 53, 47, 0.09);
+  border-radius: 4px;
+  font-size: 14px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 20ms ease-in;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  min-width: 60px;
+}
+
+.rows-per-page-select:hover {
+  background-color: rgba(55, 53, 47, 0.03);
+  border-color: rgba(55, 53, 47, 0.16);
+}
+
+.rows-per-page-select:focus {
+  outline: none;
+  border-color: rgba(35, 131, 226, 0.4);
+  background-color: var(--bg-main);
 }
 
 .pagination-controls {
@@ -1355,29 +1671,32 @@ body {
   background: var(--bg-soft);
 }
 
+/* Prompt: Alignment System - 8px spacing system */
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
-  padding: 0 4px;
+  padding: 0 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
 }
 
 .calendar-month-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .calendar-nav-btn {
   user-select: none;
-  transition: background 20ms ease-in;
+  transition: all 150ms ease;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   border: none;
   background: transparent;
@@ -1385,15 +1704,22 @@ body {
 }
 
 .calendar-nav-btn:hover {
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
+  transform: scale(1.05);
+}
+
+.calendar-nav-btn:active {
+  background: rgba(55, 53, 47, 0.12);
+  transform: scale(0.98);
 }
 
 .calendar-month-label {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text-primary);
-  min-width: 140px;
+  min-width: 160px;
   text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .calendar-today-btn {
@@ -1415,6 +1741,52 @@ body {
 
 .calendar-today-btn:hover {
   background: var(--bg-hover);
+}
+
+/* Prompt: View Toggle - Week/Month segmented control */
+/* Prompt: Motion - 120ms transitions */
+.calendar-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calendar-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(55, 53, 47, 0.04);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.calendar-view-toggle-btn {
+  user-select: none;
+  transition: color 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.5);
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+}
+
+.calendar-view-toggle-btn:hover {
+  color: rgba(55, 53, 47, 0.65);
+  background: rgba(55, 53, 47, 0.03);
+}
+
+.calendar-view-toggle-btn.active {
+  color: rgb(55, 53, 47);
+  background: white;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.06);
 }
 
 .calendar-grid {
@@ -1448,17 +1820,86 @@ body {
   grid-auto-rows: minmax(70px, 90px);
 }
 
+/* Week view - single row of 7 days */
+body.calendar-week-view .calendar-days {
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: auto;
+  grid-template-rows: 280px;
+}
+
+/* Prompt: Alignment System - 8px spacing, 16px internal padding */
+/* Prompt: Motion - 120ms transitions */
 .calendar-day {
   border-right: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 4px;
+  padding: 8px;
   background: var(--bg-main);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 4px;
   min-height: 70px;
   max-height: 90px;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+
+/* Prompt 4: Week View Grid Contract */
+/* Week view - unified grid with consistent row heights */
+body.calendar-week-view .calendar-day {
+  min-height: 280px;
+  max-height: 280px;
+  padding: 12px;
+  gap: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(55, 53, 47, 0.12);
+  border-bottom: none;
+}
+
+body.calendar-week-view .calendar-day:last-child {
+  border-right: none;
+}
+
+/* Month view - density and overview */
+body.calendar-month-view .calendar-day {
+  min-height: 70px;
+  max-height: 90px;
+  padding: 8px;
+  gap: 4px;
+}
+
+/* Prompt: Day Cell Hover - Subtle elevation */
+/* Prompt: Motion - 120ms transitions */
+.calendar-day:not(.other-month):hover {
+  background: rgba(55, 53, 47, 0.02);
+  border-color: rgba(55, 53, 47, 0.12);
+  box-shadow: none;
+}
+
+/* View all affordance - appears on hover for multi-event days */
+/* Prompt: Motion - 120ms transitions */
+.calendar-day-view-all {
+  display: none;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.45);
+  padding: 4px 6px;
+  margin-top: 2px;
+  border-radius: 3px;
+  background: rgba(55, 53, 47, 0.03);
+  text-align: center;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+.calendar-day:hover .calendar-day-view-all {
+  display: block;
+}
+
+.calendar-day-view-all:hover {
+  background: rgba(55, 53, 47, 0.06);
+  color: rgba(55, 53, 47, 0.65);
 }
 
 .calendar-day:nth-child(7n) {
@@ -1474,20 +1915,26 @@ body {
 }
 
 .calendar-day.today {
-  background: rgba(35, 131, 226, 0.05);
+  background: rgba(35, 131, 226, 0.08);
+  border: 2px solid rgba(35, 131, 226, 0.3);
+  box-shadow: 0 0 0 1px rgba(35, 131, 226, 0.15), 0 2px 4px rgba(35, 131, 226, 0.1);
 }
 
 .calendar-day.today .calendar-day-number {
   background: rgb(35, 131, 226);
   color: white;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 1px 3px rgba(35, 131, 226, 0.3);
 }
 
+/* Prompt 2: Isolate Date Header from Event Flow */
 .calendar-day-header {
   display: flex;
   align-items: center;
@@ -1498,10 +1945,36 @@ body {
   flex-shrink: 0;
 }
 
+/* Week view - fixed-height header to prevent layout shifts */
+body.calendar-week-view .calendar-day-header {
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  position: relative;
+}
+
 .calendar-day-number {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+/* Week view - larger day numbers */
+body.calendar-week-view .calendar-day-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Prompt 3: Overlay Today Indicator */
+/* Week view - absolute positioned today indicator */
+body.calendar-week-view .calendar-day.today .calendar-day-number {
+  position: absolute;
+  top: 4px;
+  left: 12px;
+  font-size: 14px;
 }
 
 .calendar-day-badges {
@@ -1582,79 +2055,622 @@ body {
   background: rgb(235, 87, 87);
 }
 
+/* Prompt: Alignment System - 8px spacing between stacked events */
+/* Prompt 1: Fixed Event Baseline */
 .calendar-events {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 4px;
   flex: 1;
   overflow: hidden;
 }
 
-.calendar-event-card {
-  background: white;
-  border-radius: 2px;
-  padding: 2px 3px;
-  font-size: 10px;
-  cursor: pointer;
-  transition: background 20ms ease-in;
-  box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
-  line-height: 1.2;
+/* Week view - fixed baseline for event lists */
+body.calendar-week-view .calendar-events {
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 0;
 }
 
+/* Prompt: Event Sizing - Fixed-height row system (28-32px per event) */
+/* Prompt: Color Discipline - Neutral background, color only for status */
+.calendar-event-card {
+  background: white;
+  border-radius: 3px;
+  padding: 0;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 120ms ease-out, box-shadow 120ms ease-out, transform 120ms ease-out;
+  box-shadow: rgba(15, 15, 15, 0.06) 0px 0px 0px 1px;
+  overflow: hidden;
+  flex-shrink: 0;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-left: 3px solid transparent;
+  margin-bottom: 4px;
+}
+
+/* Prompt 5: Event Row Locking */
+/* Week view - locked event row heights */
+body.calendar-week-view .calendar-event-card {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  padding: 6px 0;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+body.calendar-week-view .calendar-event-content {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0 10px;
+}
+
+body.calendar-week-view .calendar-event-title {
+  font-size: 12px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+body.calendar-week-view .calendar-event-company {
+  font-size: 11px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+  display: block;
+}
+
+body.calendar-week-view .calendar-event-separator {
+  display: none;
+}
+
+/* Prompt: Motion - Subtle 120ms transitions, no dramatic effects */
 .calendar-event-card:hover {
-  background: rgba(55, 53, 47, 0.04);
+  background: rgba(55, 53, 47, 0.03);
+  box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
+  transform: none;
+}
+
+/* Status-based left border colors - matching Kanban board */
+.calendar-event-card.status-saved {
+  border-left-color: rgb(144, 101, 176);
 }
 
 .calendar-event-card.status-applied {
-  border-left: 2px solid rgb(120, 119, 116);
+  border-left-color: rgb(120, 119, 116);
 }
 
 .calendar-event-card.status-interview {
-  border-left: 2px solid rgb(35, 131, 226);
+  border-left-color: rgb(35, 131, 226);
 }
 
 .calendar-event-card.status-offer {
-  border-left: 2px solid rgb(0, 135, 107);
+  border-left-color: rgb(0, 135, 107);
 }
 
 .calendar-event-card.status-rejected {
-  border-left: 2px solid rgb(235, 87, 87);
+  border-left-color: rgb(235, 87, 87);
 }
 
+/* Status indicator - thin accent bar (left-aligned) */
+.calendar-event-status-bar {
+  width: 3px;
+  height: 100%;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.calendar-event-card.status-saved .calendar-event-status-bar {
+  background: rgb(144, 101, 176);
+}
+
+.calendar-event-card.status-applied .calendar-event-status-bar {
+  background: rgb(120, 119, 116);
+}
+
+.calendar-event-card.status-interview .calendar-event-status-bar {
+  background: rgb(35, 131, 226);
+}
+
+.calendar-event-card.status-offer .calendar-event-status-bar {
+  background: rgb(0, 135, 107);
+}
+
+.calendar-event-card.status-rejected .calendar-event-status-bar {
+  background: rgb(235, 87, 87);
+}
+
+/* Prompt: Event Content Hierarchy - Single line with truncation */
+/* Content wrapper - single line layout */
+.calendar-event-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 100%;
+}
+
+/* Title - bold, primary emphasis */
 .calendar-event-title {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 11px;
   color: rgb(55, 53, 47);
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 1;
 }
 
+/* Company - inline, muted, secondary */
 .calendar-event-company {
-  font-size: 9px;
-  color: rgba(55, 53, 47, 0.65);
-  margin-top: 0;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(55, 53, 47, 0.45);
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
-  display: none;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 2;
+}
+
+/* Separator between title and company */
+.calendar-event-separator {
+  color: rgba(55, 53, 47, 0.25);
+  font-size: 10px;
+  flex-shrink: 0;
 }
 
 .calendar-more-events {
   font-size: 10px;
   color: var(--text-secondary);
-  padding: 2px 4px;
+  padding: 4px 6px;
   cursor: pointer;
-  transition: background 20ms ease-in;
-  border-radius: 3px;
+  transition: all 150ms ease;
+  border-radius: 4px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(55, 53, 47, 0.04);
+  border: 1px solid rgba(55, 53, 47, 0.08);
 }
 
 .calendar-more-events:hover {
-  background: var(--bg-hover);
+  background: rgba(55, 53, 47, 0.08);
+  border-color: rgba(55, 53, 47, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.calendar-more-status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.calendar-more-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.calendar-more-status-dot.status-saved {
+  background: rgb(144, 101, 176);
+}
+
+.calendar-more-status-dot.status-applied {
+  background: rgb(120, 119, 116);
+}
+
+.calendar-more-status-dot.status-interview {
+  background: rgb(35, 131, 226);
+}
+
+.calendar-more-status-dot.status-offer {
+  background: rgb(0, 135, 107);
+}
+
+.calendar-more-status-dot.status-rejected {
+  background: rgb(235, 87, 87);
+}
+
+.calendar-more-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.65);
+  white-space: nowrap;
+}
+
+/* Prompt: Empty Day State - Subtle hover affordance */
+/* Prompt: Motion - 120ms transitions */
+.calendar-empty-affordance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.calendar-day:not(.other-month):hover .calendar-empty-affordance {
+  opacity: 1;
+}
+
+.calendar-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(55, 53, 47, 0.35);
+  transition: color 120ms ease-out;
+}
+
+.calendar-day:hover .calendar-empty-icon {
+  color: rgba(55, 53, 47, 0.5);
+}
+
+.calendar-empty-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.35);
+  white-space: nowrap;
+  transition: color 120ms ease-out;
+}
+
+.calendar-day:hover .calendar-empty-text {
+  color: rgba(55, 53, 47, 0.5);
+}
+
+/* Prompt: Multi-Event Expansion - Notion-style popover */
+/* Prompt: Motion - 120ms transitions, subtle effects */
+.calendar-day-popover {
+  position: fixed;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(15, 15, 15, 0.1), 0 0 0 1px rgba(15, 15, 15, 0.06);
+  padding: 12px;
+  min-width: 320px;
+  max-width: 400px;
+  max-height: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  animation: popoverFadeIn 120ms ease-out;
+}
+
+/* Prompt: Motion - Subtle, quiet motion */
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-day-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  margin-bottom: 10px;
+}
+
+.calendar-day-popover-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(55, 53, 47);
+}
+
+.calendar-day-popover-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(55, 53, 47, 0.5);
+}
+
+.calendar-day-popover-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease;
+  color: rgba(55, 53, 47, 0.5);
+}
+
+.calendar-day-popover-close:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: rgba(55, 53, 47, 0.8);
+}
+
+.calendar-day-popover-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Scrollbar styling for popover */
+.calendar-day-popover-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.calendar-day-popover-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-day-popover-content::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.2);
+  border-radius: 3px;
+}
+
+.calendar-day-popover-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 53, 47, 0.3);
+}
+
+/* Event cards in popover - same styling as grid */
+.calendar-day-popover .calendar-event-card {
+  margin-bottom: 4px;
+}
+
+.calendar-day-popover .calendar-event-card:hover {
+  background: rgba(55, 53, 47, 0.04);
+  box-shadow: rgba(15, 15, 15, 0.12) 0px 0px 0px 1px, 0 1px 2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+/* Popover backdrop */
+.calendar-popover-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: transparent;
+}
+
+/* Calendar-First Layout Mode */
+/* When calendar view is active, switch to full-width layout */
+
+/* Prompt 1: Full-Screen Layout Mode */
+/* Prompt 2: Remove Header Ownership From Views */
+/* Prompt 4: Lock Header + Nav as a Single Unit */
+/* Header and view-toggle styles removed - both are now locked globally */
+body.calendar-view-active .calendar-wrapper {
+  max-width: none;
+  padding-inline: 48px;
+}
+
+body.calendar-view-active .main-content {
+  padding: 32px 0 24px 0;
+}
+
+body.calendar-view-active .calendar-wrapper {
+  background: var(--bg-main);
+  padding: 24px 48px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(55, 53, 47, 0.06);
+}
+
+body.calendar-view-active .calendar-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+}
+
+body.calendar-view-active .calendar-month-label {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+body.calendar-view-active .calendar-grid {
+  box-shadow: 0 0 0 1px rgba(55, 53, 47, 0.09);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Prompt 4: Sticky Controls */
+/* Make calendar header sticky while scrolling */
+body.calendar-view-active .calendar-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-main);
+  margin-bottom: 0;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  box-shadow: 0 1px 2px rgba(55, 53, 47, 0.04);
+}
+
+body.calendar-view-active .calendar-grid {
+  margin-top: 24px;
+}
+
+/* Prompt 5: Responsive Behavior */
+/* On smaller screens, maintain full-screen mode but collapse secondary controls */
+
+/* Tablet breakpoint (768px) */
+@media (max-width: 768px) {
+  /* Prompt 2: Remove Header Ownership From Views */
+  /* Prompt 4: Lock Header + Nav as a Single Unit */
+  /* Header and view-toggle styles removed - both are now locked globally */
+  body.calendar-view-active .calendar-wrapper {
+    padding-inline: 24px;
+  }
+
+  body.calendar-view-active .calendar-wrapper {
+    padding: 16px 24px;
+  }
+
+  /* Collapse toolbar into overflow menu */
+  body.calendar-view-active .toolbar-container {
+    display: none;
+  }
+
+  /* Keep only essential controls visible */
+  body.calendar-view-active .view-toolbar {
+    gap: 8px;
+  }
+
+  /* Calendar header adjustments */
+  body.calendar-view-active .calendar-header {
+    padding: 12px 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  body.calendar-view-active .calendar-month-nav {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  body.calendar-view-active .calendar-month-label {
+    font-size: 18px;
+  }
+
+  body.calendar-view-active .calendar-nav-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Optimize calendar grid for smaller screens */
+  body.calendar-view-active .calendar-day {
+    min-height: 60px;
+    max-height: 80px;
+    padding: 3px;
+  }
+
+  body.calendar-view-active .calendar-day-number {
+    font-size: 11px;
+  }
+
+  body.calendar-view-active .calendar-event-card {
+    height: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    margin-bottom: 2px;
+  }
+
+  body.calendar-view-active .calendar-event-title {
+    font-size: 9px;
+  }
+
+  body.calendar-view-active .calendar-event-company {
+    font-size: 8px;
+  }
+
+  body.calendar-view-active .calendar-event-status-bar {
+    width: 2px;
+  }
+}
+
+/* Mobile breakpoint (600px) */
+@media (max-width: 600px) {
+  /* Prompt 2: Remove Header Ownership From Views */
+  /* Prompt 4: Lock Header + Nav as a Single Unit */
+  /* Header and view-toggle styles removed - both are now locked globally */
+  body.calendar-view-active .calendar-wrapper {
+    padding-inline: 16px;
+  }
+
+  body.calendar-view-active .calendar-wrapper {
+    padding: 12px 16px;
+  }
+
+  /* Compact calendar header */
+  body.calendar-view-active .calendar-header {
+    padding: 10px 2px;
+  }
+
+  body.calendar-view-active .calendar-month-label {
+    font-size: 16px;
+    min-width: 140px;
+  }
+
+  body.calendar-view-active .calendar-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  body.calendar-view-active .calendar-today-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* Optimize calendar grid for mobile */
+  body.calendar-view-active .calendar-day {
+    min-height: 50px;
+    max-height: 70px;
+    padding: 2px;
+  }
+
+  body.calendar-view-active .calendar-day-number {
+    font-size: 10px;
+    width: 20px;
+    height: 20px;
+  }
+
+  body.calendar-view-active .calendar-weekday {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  body.calendar-view-active .calendar-event-card {
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    margin-bottom: 1px;
+  }
+
+  body.calendar-view-active .calendar-event-title {
+    font-size: 8px;
+  }
+
+  body.calendar-view-active .calendar-event-company {
+    display: none;
+  }
+
+  body.calendar-view-active .calendar-event-separator {
+    display: none;
+  }
+
+  body.calendar-view-active .calendar-event-status-bar {
+    width: 2px;
+  }
+
+  body.calendar-view-active .calendar-more-events {
+    padding: 2px 4px;
+    font-size: 8px;
+  }
+
+  body.calendar-view-active .calendar-empty-affordance {
+    font-size: 9px;
+  }
 }
 
 .empty-state {
@@ -2094,10 +3110,36 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* Prompt 3: Lock Header Layout */
+  /* Prompt 4: Lock Header + Nav as a Single Unit */
+  /* Header and nav remain locked even on tablet - only padding adjusts */
   .header-content {
-    padding: 16px 24px;
-    flex-direction: column;
-    gap: 16px;
+    padding: 14px 24px 12px;
+  }
+
+  /* View toggle padding matches header */
+  .view-toggle-row {
+    padding-inline: 24px;
+  }
+
+  /* Title and subtitle sizes remain LOCKED */
+  .logo h1 {
+    font-size: 22px;
+  }
+
+  .logo-subtitle {
+    font-size: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .global-actions {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
   }
 
   .btn-profile span {
@@ -2132,6 +3174,21 @@ body {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
+    min-height: 44px;
+  }
+
+  .view-toggle-row {
+    height: 44px;
+  }
+
+  .view-tab {
+    font-size: 13px;
+    padding-inline: 12px;
+  }
+
+  .toolbar-container {
+    flex-wrap: wrap;
+    padding: 4px 6px;
   }
 
   .main-content {
@@ -2147,21 +3204,49 @@ body {
   }
 }
 
+/* Mobile breakpoint (480px) */
+@media (max-width: 480px) {
+  /* Prompt 3: Lock Header Layout */
+  /* Prompt 4: Lock Header + Nav as a Single Unit */
+  /* Header and nav remain locked even on mobile - only padding adjusts */
+  .header-content {
+    padding: 12px 16px 10px;
+  }
+
+  /* View toggle padding matches header */
+  .view-toggle-row {
+    padding-inline: 16px;
+  }
+
+  /* Title and subtitle sizes remain LOCKED */
+  .logo h1 {
+    font-size: 22px;
+  }
+
+  .logo-subtitle {
+    font-size: 12px;
+  }
+}
+
 /* ==================== Share to Group Modal ==================== */
 
 /* Share to Group Modal Overlay - Centered */
 #share-to-group-modal.modal-overlay {
-  position: fixed !important;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 15, 15, 0.5) !important;
-  display: flex !important;
+  background: rgba(15, 15, 15, 0.5);
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+}
+
+/* Only show when display is set to flex via JavaScript */
+#share-to-group-modal.modal-overlay[style*="display: flex"] {
+  display: flex;
 }
 
 /* Share to Group Modal Container - Calendar Day Jobs Style */
@@ -2394,5 +3479,103 @@ body {
 
 .empty-state p {
   margin: 0;
+}
+
+/* ==================== CSV Export Modal ==================== */
+
+.csv-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  .csv-fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.csv-field-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.csv-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(55, 53, 47, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 8px 0;
+  padding-bottom: 4px;
+}
+
+.csv-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 3px;
+  transition: background 20ms ease-in;
+  user-select: none;
+  min-height: 28px;
+}
+
+.csv-field-checkbox:hover {
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.csv-field-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.csv-field-checkbox span {
+  font-size: 14px;
+  color: rgb(55, 53, 47);
+  line-height: 1.3;
+}
+
+/* Checkbox styling for better Notion look */
+.csv-field-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(55, 53, 47, 0.3);
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.csv-field-checkbox input[type="checkbox"]:hover {
+  border-color: rgba(55, 53, 47, 0.5);
+  background: rgba(55, 53, 47, 0.03);
+}
+
+.csv-field-checkbox input[type="checkbox"]:checked {
+  background: rgb(35, 131, 226);
+  border-color: rgb(35, 131, 226);
+}
+
+.csv-field-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 

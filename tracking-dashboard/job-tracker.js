@@ -375,20 +375,26 @@ class JobTracker {
 
   // Delete job
   async deleteJob(jobId) {
-    const index = this.jobs.findIndex(j => j.id === jobId);
-    if (index === -1) return false;
+    // Find job by id or _id (MongoDB compatibility)
+    const index = this.jobs.findIndex(j => j.id === jobId || j._id === jobId);
+    if (index === -1) {
+      console.error('[Job Tracker] Job not found for deletion:', jobId);
+      return false;
+    }
 
     const job = this.jobs[index];
+    console.log('[Job Tracker] 🗑️ Deleting job:', job.company, '-', job.title);
 
     // Delete from API if authenticated
     if (window.apiClient?.isAuthenticated()) {
       try {
         // Try to find the MongoDB _id from the job
         const mongoId = job._id || job.id;
+        console.log('[Job Tracker] 🗑️ Deleting from MongoDB with ID:', mongoId);
         await window.apiClient.deleteJob(mongoId);
-        console.log('[Job Tracker] 🗑️ Deleted from MongoDB:', job.company, '-', job.title);
+        console.log('[Job Tracker] ✅ Deleted from MongoDB:', job.company, '-', job.title);
       } catch (error) {
-        console.error('[Job Tracker] Failed to delete from MongoDB:', error);
+        console.error('[Job Tracker] ❌ Failed to delete from MongoDB:', error);
         // Continue with local deletion even if API fails
       }
     }
@@ -397,7 +403,7 @@ class JobTracker {
     this.jobs.splice(index, 1);
     await this.saveJobs();
 
-    console.log('[Job Tracker] 🗑️ Deleted job:', job.company, '-', job.title);
+    console.log('[Job Tracker] ✅ Deleted job from local storage:', job.company, '-', job.title);
     return true;
   }
 

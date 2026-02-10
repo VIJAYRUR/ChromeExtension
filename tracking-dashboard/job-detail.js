@@ -830,9 +830,33 @@ class JobDetailPage {
   }
 
   async deleteJob() {
-    await window.jobTracker.deleteJob(this.jobId);
-    alert('Job deleted successfully!');
-    window.close();
+    try {
+      console.log('[Job Detail] 🗑️ Deleting job:', this.jobId);
+
+      const success = await window.jobTracker.deleteJob(this.jobId);
+
+      if (success) {
+        console.log('[Job Detail] ✅ Job deleted successfully');
+
+        // Show success notification
+        if (window.globalNotifications) {
+          window.globalNotifications.showNotionToast('Job deleted successfully', 'success', 2000);
+        } else {
+          alert('Job deleted successfully!');
+        }
+
+        // Redirect back to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 500);
+      } else {
+        console.error('[Job Detail] ❌ Failed to delete job');
+        alert('Failed to delete job. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Job Detail] Error deleting job:', error);
+      alert(`Failed to delete job: ${error.message}`);
+    }
   }
 
   renderTimingBadge() {

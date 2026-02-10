@@ -14,7 +14,7 @@ class DashboardUI {
 
     // Pagination for table view (local pagination)
     this.currentPage = 1;
-    this.itemsPerPage = 10;
+    this.itemsPerPage = 20; // Default increased from 10 to 20 for better scan efficiency
 
     // Lazy loading state (database-first approach)
     this.lazyLoadEnabled = true; // Toggle between lazy loading and offline-first
@@ -50,6 +50,7 @@ class DashboardUI {
 
     await this.waitForTracker();
     await this.loadCompactMode();
+    await this.loadItemsPerPage();
     await this.setupUserMenu();
 
     // Load jobs using lazy loading (database-first) if authenticated
@@ -359,6 +360,32 @@ class DashboardUI {
     } catch (error) {
       console.log('[Dashboard] Running in non-extension mode');
       this.compactMode = false;
+    }
+  }
+
+  async loadItemsPerPage() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.local.get(['itemsPerPage']);
+        if (result.itemsPerPage) {
+          this.itemsPerPage = result.itemsPerPage;
+          console.log('[Dashboard] 📄 Loaded saved items per page:', this.itemsPerPage);
+        }
+      } else {
+        // Fallback to localStorage for non-extension environment
+        const saved = localStorage.getItem('itemsPerPage');
+        if (saved) {
+          this.itemsPerPage = parseInt(saved, 10);
+        }
+      }
+
+      // Update the select element if it exists
+      const rowsPerPageSelect = document.getElementById('rows-per-page-select');
+      if (rowsPerPageSelect) {
+        rowsPerPageSelect.value = this.itemsPerPage.toString();
+      }
+    } catch (error) {
+      console.log('[Dashboard] Could not load items per page preference');
     }
   }
 
@@ -732,6 +759,13 @@ class DashboardUI {
     filterStatusPanel.addEventListener('change', (e) => {
       this.currentFilters.status = e.target.value;
       this.currentPage = 1;
+
+      // Update filter badge
+      this.updateFilterBadge();
+
+      // Auto-close panel on selection
+      filterPanel.style.display = 'none';
+
       this.reloadJobsWithFilters();
     });
 
@@ -740,20 +774,82 @@ class DashboardUI {
     filterWorktypePanel.addEventListener('change', (e) => {
       this.currentFilters.workType = e.target.value;
       this.currentPage = 1;
+
+      // Update filter badge
+      this.updateFilterBadge();
+
+      // Auto-close panel on selection
+      filterPanel.style.display = 'none';
+
       this.reloadJobsWithFilters();
+    });
+
+    // Clear filters button
+    const filterClearBtn = document.getElementById('filter-clear-btn');
+    if (filterClearBtn) {
+      filterClearBtn.addEventListener('click', () => {
+        // Reset filters to default
+        this.currentFilters.status = 'all';
+        this.currentFilters.workType = 'all';
+        this.currentPage = 1;
+
+        // Update UI
+        filterStatusPanel.value = 'all';
+        filterWorktypePanel.value = 'all';
+
+        // Update filter badge
+        this.updateFilterBadge();
+
+        // Close panel
+        filterPanel.style.display = 'none';
+
+        this.reloadJobsWithFilters();
+      });
+    }
+
+    // Initialize filter badge
+    this.updateFilterBadge();
+
+    // Keyboard navigation for filter panel
+    filterStatusPanel.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        filterPanel.style.display = 'none';
+        filterBtn.focus();
+      }
+    });
+
+    filterWorktypePanel.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        filterPanel.style.display = 'none';
+        filterBtn.focus();
+      }
     });
 
     // Sort panel - sort options
     const sortOptions = document.querySelectorAll('.sort-option');
+    const sortBtnLabel = document.getElementById('sort-btn-label');
+
     sortOptions.forEach(option => {
       option.addEventListener('click', () => {
         const sortValue = option.dataset.sort;
+        const sortLabel = option.dataset.label;
         this.currentFilters.sort = sortValue;
         this.currentPage = 1;
 
         // Update active state
-        sortOptions.forEach(opt => opt.classList.remove('active'));
+        sortOptions.forEach(opt => {
+          opt.classList.remove('active');
+          const checkmark = opt.querySelector('.sort-option-check');
+          if (checkmark) checkmark.style.display = 'none';
+        });
         option.classList.add('active');
+        const activeCheckmark = option.querySelector('.sort-option-check');
+        if (activeCheckmark) activeCheckmark.style.display = 'block';
+
+        // Update button label
+        if (sortBtnLabel && sortLabel) {
+          sortBtnLabel.textContent = sortLabel;
+        }
 
         // Close panel and reload
         sortPanel.style.display = 'none';
@@ -765,6 +861,14 @@ class DashboardUI {
     const defaultSort = document.querySelector('.sort-option[data-sort="date-desc"]');
     if (defaultSort) {
       defaultSort.classList.add('active');
+      const defaultCheckmark = defaultSort.querySelector('.sort-option-check');
+      if (defaultCheckmark) defaultCheckmark.style.display = 'block';
+
+      // Set initial button label
+      const defaultLabel = defaultSort.dataset.label;
+      if (sortBtnLabel && defaultLabel) {
+        sortBtnLabel.textContent = defaultLabel;
+      }
     }
 
     // View toggle
@@ -847,6 +951,22 @@ class DashboardUI {
       });
     }
 
+    // Rows per page selector
+    const rowsPerPageSelect = document.getElementById('rows-per-page-select');
+    if (rowsPerPageSelect) {
+      rowsPerPageSelect.addEventListener('change', async (e) => {
+        const newItemsPerPage = parseInt(e.target.value, 10);
+        this.itemsPerPage = newItemsPerPage;
+        this.currentPage = 1; // Reset to first page
+
+        // Persist preference
+        await chrome.storage.local.set({ itemsPerPage: newItemsPerPage });
+
+        // Re-render table
+        this.renderTable(this.currentJobs);
+      });
+    }
+
     // Pagination controls
     const prevPageBtn = document.getElementById('prev-page-btn');
     const nextPageBtn = document.getElementById('next-page-btn');
@@ -889,12 +1009,81 @@ class DashboardUI {
         }
       });
     }
+
+    // Listen for page visibility changes to refresh jobs when user returns
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden) {
+        console.log('[Dashboard] 👁️ Page became visible, refreshing jobs...');
+
+        // Reload jobs from API if authenticated and lazy loading is enabled
+        if (this.lazyLoadEnabled && window.apiClient?.isAuthenticated()) {
+          await this.loadJobsFromAPI(1, false);
+        } else {
+          // Reload from local storage
+          if (window.jobTracker) {
+            await window.jobTracker.loadJobs();
+            this.allJobs = window.jobTracker.jobs;
+          }
+          this.render();
+        }
+      }
+    });
   }
 
   async toggleCompactMode() {
     this.compactMode = !this.compactMode;
     document.body.classList.toggle('compact-mode', this.compactMode);
     await chrome.storage.local.set({ compactMode: this.compactMode });
+  }
+
+  /**
+   * Update filter button badge to show active filters
+   */
+  updateFilterBadge() {
+    const filterBtnBadge = document.getElementById('filter-btn-badge');
+    const filterClearContainer = document.getElementById('filter-clear-container');
+
+    if (!filterBtnBadge) return;
+
+    // Count active filters (non-default values)
+    const activeFilters = [];
+
+    if (this.currentFilters.status !== 'all') {
+      // Capitalize first letter for display
+      const statusLabel = this.currentFilters.status.charAt(0).toUpperCase() +
+                         this.currentFilters.status.slice(1);
+      activeFilters.push(statusLabel);
+    }
+
+    if (this.currentFilters.workType !== 'all') {
+      // Capitalize first letter for display
+      const workTypeLabel = this.currentFilters.workType.charAt(0).toUpperCase() +
+                           this.currentFilters.workType.slice(1);
+      activeFilters.push(workTypeLabel);
+    }
+
+    // Update badge
+    if (activeFilters.length > 0) {
+      if (activeFilters.length === 1) {
+        // Show the filter value
+        filterBtnBadge.textContent = activeFilters[0];
+      } else {
+        // Show count
+        filterBtnBadge.textContent = `${activeFilters.length} filters`;
+      }
+      filterBtnBadge.style.display = 'inline-block';
+
+      // Show clear button
+      if (filterClearContainer) {
+        filterClearContainer.style.display = 'block';
+      }
+    } else {
+      // Hide badge and clear button
+      filterBtnBadge.style.display = 'none';
+      if (filterClearContainer) {
+        filterClearContainer.style.display = 'none';
+      }
+    }
   }
 
   async refreshData() {
@@ -943,6 +1132,13 @@ class DashboardUI {
       container.classList.remove('active');
     });
     document.getElementById(`${view}-view`).classList.add('active');
+
+    // Add/remove calendar-view-active class to body for full-screen layout
+    if (view === 'calendar') {
+      document.body.classList.add('calendar-view-active');
+    } else {
+      document.body.classList.remove('calendar-view-active');
+    }
 
     // Initialize calendar if switching to calendar view
     if (view === 'calendar' && !this.calendarInitialized) {
@@ -1066,26 +1262,27 @@ class DashboardUI {
 
       addButton.style.cssText = `
         user-select: none;
-        transition: background 20ms ease-in;
+        transition: all 150ms ease;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 9px;
-        height: 32px;
-        padding-inline: 10px;
-        border-radius: 10px;
+        gap: 8px;
+        height: 36px;
+        padding: 8px 12px;
+        border-radius: 6px;
         white-space: nowrap;
-        font-size: 15px;
-        font-weight: 400;
+        font-size: 14px;
+        font-weight: 500;
         line-height: 1.2;
         color: ${statusColors[status] || 'var(--text-secondary)'};
-        box-shadow: rgb(from ${statusColors[status] || 'var(--text-secondary)'} r g b / 0.1) 0px 0px 0px 1px;
-        min-height: 40px;
+        background: rgba(55, 53, 47, 0.04);
+        border: 1px solid rgba(55, 53, 47, 0.08);
+        min-height: 36px;
       `;
 
       addButton.innerHTML = `
-        <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: inherit; flex-shrink: 0; color: inherit; margin-inline-start: 2px;">
+        <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: inherit; flex-shrink: 0; color: inherit;">
           <path d="M8 2.74a.66.66 0 0 1 .66.66v3.94h3.94a.66.66 0 0 1 0 1.32H8.66v3.94a.66.66 0 0 1-1.32 0V8.66H3.4a.66.66 0 0 1 0-1.32h3.94V3.4A.66.66 0 0 1 8 2.74"></path>
         </svg>New page
       `;
@@ -1707,16 +1904,29 @@ class DashboardUI {
   // Calendar methods
   initCalendar() {
     this.currentDate = new Date();
+    this.calendarViewMode = 'month'; // Default to month view
     this.renderCalendar();
 
     // Event listeners for calendar navigation
     document.getElementById('prev-month').addEventListener('click', () => {
-      this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+      if (this.calendarViewMode === 'week') {
+        // Navigate by week
+        this.currentDate.setDate(this.currentDate.getDate() - 7);
+      } else {
+        // Navigate by month
+        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+      }
       this.renderCalendar();
     });
 
     document.getElementById('next-month').addEventListener('click', () => {
-      this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+      if (this.calendarViewMode === 'week') {
+        // Navigate by week
+        this.currentDate.setDate(this.currentDate.getDate() + 7);
+      } else {
+        // Navigate by month
+        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+      }
       this.renderCalendar();
     });
 
@@ -1724,9 +1934,95 @@ class DashboardUI {
       this.currentDate = new Date();
       this.renderCalendar();
     });
+
+    // Event listeners for view toggle
+    const viewToggleBtns = document.querySelectorAll('.calendar-view-toggle-btn');
+    viewToggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.getAttribute('data-view');
+        this.setCalendarViewMode(view);
+      });
+    });
+  }
+
+  setCalendarViewMode(mode) {
+    this.calendarViewMode = mode;
+
+    // Update button states
+    const viewToggleBtns = document.querySelectorAll('.calendar-view-toggle-btn');
+    viewToggleBtns.forEach(btn => {
+      if (btn.getAttribute('data-view') === mode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Update body class for CSS targeting
+    document.body.classList.remove('calendar-week-view', 'calendar-month-view');
+    document.body.classList.add(`calendar-${mode}-view`);
+
+    // Re-render calendar
+    this.renderCalendar();
   }
 
   renderCalendar() {
+    // Ensure view mode class is set
+    if (!document.body.classList.contains('calendar-week-view') && !document.body.classList.contains('calendar-month-view')) {
+      document.body.classList.add(`calendar-${this.calendarViewMode || 'month'}-view`);
+    }
+
+    // Render based on view mode
+    if (this.calendarViewMode === 'week') {
+      this.renderWeekView();
+    } else {
+      this.renderMonthView();
+    }
+  }
+
+  renderWeekView() {
+    // Get the current week (Sunday to Saturday)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get the start of the week (Sunday)
+    const currentDay = this.currentDate.getDay();
+    const weekStart = new Date(this.currentDate);
+    weekStart.setDate(this.currentDate.getDate() - currentDay);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Update month label to show week range
+    const monthLabel = document.getElementById('calendar-month-label');
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    monthLabel.textContent = `${startMonth} - ${endMonth}`;
+
+    // Generate calendar days
+    const calendarDays = document.getElementById('calendar-days');
+    calendarDays.innerHTML = '';
+
+    // Group jobs by date
+    const jobsByDate = this.groupJobsByDate(this.currentJobs);
+
+    // Render 7 days (Sunday to Saturday)
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(weekStart.getDate() + i);
+      currentDate.setHours(0, 0, 0, 0);
+
+      const isToday = currentDate.getTime() === today.getTime();
+      const dateKey = this.getDateKey(currentDate);
+      const dayJobs = jobsByDate[dateKey] || [];
+
+      const dayElement = this.createCalendarDay(currentDate.getDate(), false, isToday, dayJobs, currentDate);
+      calendarDays.appendChild(dayElement);
+    }
+  }
+
+  renderMonthView() {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
 
@@ -1870,15 +2166,34 @@ class DashboardUI {
         const eventCard = document.createElement('div');
         eventCard.className = `calendar-event-card status-${job.status}`;
 
+        // Status indicator bar (left-aligned, 3px width)
+        const statusBar = document.createElement('div');
+        statusBar.className = 'calendar-event-status-bar';
+        eventCard.appendChild(statusBar);
+
+        // Content wrapper (inline layout)
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'calendar-event-content';
+
+        // Title (bold, primary)
         const titleElement = document.createElement('div');
         titleElement.className = 'calendar-event-title';
         titleElement.textContent = job.title;
-        eventCard.appendChild(titleElement);
+        contentWrapper.appendChild(titleElement);
 
+        // Separator (·)
+        const separator = document.createElement('span');
+        separator.className = 'calendar-event-separator';
+        separator.textContent = '·';
+        contentWrapper.appendChild(separator);
+
+        // Company (inline, muted, secondary)
         const companyElement = document.createElement('div');
         companyElement.className = 'calendar-event-company';
         companyElement.textContent = job.company;
-        eventCard.appendChild(companyElement);
+        contentWrapper.appendChild(companyElement);
+
+        eventCard.appendChild(contentWrapper);
 
         eventCard.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1888,14 +2203,43 @@ class DashboardUI {
         eventsContainer.appendChild(eventCard);
       });
 
-      // Show "more" indicator if there are more jobs
+      // Show enhanced "more" indicator if there are more jobs
       if (jobs.length > maxVisible) {
+        const remainingJobs = jobs.length - maxVisible;
         const moreElement = document.createElement('div');
         moreElement.className = 'calendar-more-events';
-        moreElement.textContent = `+${jobs.length - maxVisible} more`;
+
+        // Count remaining jobs by status
+        const remainingByStatus = {};
+        jobs.slice(maxVisible).forEach(job => {
+          remainingByStatus[job.status] = (remainingByStatus[job.status] || 0) + 1;
+        });
+
+        // Create status indicators
+        const statusIndicators = document.createElement('div');
+        statusIndicators.className = 'calendar-more-status-indicators';
+
+        const statusOrder = ['interview', 'offer', 'applied', 'rejected'];
+        statusOrder.forEach(status => {
+          if (remainingByStatus[status]) {
+            const indicator = document.createElement('div');
+            indicator.className = `calendar-more-status-dot status-${status}`;
+            indicator.setAttribute('data-tooltip', `${remainingByStatus[status]} ${status}`);
+            statusIndicators.appendChild(indicator);
+          }
+        });
+
+        moreElement.appendChild(statusIndicators);
+
+        // Add text
+        const moreText = document.createElement('span');
+        moreText.className = 'calendar-more-text';
+        moreText.textContent = `${remainingJobs} more application${remainingJobs > 1 ? 's' : ''}`;
+        moreElement.appendChild(moreText);
+
         moreElement.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear());
+          this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear(), e.currentTarget);
         });
         eventsContainer.appendChild(moreElement);
       }
@@ -1903,11 +2247,40 @@ class DashboardUI {
       dayElement.appendChild(eventsContainer);
     }
 
+    // Add empty state affordance for days without jobs
+    if ((!jobs || jobs.length === 0) && !isOtherMonth) {
+      const emptyAffordance = document.createElement('div');
+      emptyAffordance.className = 'calendar-empty-affordance';
+
+      const plusIcon = document.createElement('div');
+      plusIcon.className = 'calendar-empty-icon';
+      plusIcon.innerHTML = `
+        <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
+          <path d="M8 2.74a.66.66 0 0 1 .66.66v3.94h3.94a.66.66 0 0 1 0 1.32H8.66v3.94a.66.66 0 0 1-1.32 0V8.66H3.4a.66.66 0 0 1 0-1.32h3.94V3.4A.66.66 0 0 1 8 2.74"></path>
+        </svg>
+      `;
+
+      const affordanceText = document.createElement('span');
+      affordanceText.className = 'calendar-empty-text';
+      affordanceText.textContent = 'Add application';
+
+      emptyAffordance.appendChild(plusIcon);
+      emptyAffordance.appendChild(affordanceText);
+
+      dayElement.appendChild(emptyAffordance);
+
+      // Make empty day clickable to add application
+      dayElement.style.cursor = 'pointer';
+      dayElement.addEventListener('click', () => {
+        this.showManualAddJobModal();
+      });
+    }
+
     // Add click handler to day element to show all jobs for that day
     if (jobs && jobs.length > 0 && !isOtherMonth) {
       dayElement.style.cursor = 'pointer';
-      dayElement.addEventListener('click', () => {
-        this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear());
+      dayElement.addEventListener('click', (e) => {
+        this.showDayJobsList(jobs, dayNumber, this.currentDate.getMonth(), this.currentDate.getFullYear(), e.currentTarget);
       });
     }
 
@@ -1958,249 +2331,137 @@ class DashboardUI {
     return this.jobIcons[index];
   }
 
-  showDayJobsList(jobs, day, month, year) {
+  showDayJobsList(jobs, day, month, year, triggerElement = null) {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'];
 
     const dateTitle = `${monthNames[month]} ${day}, ${year}`;
 
-    // Create modal overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(15, 15, 15, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      backdrop-filter: blur(3px);
-      padding: 20px;
-    `;
+    // Create backdrop (transparent, click to close)
+    const backdrop = document.createElement('div');
+    backdrop.className = 'calendar-popover-backdrop';
+    backdrop.addEventListener('click', () => {
+      document.body.removeChild(backdrop);
+      document.body.removeChild(popover);
+    });
+    document.body.appendChild(backdrop);
 
-    // Create modal container - clean and minimal
-    const modal = document.createElement('div');
-    modal.className = 'day-jobs-modal';
-    modal.style.cssText = `
-      background: white;
-      border-radius: 8px;
-      width: 400px;
-      max-width: 90vw;
-      max-height: 70vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
-      animation: modalFadeIn 0.2s ease;
-    `;
+    // Create popover
+    const popover = document.createElement('div');
+    popover.className = 'calendar-day-popover';
 
-    // Add animation keyframes if not already present
-    if (!document.querySelector('#modal-animation-styles')) {
-      const style = document.createElement('style');
-      style.id = 'modal-animation-styles';
-      style.textContent = `
-        @keyframes modalFadeIn {
-          from { opacity: 0; transform: scale(0.96); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    // Modal header - clean and minimal
+    // Popover header
     const header = document.createElement('div');
-    header.style.cssText = `
-      padding: 16px 20px;
-      border-bottom: 1px solid rgba(55, 53, 47, 0.09);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    `;
+    header.className = 'calendar-day-popover-header';
+
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 8px;';
 
     const headerTitle = document.createElement('div');
-    headerTitle.style.cssText = `
-      font-size: 16px;
-      font-weight: 600;
-      color: rgb(55, 53, 47);
-      line-height: 1.2;
-    `;
-    headerTitle.textContent = `${dateTitle}`;
+    headerTitle.className = 'calendar-day-popover-title';
+    headerTitle.textContent = dateTitle;
+
+    const headerCount = document.createElement('div');
+    headerCount.className = 'calendar-day-popover-count';
+    headerCount.textContent = `${jobs.length} application${jobs.length > 1 ? 's' : ''}`;
+
+    headerLeft.appendChild(headerTitle);
+    headerLeft.appendChild(headerCount);
 
     const closeBtn = document.createElement('button');
+    closeBtn.className = 'calendar-day-popover-close';
     closeBtn.innerHTML = '×';
     closeBtn.setAttribute('aria-label', 'Close');
-    closeBtn.style.cssText = `
-      background: transparent;
-      border: none;
-      font-size: 24px;
-      color: rgba(55, 53, 47, 0.5);
-      cursor: pointer;
-      padding: 0;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 3px;
-      transition: background 20ms ease-in;
-    `;
-    closeBtn.addEventListener('mouseover', () => {
-      closeBtn.style.background = 'rgba(55, 53, 47, 0.08)';
-    });
-    closeBtn.addEventListener('mouseout', () => {
-      closeBtn.style.background = 'transparent';
-    });
     closeBtn.addEventListener('click', () => {
-      document.body.removeChild(overlay);
+      document.body.removeChild(backdrop);
+      document.body.removeChild(popover);
     });
 
-    header.appendChild(headerTitle);
+    header.appendChild(headerLeft);
     header.appendChild(closeBtn);
 
-    // Modal body with clean list
-    const body = document.createElement('div');
-    body.style.cssText = `
-      padding: 8px 0;
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-    `;
+    // Popover content (scrollable event list)
+    const content = document.createElement('div');
+    content.className = 'calendar-day-popover-content';
 
-    // Create clean list items matching the screenshot
-    jobs.forEach((job, index) => {
-      const listItem = document.createElement('div');
-      listItem.style.cssText = `
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 20px;
-        cursor: pointer;
-        transition: background 20ms ease-in;
-        min-height: 44px;
-        gap: 12px;
-      `;
+    // Create event cards using same structure as calendar grid
+    jobs.forEach(job => {
+      const eventCard = document.createElement('div');
+      eventCard.className = `calendar-event-card status-${job.status}`;
 
-      listItem.addEventListener('mouseover', () => {
-        listItem.style.background = 'rgba(55, 53, 47, 0.04)';
-      });
-      listItem.addEventListener('mouseout', () => {
-        listItem.style.background = 'transparent';
-      });
-      listItem.addEventListener('click', () => {
-        document.body.removeChild(overlay);
+      // Status indicator bar
+      const statusBar = document.createElement('div');
+      statusBar.className = 'calendar-event-status-bar';
+      eventCard.appendChild(statusBar);
+
+      // Content wrapper (inline layout)
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'calendar-event-content';
+
+      // Title (bold, primary)
+      const titleElement = document.createElement('div');
+      titleElement.className = 'calendar-event-title';
+      titleElement.textContent = job.title;
+      contentWrapper.appendChild(titleElement);
+
+      // Separator (·)
+      const separator = document.createElement('span');
+      separator.className = 'calendar-event-separator';
+      separator.textContent = '·';
+      contentWrapper.appendChild(separator);
+
+      // Company (inline, muted, secondary)
+      const companyElement = document.createElement('div');
+      companyElement.className = 'calendar-event-company';
+      companyElement.textContent = job.company;
+      contentWrapper.appendChild(companyElement);
+
+      eventCard.appendChild(contentWrapper);
+
+      eventCard.addEventListener('click', () => {
+        document.body.removeChild(backdrop);
+        document.body.removeChild(popover);
         this.showJobDetail(job);
       });
 
-      // Left side: Bullet + Job info
-      const leftSide = document.createElement('div');
-      leftSide.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex: 1;
-        min-width: 0;
-      `;
-
-      // Bullet point
-      const bullet = document.createElement('div');
-      bullet.style.cssText = `
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: rgba(55, 53, 47, 0.4);
-        flex-shrink: 0;
-      `;
-
-      // Job title and company container
-      const textContainer = document.createElement('div');
-      textContainer.style.cssText = `
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      `;
-
-      // Job title
-      const titleText = document.createElement('div');
-      titleText.style.cssText = `
-        color: rgb(55, 53, 47);
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.3;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      `;
-      titleText.textContent = job.title;
-
-      // Company name
-      const companyText = document.createElement('div');
-      companyText.style.cssText = `
-        color: rgba(55, 53, 47, 0.6);
-        font-size: 13px;
-        line-height: 1.3;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      `;
-      companyText.textContent = `at ${job.company}`;
-
-      textContainer.appendChild(titleText);
-      textContainer.appendChild(companyText);
-
-      leftSide.appendChild(bullet);
-      leftSide.appendChild(textContainer);
-
-      // Right side: Status badge
-      const statusStyle = this.getStatusStyle(job.status);
-      const statusBadge = document.createElement('span');
-      statusBadge.style.cssText = `
-        display: inline-flex;
-        align-items: center;
-        height: 24px;
-        padding: 0 10px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        background: ${statusStyle.bg};
-        color: ${statusStyle.color};
-        white-space: nowrap;
-        flex-shrink: 0;
-      `;
-      const statusLabels = {
-        'applied': 'Applied',
-        'interview': 'Interview',
-        'offer': 'Offer',
-        'rejected': 'Rejected',
-        'withdrawn': 'Withdrawn',
-        'saved': 'Saved'
-      };
-      statusBadge.textContent = statusLabels[job.status] || job.status;
-
-      listItem.appendChild(leftSide);
-      listItem.appendChild(statusBadge);
-
-      body.appendChild(listItem);
+      content.appendChild(eventCard);
     });
 
-    modal.appendChild(header);
-    modal.appendChild(body);
-    overlay.appendChild(modal);
+    popover.appendChild(header);
+    popover.appendChild(content);
 
-    // Close on overlay click
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        document.body.removeChild(overlay);
+    // Position popover near trigger element (if provided)
+    document.body.appendChild(popover);
+
+    // Calculate position
+    if (triggerElement) {
+      const triggerRect = triggerElement.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+
+      // Try to position below and to the right of trigger
+      let top = triggerRect.bottom + 8;
+      let left = triggerRect.left;
+
+      // Adjust if popover would go off-screen
+      if (left + popoverRect.width > window.innerWidth - 16) {
+        left = window.innerWidth - popoverRect.width - 16;
       }
-    });
+      if (top + popoverRect.height > window.innerHeight - 16) {
+        top = triggerRect.top - popoverRect.height - 8;
+      }
 
-    document.body.appendChild(overlay);
+      // Ensure minimum margins
+      top = Math.max(16, Math.min(top, window.innerHeight - popoverRect.height - 16));
+      left = Math.max(16, Math.min(left, window.innerWidth - popoverRect.width - 16));
+
+      popover.style.top = `${top}px`;
+      popover.style.left = `${left}px`;
+    } else {
+      // Center if no trigger element
+      const popoverRect = popover.getBoundingClientRect();
+      popover.style.top = `${(window.innerHeight - popoverRect.height) / 2}px`;
+      popover.style.left = `${(window.innerWidth - popoverRect.width) / 2}px`;
+    }
   }
 
   async showShareToGroupModal(job) {
@@ -2430,6 +2691,214 @@ class DashboardUI {
   }
 }
 
+// ==================== CSV Export Manager ====================
+class CSVExportManager {
+  constructor() {
+    this.modal = document.getElementById('csv-export-modal');
+    this.selectAllCheckbox = document.getElementById('csv-select-all');
+    this.fieldCheckboxes = document.querySelectorAll('.csv-field');
+    this.init();
+  }
+
+  init() {
+    // Open modal button
+    document.getElementById('export-csv-btn')?.addEventListener('click', () => {
+      this.openModal();
+    });
+
+    // Close modal
+    document.getElementById('close-csv-export-modal')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    document.getElementById('cancel-csv-export')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    // Close on overlay click
+    this.modal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    // Select all / deselect all
+    this.selectAllCheckbox?.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      this.fieldCheckboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+      });
+    });
+
+    // Update select all checkbox when individual checkboxes change
+    this.fieldCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        this.updateSelectAllCheckbox();
+      });
+    });
+
+    // Export button
+    document.getElementById('confirm-csv-export')?.addEventListener('click', () => {
+      this.exportToCSV();
+    });
+  }
+
+  openModal() {
+    this.modal.style.display = 'flex';
+    // Reset to default selections
+    this.selectAllCheckbox.checked = true;
+    this.fieldCheckboxes.forEach(checkbox => {
+      const field = checkbox.dataset.field;
+      // Check core fields by default
+      const coreFields = ['company', 'title', 'status', 'location', 'workType', 'salary', 'dateApplied'];
+      checkbox.checked = coreFields.includes(field);
+    });
+    this.updateSelectAllCheckbox();
+  }
+
+  closeModal() {
+    this.modal.style.display = 'none';
+  }
+
+  updateSelectAllCheckbox() {
+    const allChecked = Array.from(this.fieldCheckboxes).every(cb => cb.checked);
+    const noneChecked = Array.from(this.fieldCheckboxes).every(cb => !cb.checked);
+
+    this.selectAllCheckbox.checked = allChecked;
+    this.selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+  }
+
+  getSelectedFields() {
+    const selectedFields = [];
+    this.fieldCheckboxes.forEach(checkbox => {
+      if (checkbox.checked) {
+        selectedFields.push(checkbox.dataset.field);
+      }
+    });
+    return selectedFields;
+  }
+
+  exportToCSV() {
+    const selectedFields = this.getSelectedFields();
+
+    if (selectedFields.length === 0) {
+      alert('Please select at least one field to export.');
+      return;
+    }
+
+    // Get all jobs from the dashboard
+    const jobs = window.jobTracker?.jobs || [];
+
+    if (jobs.length === 0) {
+      alert('No jobs to export.');
+      return;
+    }
+
+    // Field display names
+    const fieldNames = {
+      company: 'Company',
+      title: 'Job Title',
+      status: 'Status',
+      location: 'Location',
+      workType: 'Work Type',
+      salary: 'Salary',
+      dateApplied: 'Date Applied',
+      deadline: 'Deadline',
+      followUpDate: 'Follow-up Date',
+      linkedinUrl: 'LinkedIn URL',
+      contactPerson: 'Contact Person',
+      contactEmail: 'Contact Email',
+      notes: 'Notes',
+      tags: 'Tags',
+      priority: 'Priority',
+      source: 'Source',
+      resumeFileName: 'Resume File'
+    };
+
+    // Create CSV header
+    const headers = selectedFields.map(field => fieldNames[field] || field);
+
+    // Create CSV rows
+    const rows = jobs.map(job => {
+      return selectedFields.map(field => {
+        let value = job[field] || '';
+
+        // Format specific fields
+        if (field === 'dateApplied' || field === 'deadline' || field === 'followUpDate') {
+          if (value) {
+            const date = new Date(value);
+            value = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          }
+        } else if (field === 'tags') {
+          if (Array.isArray(value)) {
+            value = value.join(', ');
+          }
+        } else if (field === 'status') {
+          // Capitalize status
+          value = value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        value = String(value).replace(/"/g, '""');
+        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+          value = `"${value}"`;
+        }
+
+        return value;
+      });
+    });
+
+    // Combine header and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `track376_jobs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Close modal and show success message
+    this.closeModal();
+    this.showToast(`✅ Exported ${jobs.length} jobs to CSV`);
+  }
+
+  showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgb(35, 131, 226);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10001;
+      animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+}
+
 // Initialize dashboard
 const dashboard = new DashboardUI();
+
+// Initialize CSV Export Manager
+const csvExportManager = new CSVExportManager();
 

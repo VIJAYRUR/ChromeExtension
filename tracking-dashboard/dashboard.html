@@ -13,25 +13,29 @@
   <header class="header">
     <div class="header-content">
       <div class="logo">
-        <h1>Track376</h1>
+        <div class="logo-title-wrapper">
+          <h1>Track376</h1>
+          <p class="logo-subtitle">Job application tracker</p>
+        </div>
       </div>
       <div class="header-actions">
-        <button class="btn-groups" id="open-groups-btn" title="Groups">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-          <span>Groups</span>
-        </button>
-        <!-- Notification Bell will be injected here -->
-        <div id="notification-bell-wrapper"></div>
-        <div class="user-menu" id="user-menu">
-          <button class="user-avatar-btn" id="user-avatar-btn" title="Account">
-            <span id="header-user-initials">U</span>
+        <div class="global-actions">
+          <button class="btn-groups" id="open-groups-btn" title="Groups">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Groups</span>
           </button>
-          <div class="user-dropdown" id="header-user-dropdown">
+          <!-- Notification Bell will be injected here -->
+          <div id="notification-bell-wrapper"></div>
+          <div class="user-menu" id="user-menu">
+            <button class="user-avatar-btn" id="user-avatar-btn" title="Account">
+              <span id="header-user-initials">U</span>
+            </button>
+            <div class="user-dropdown" id="header-user-dropdown">
             <div class="user-dropdown-info">
               <div class="user-dropdown-name" id="header-user-name">User</div>
               <div class="user-dropdown-email" id="header-user-email">user@email.com</div>
@@ -53,6 +57,7 @@
               Logout
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -125,17 +130,20 @@
       </div>
 
       <div class="view-toolbar">
-        <div class="toolbar-icons">
+        <div class="toolbar-container">
+          <div class="toolbar-icons">
           <button class="toolbar-btn" id="filter-btn" aria-label="Filter" title="Filter">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
               <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
             </svg>
+            <span class="filter-btn-badge" id="filter-btn-badge" style="display: none;"></span>
           </button>
 
           <button class="toolbar-btn" id="sort-btn" aria-label="Sort" title="Sort">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0; transform: rotate(180deg);">
               <path d="M11.349 2.672a.625.625 0 0 0-.884 0L7.666 5.471a.625.625 0 1 0 .884.883l1.732-1.73v8.262a.625.625 0 1 0 1.25 0V4.623l1.73 1.731a.625.625 0 0 0 .885-.883zM5.093 2.49a.625.625 0 0 0-.625.624v8.263l-1.73-1.731a.625.625 0 1 0-.885.883l2.798 2.799c.244.244.64.244.884 0l2.798-2.798a.625.625 0 0 0-.883-.884l-1.732 1.73V3.115a.625.625 0 0 0-.625-.625"></path>
             </svg>
+            <span class="sort-btn-label" id="sort-btn-label">Newest</span>
           </button>
 
           <button class="toolbar-btn" id="refresh-btn" aria-label="Refresh" title="Refresh">
@@ -152,17 +160,24 @@
             <input
               type="text"
               id="inline-search-input"
-              placeholder="Type to search..."
+              placeholder="Search roles, companies, locations..."
               autocomplete="off"
             >
             <button class="clear-inline-search" id="clear-inline-search" style="display: none;">×</button>
           </div>
+
+          <button class="toolbar-btn" id="export-csv-btn" aria-label="Export to CSV" title="Export to CSV">
+            <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
+              <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v6.69L4.3 6.53a.75.75 0 0 0-1.1 1.02l4.25 4.5a.75.75 0 0 0 1.1 0l4.25-4.5a.75.75 0 1 0-1.1-1.02l-2.95 3.13zm-6.5 9a.75.75 0 0 0 0 1.5h11.5a.75.75 0 0 0 0-1.5z"></path>
+            </svg>
+          </button>
 
           <button class="toolbar-btn" id="settings-btn" aria-label="Settings" title="Settings">
             <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 16px; height: 16px; display: block; fill: var(--c-icoSec); flex-shrink: 0;">
               <path d="M2.25 5.531h5.692a2.126 2.126 0 0 0 4.116 0h1.692a.625.625 0 1 0 0-1.25H12a2.126 2.126 0 0 0-4 0H2.25a.625.625 0 1 0 0 1.25M10 4.125a.875.875 0 1 1 0 1.75.875.875 0 0 1 0-1.75m-4 9c.921 0 1.706-.586 2-1.406h5.75a.625.625 0 0 0 0-1.25H8.058a2.126 2.126 0 0 0-4.116 0H2.25a.625.625 0 1 0 0 1.25H4a2.13 2.13 0 0 0 2 1.406m0-1.25a.875.875 0 1 1 0-1.75.875.875 0 0 1 0 1.75"></path>
             </svg>
           </button>
+          </div>
         </div>
 
         <div class="new-button-group">
@@ -179,25 +194,42 @@
     <!-- Filter Panel (hidden by default, shown when filter button clicked) -->
     <div class="filter-panel" id="filter-panel" style="display: none;">
       <div class="filter-panel-content">
-        <div class="filter-section">
-          <label class="filter-label">Status</label>
-          <select id="filter-status-panel" class="filter-select-panel">
-            <option value="all">All Status</option>
-            <option value="saved">Saved</option>
-            <option value="applied">Applied</option>
-            <option value="interview">Interview</option>
-            <option value="offer">Offer</option>
-            <option value="rejected">Rejected</option>
-          </select>
+        <!-- Panel Header -->
+        <div class="filter-panel-header">Filter by</div>
+
+        <!-- Application Section -->
+        <div class="filter-group">
+          <div class="filter-group-label">Application</div>
+          <div class="filter-section">
+            <label class="filter-label">Status</label>
+            <select id="filter-status-panel" class="filter-select-panel">
+              <option value="all" class="filter-option-default">All Status</option>
+              <option value="saved">Saved</option>
+              <option value="applied">Applied</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
         </div>
-        <div class="filter-section">
-          <label class="filter-label">Work Type</label>
-          <select id="filter-worktype-panel" class="filter-select-panel">
-            <option value="all">All Work Types</option>
-            <option value="remote">Remote</option>
-            <option value="hybrid">Hybrid</option>
-            <option value="onsite">Onsite</option>
-          </select>
+
+        <!-- Job Details Section -->
+        <div class="filter-group">
+          <div class="filter-group-label">Job details</div>
+          <div class="filter-section">
+            <label class="filter-label">Work type</label>
+            <select id="filter-worktype-panel" class="filter-select-panel">
+              <option value="all" class="filter-option-default">All Work Types</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">Onsite</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Clear Filters -->
+        <div class="filter-clear-container" id="filter-clear-container" style="display: none;">
+          <button class="filter-clear-btn" id="filter-clear-btn">Clear filters</button>
         </div>
       </div>
     </div>
@@ -205,29 +237,64 @@
     <!-- Sort Panel (hidden by default, shown when sort button clicked) -->
     <div class="sort-panel" id="sort-panel" style="display: none;">
       <div class="sort-panel-content">
-        <div class="sort-option" data-sort="date-desc">
-          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
-            <path d="M8 2.75a.625.625 0 0 1 .625.625v9.19l2.22-2.22a.625.625 0 1 1 .884.884l-3.334 3.334a.625.625 0 0 1-.884 0l-3.333-3.334a.625.625 0 1 1 .884-.884l2.219 2.22V3.375A.625.625 0 0 1 8 2.75"></path>
-          </svg>
-          <span>Newest First</span>
+        <!-- Section Label -->
+        <div class="sort-panel-header">Sort by</div>
+
+        <!-- Time Section -->
+        <div class="sort-section">
+          <div class="sort-section-label">Time</div>
+          <div class="sort-option" data-sort="date-desc" data-label="Newest">
+            <div class="sort-option-content">
+              <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="sort-option-icon">
+                <path d="M8 2.75a.625.625 0 0 1 .625.625v9.19l2.22-2.22a.625.625 0 1 1 .884.884l-3.334 3.334a.625.625 0 0 1-.884 0l-3.333-3.334a.625.625 0 1 1 .884-.884l2.219 2.22V3.375A.625.625 0 0 1 8 2.75"></path>
+              </svg>
+              <span>Newest first</span>
+            </div>
+            <svg class="sort-option-check" viewBox="0 0 16 16" style="display: none;">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0"></path>
+            </svg>
+          </div>
+          <div class="sort-option" data-sort="date-asc" data-label="Oldest">
+            <div class="sort-option-content">
+              <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="sort-option-icon">
+                <path d="M8 13.25a.625.625 0 0 1-.625-.625V3.435l-2.22 2.22a.625.625 0 1 1-.884-.884l3.334-3.334a.625.625 0 0 1 .884 0l3.333 3.334a.625.625 0 1 1-.884.883l-2.219-2.22v9.191a.625.625 0 0 1-.625.625"></path>
+              </svg>
+              <span>Oldest first</span>
+            </div>
+            <svg class="sort-option-check" viewBox="0 0 16 16" style="display: none;">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0"></path>
+            </svg>
+          </div>
         </div>
-        <div class="sort-option" data-sort="date-asc">
-          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0; transform: rotate(180deg);">
-            <path d="M8 2.75a.625.625 0 0 1 .625.625v9.19l2.22-2.22a.625.625 0 1 1 .884.884l-3.334 3.334a.625.625 0 0 1-.884 0l-3.333-3.334a.625.625 0 1 1 .884-.884l2.219 2.22V3.375A.625.625 0 0 1 8 2.75"></path>
-          </svg>
-          <span>Oldest First</span>
-        </div>
-        <div class="sort-option" data-sort="company-asc">
-          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0;">
-            <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
-          </svg>
-          <span>Company A-Z</span>
-        </div>
-        <div class="sort-option" data-sort="company-desc">
-          <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" style="width: 14px; height: 14px; display: block; fill: currentColor; flex-shrink: 0; transform: rotate(180deg);">
-            <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
-          </svg>
-          <span>Company Z-A</span>
+
+        <!-- Divider -->
+        <div class="sort-divider"></div>
+
+        <!-- Name Section -->
+        <div class="sort-section">
+          <div class="sort-section-label">Name</div>
+          <div class="sort-option" data-sort="company-asc" data-label="A–Z">
+            <div class="sort-option-content">
+              <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="sort-option-icon">
+                <path d="M2.4 3.7a.7.7 0 1 0 0 1.4h11.2a.7.7 0 1 0 0-1.4zm9.5 3.594H4.1a.7.7 0 1 0 0 1.4h7.8a.7.7 0 1 0 0-1.4M5.8 10.9a.7.7 0 1 0 0 1.4h4.4a.7.7 0 1 0 0-1.4z"></path>
+              </svg>
+              <span>Company A–Z</span>
+            </div>
+            <svg class="sort-option-check" viewBox="0 0 16 16" style="display: none;">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0"></path>
+            </svg>
+          </div>
+          <div class="sort-option" data-sort="company-desc" data-label="Z–A">
+            <div class="sort-option-content">
+              <svg aria-hidden="true" role="graphics-symbol" viewBox="0 0 16 16" class="sort-option-icon">
+                <path d="M13.6 12.3a.7.7 0 0 0 0-1.4H2.4a.7.7 0 0 0 0 1.4zm-9.5-3.594h7.8a.7.7 0 0 0 0-1.4H4.1a.7.7 0 0 0 0 1.4M10.2 5.1a.7.7 0 0 0 0-1.4H5.8a.7.7 0 0 0 0 1.4z"></path>
+              </svg>
+              <span>Company Z–A</span>
+            </div>
+            <svg class="sort-option-check" viewBox="0 0 16 16" style="display: none;">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0"></path>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -319,8 +386,18 @@
 
       <!-- Notion-style Pagination -->
       <div class="table-pagination" id="table-pagination">
-        <div class="pagination-info">
-          <span id="pagination-info-text">1-10 of 50</span>
+        <div class="pagination-left">
+          <div class="pagination-info">
+            <span id="pagination-info-text">1-20 of 50</span>
+          </div>
+          <div class="rows-per-page-selector">
+            <span class="rows-per-page-label">Rows per page:</span>
+            <select id="rows-per-page-select" class="rows-per-page-select">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
         <div class="pagination-controls">
           <button class="pagination-btn" id="prev-page-btn" aria-label="Previous page" disabled>
@@ -354,7 +431,13 @@
               </svg>
             </button>
           </div>
-          <button class="calendar-today-btn" id="today-btn">Today</button>
+          <div class="calendar-header-right">
+            <div class="calendar-view-toggle" role="group" aria-label="Calendar view">
+              <button class="calendar-view-toggle-btn" data-view="week" aria-label="Week view">Week</button>
+              <button class="calendar-view-toggle-btn active" data-view="month" aria-label="Month view">Month</button>
+            </div>
+            <button class="calendar-today-btn" id="today-btn">Today</button>
+          </div>
         </div>
 
         <div class="calendar-grid">
@@ -947,6 +1030,137 @@
           <div class="loading-state">
             Loading groups...
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Export Modal -->
+  <div id="csv-export-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 style="font-size: 20px; font-weight: 600; color: #111; margin: 0;">Export to CSV</h2>
+        <button class="modal-close" id="close-csv-export-modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #6b6b6b; margin-bottom: 20px; font-size: 14px;">Select the fields you want to include in your CSV export:</p>
+
+        <!-- Select All / Deselect All -->
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+          <label class="csv-field-checkbox" style="font-weight: 500;">
+            <input type="checkbox" id="csv-select-all" checked>
+            <span>Select All</span>
+          </label>
+        </div>
+
+        <!-- Field Selection Grid -->
+        <div class="csv-fields-grid">
+          <!-- Core Fields -->
+          <div class="csv-field-section">
+            <h4 class="csv-section-title">Core Information</h4>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="company" checked>
+              <span>Company</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="title" checked>
+              <span>Job Title</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="status" checked>
+              <span>Status</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="location" checked>
+              <span>Location</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="workType" checked>
+              <span>Work Type</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="salary" checked>
+              <span>Salary</span>
+            </label>
+          </div>
+
+          <!-- Dates -->
+          <div class="csv-field-section">
+            <h4 class="csv-section-title">Dates</h4>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="dateApplied" checked>
+              <span>Date Applied</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="deadline">
+              <span>Deadline</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="followUpDate">
+              <span>Follow-up Date</span>
+            </label>
+          </div>
+
+          <!-- Contact & Links -->
+          <div class="csv-field-section">
+            <h4 class="csv-section-title">Contact & Links</h4>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="linkedinUrl">
+              <span>LinkedIn URL</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="contactPerson">
+              <span>Contact Person</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="contactEmail">
+              <span>Contact Email</span>
+            </label>
+          </div>
+
+          <!-- Additional Info -->
+          <div class="csv-field-section">
+            <h4 class="csv-section-title">Additional Information</h4>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="notes">
+              <span>Notes</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="tags">
+              <span>Tags</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="priority">
+              <span>Priority</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="source">
+              <span>Source</span>
+            </label>
+            <label class="csv-field-checkbox">
+              <input type="checkbox" class="csv-field" data-field="resumeFileName">
+              <span>Resume File</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Export Button -->
+        <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn-secondary" id="cancel-csv-export">Cancel</button>
+          <button type="button" class="btn-primary" id="confirm-csv-export">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export CSV
+          </button>
         </div>
       </div>
     </div>
