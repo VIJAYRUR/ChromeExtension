@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Job Tracker</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-shield-lock-fill me-2"></i>
+        Admin Dashboard
+      </a>
+      <div class="navbar-nav ms-auto">
+        <span class="navbar-text text-white me-3" id="adminName">
+          <i class="bi bi-person-circle me-1"></i>
+          <span id="adminEmail"></span>
+        </span>
+        <button class="btn btn-outline-light btn-sm" id="logoutBtn">
+          <i class="bi bi-box-arrow-right me-1"></i>
+          Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container-fluid mt-4">
+    <!-- Stats Cards -->
+    <div class="row mb-4" id="statsSection">
+      <div class="col-md-3">
+        <div class="card text-white bg-primary">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title mb-0">Total Users</h6>
+                <h2 class="mt-2 mb-0" id="totalUsers">-</h2>
+              </div>
+              <i class="bi bi-people-fill fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-white bg-success">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title mb-0">Active Users</h6>
+                <h2 class="mt-2 mb-0" id="activeUsers">-</h2>
+              </div>
+              <i class="bi bi-person-check-fill fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-white bg-info">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title mb-0">Total Jobs</h6>
+                <h2 class="mt-2 mb-0" id="totalJobs">-</h2>
+              </div>
+              <i class="bi bi-briefcase-fill fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-white bg-warning">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title mb-0">Applications</h6>
+                <h2 class="mt-2 mb-0" id="totalApplications">-</h2>
+              </div>
+              <i class="bi bi-file-earmark-text-fill fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="row">
+      <!-- Users List Section -->
+      <div class="col-12" id="usersSection">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <h5 class="mb-0">
+                  <i class="bi bi-people me-2"></i>
+                  All Users
+                </h5>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                  </span>
+                  <input type="text" class="form-control" id="searchUsers" placeholder="Search by name or email...">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Total Jobs</th>
+                    <th>Applied</th>
+                    <th>Interview</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td colspan="9" class="text-center py-5">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="text-muted" id="usersPagination">
+                Showing 0 of 0 users
+              </div>
+              <nav>
+                <ul class="pagination mb-0" id="usersPaginationButtons">
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Jobs Section (Initially Hidden) -->
+      <div class="col-12 mt-4" id="userJobsSection" style="display: none;">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <h5 class="mb-0">
+                  <button class="btn btn-sm btn-outline-secondary me-2" id="backToUsers">
+                    <i class="bi bi-arrow-left"></i>
+                  </button>
+                  <i class="bi bi-briefcase me-2"></i>
+                  Jobs for <span id="selectedUserName"></span>
+                </h5>
+              </div>
+              <div class="col-md-6">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <select class="form-select form-select-sm" id="statusFilter">
+                      <option value="">All Status</option>
+                      <option value="saved">Saved</option>
+                      <option value="applied">Applied</option>
+                      <option value="screening">Screening</option>
+                      <option value="interview">Interview</option>
+                      <option value="offer">Offer</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="withdrawn">Withdrawn</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                      </span>
+                      <input type="text" class="form-control" id="searchJobs" placeholder="Search jobs...">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Company</th>
+                    <th>Title</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Applied Date</th>
+                    <th>Priority</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody id="jobsTableBody">
+                  <tr>
+                    <td colspan="7" class="text-center py-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="text-muted" id="jobsPagination">
+                Showing 0 of 0 jobs
+              </div>
+              <nav>
+                <ul class="pagination mb-0" id="jobsPaginationButtons">
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS -->
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>
